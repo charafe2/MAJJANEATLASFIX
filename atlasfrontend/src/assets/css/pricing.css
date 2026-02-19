@@ -1,0 +1,343 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500&family=Poppins:wght@400;500&display=swap');
+
+/* ── Wrapper ──────────────────────────────────────────── */
+.pricing-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+  max-width: 1280px;
+  padding: 60px 16px 80px;
+}
+
+/* ── Header ───────────────────────────────────────────── */
+.pricing-header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 48px;
+  width: 100%;
+}
+
+.pricing-title {
+  font-family: 'Inter', sans-serif;
+  font-weight: 400;
+  font-size: 40px;
+  line-height: 48px;
+  text-align: center;
+  color: #314158;
+  margin: 0;
+}
+
+.pricing-title .orange { color: #FF6900; }
+
+.pricing-subtitle {
+  font-family: 'Inter', sans-serif;
+  font-weight: 400;
+  font-size: 16px;
+  line-height: 24px;
+  text-align: center;
+  letter-spacing: -0.3125px;
+  color: #62748E;
+  margin: 0;
+}
+
+/* ── Billing toggle ───────────────────────────────────── */
+.billing-toggle {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background: #F3F4F6;
+  border-radius: 999px;
+  padding: 4px;
+  margin-top: 8px;
+}
+
+.toggle-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 20px;
+  border: none;
+  border-radius: 999px;
+  cursor: pointer;
+  background: transparent;
+  font-family: 'Inter', sans-serif;
+  font-size: 14px;
+  color: #62748E;
+  transition: all 0.2s;
+}
+
+.toggle-btn.active {
+  background: #FF6900;
+  color: #FFFFFF;
+}
+
+.badge-discount {
+  background: rgba(255,255,255,0.3);
+  border-radius: 999px;
+  padding: 1px 6px;
+  font-size: 11px;
+  font-weight: 500;
+}
+
+/* ── Plans grid ───────────────────────────────────────── */
+.plans-grid {
+  display: flex;
+  flex-direction: row;
+  align-items: flex-start;
+  gap: 32px;
+  width: 100%;
+  justify-content: center;
+}
+
+/* ── Plan card base ───────────────────────────────────── */
+.plan-card {
+  position: relative;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  padding: 34px 34px 2px;
+  gap: 24px;
+  width: 288px;
+  background: #FFFFFF;
+  border-radius: 16px;
+  border: 2px solid #D1D5DC;
+  margin-top: 20px;
+}
+
+/* ── Featured card ────────────────────────────────────── */
+.plan-card.featured {
+  border-color: #FF6900;
+  box-shadow: 0px 20px 25px -5px rgba(0,0,0,0.1),
+              0px 8px 10px -6px rgba(0,0,0,0.1);
+  margin-top: 0;
+}
+
+/* Plan-specific borders */
+.plan-pro      { border-color: #2B7FFF; }
+.plan-business { border-color: #9810FA; }
+
+/* ── Popular badge ────────────────────────────────────── */
+.popular-badge {
+  position: absolute;
+  top: -15px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: linear-gradient(90deg, #FF6900 0%, #F54900 100%);
+  box-shadow: 0px 10px 15px -3px rgba(0,0,0,0.1),
+              0px 4px 6px -4px rgba(0,0,0,0.1);
+  border-radius: 999px;
+  padding: 9px 18px;
+  white-space: nowrap;
+
+  font-family: 'Inter', sans-serif;
+  font-weight: 400;
+  font-size: 14px;
+  line-height: 20px;
+  letter-spacing: -0.150391px;
+  color: #FFFFFF;
+}
+
+/* ── Plan icon ────────────────────────────────────────── */
+.plan-icon {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 64px;
+  height: 64px;
+  border-radius: 16px;
+  align-self: center;
+  flex-shrink: 0;
+}
+
+.basic-icon    { background: linear-gradient(135deg, #6A7282 0%, #4A5565 100%); }
+.pro-icon      { background: linear-gradient(135deg, #2B7FFF 0%, #155DFC 100%); }
+.premium-icon  { background: linear-gradient(135deg, #FF6900 0%, #F54900 100%); }
+.business-icon { background: linear-gradient(135deg, #9810FA 0%, #8200DB 100%); }
+
+/* ── Plan name ────────────────────────────────────────── */
+.plan-name {
+  font-family: 'Inter', sans-serif;
+  font-weight: 400;
+  font-size: 24px;
+  line-height: 32px;
+  text-align: center;
+  letter-spacing: 0.0703125px;
+  color: #314158;
+  margin: 0;
+  align-self: center;
+}
+
+/* ── Plan desc ────────────────────────────────────────── */
+.plan-desc {
+  font-family: 'Inter', sans-serif;
+  font-weight: 400;
+  font-size: 14px;
+  line-height: 20px;
+  text-align: center;
+  letter-spacing: -0.150391px;
+  color: #62748E;
+  margin: 0;
+  align-self: center;
+}
+
+/* ── Price ────────────────────────────────────────────── */
+.plan-price {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  align-self: center;
+}
+
+.price-amount {
+  font-family: 'Inter', sans-serif;
+  font-weight: 400;
+  font-size: 48px;
+  line-height: 48px;
+  text-align: center;
+  letter-spacing: 0.351562px;
+  color: #314158;
+}
+
+.price-unit {
+  font-family: 'Inter', sans-serif;
+  font-weight: 400;
+  font-size: 20px;
+  line-height: 28px;
+  text-align: center;
+  letter-spacing: -0.449219px;
+  color: #62748E;
+}
+
+/* ── Plan button ──────────────────────────────────────── */
+.plan-btn {
+  width: 220px;
+  height: 56px;
+  border: none;
+  border-radius: 14px;
+  cursor: pointer;
+  align-self: center;
+  transition: opacity 0.2s, transform 0.1s;
+
+  font-family: 'Inter', sans-serif;
+  font-weight: 400;
+  font-size: 16px;
+  line-height: 24px;
+  text-align: center;
+  letter-spacing: -0.3125px;
+  color: #FFFFFF;
+}
+
+.plan-btn:hover  { opacity: 0.9; }
+.plan-btn:active { transform: scale(0.98); }
+
+.basic-btn    { background: linear-gradient(90deg, #6A7282 0%, #4A5565 100%); }
+.pro-btn      { background: linear-gradient(90deg, #2B7FFF 0%, #155DFC 100%); }
+.premium-btn  { background: linear-gradient(90deg, #FF6900 0%, #F54900 100%); }
+.business-btn { background: linear-gradient(90deg, #9810FA 0%, #8200DB 100%); }
+
+/* ── Features section ─────────────────────────────────── */
+.plan-features {
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding-top: 25px;
+  width: 220px;
+  border-top: 1px solid #E5E7EB;
+  align-self: center;
+}
+
+.features-label {
+  font-family: 'Inter', sans-serif;
+  font-weight: 400;
+  font-size: 14px;
+  line-height: 20px;
+  letter-spacing: -0.150391px;
+  color: #62748E;
+  margin: 0;
+}
+
+.plan-features ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.plan-features li {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  font-family: 'Inter', sans-serif;
+  font-weight: 400;
+  font-size: 14px;
+  line-height: 20px;
+  letter-spacing: -0.150391px;
+  min-height: 22px;
+}
+
+/* ── Check / cross icons ──────────────────────────────── */
+.feat-yes::before,
+.feat-no::before {
+  content: '';
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  margin-top: 1px;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.feat-yes {
+  color: #314158;
+}
+
+.feat-yes::before {
+  content: '✓';
+  background: #DCFCE7;
+  color: #00A63E;
+  min-width: 20px;
+  text-align: center;
+  line-height: 20px;
+  border-radius: 50%;
+}
+
+.feat-no {
+  color: #62748E;
+}
+
+.feat-no::before {
+  content: '✕';
+  background: #F3F4F6;
+  color: #99A1AF;
+  min-width: 20px;
+  text-align: center;
+  line-height: 20px;
+  border-radius: 50%;
+}
+
+/* ── Responsive ───────────────────────────────────────── */
+@media (max-width: 1200px) {
+  .plans-grid { gap: 20px; }
+  .plan-card  { width: 240px; padding: 28px 24px 2px; }
+  .plan-btn   { width: 192px; }
+  .plan-features { width: 192px; }
+}
+
+@media (max-width: 900px) {
+  .plans-grid    { flex-direction: column; align-items: center; }
+  .plan-card     { width: 100%; max-width: 400px; margin-top: 20px; }
+  .plan-card.featured { margin-top: 20px; }
+  .plan-btn      { width: 100%; }
+  .plan-features { width: 100%; }
+}
