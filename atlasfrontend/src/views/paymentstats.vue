@@ -25,8 +25,8 @@
               <span>+12%</span>
             </div>
           </div>
-          <p class="stat-label">Revenus totaux</p>
-          <p class="stat-value">7 400 MAD</p>
+          <p class="stat-label">{{user?.account_type === 'client' ? "Total depensé" : "Revenue Total"}}</p>
+          <p class="stat-value">{{ formatAmount(stats.total_revenue) }} MAD</p>
           <p class="stat-period">Ce mois-ci</p>
         </div>
 
@@ -39,11 +39,11 @@
               </svg>
             </div>
             <div class="stat-badge stat-badge--green">
-              <span>5 paiements</span>
+              <span>{{ stats.completed_count }} paiement{{ stats.completed_count !== 1 ? 's' : '' }}</span>
             </div>
           </div>
           <p class="stat-label">Paiements complétés</p>
-          <p class="stat-value stat-value--dark">3 550 MAD</p>
+          <p class="stat-value stat-value--dark">{{ formatAmount(stats.completed_total) }} MAD</p>
           <div class="stat-footer stat-footer--green">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
               <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z" stroke="#00A63E" stroke-width="0.5" fill="#00A63E"/>
@@ -61,11 +61,11 @@
               </svg>
             </div>
             <div class="stat-badge stat-badge--orange">
-              <span>3 paiements</span>
+              <span>{{ stats.pending_count }} paiement{{ stats.pending_count !== 1 ? 's' : '' }}</span>
             </div>
           </div>
           <p class="stat-label">Paiements en cours</p>
-          <p class="stat-value stat-value--dark">3 850 MAD</p>
+          <p class="stat-value stat-value--dark">{{ formatAmount(stats.pending_total) }} MAD</p>
           <div class="stat-footer stat-footer--orange">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
               <circle cx="12" cy="12" r="9" stroke="#F54900" stroke-width="2" fill="none"/>
@@ -156,7 +156,7 @@
 
                 <!-- Méthode -->
                 <td>
-                  <span class="method">{{ payment.method }}</span>
+                  <span class="method">{{ payment.method ?? '—' }}</span>
                 </td>
 
                 <!-- Date -->
@@ -173,16 +173,16 @@
                 <td>
                   <span
                     class="status-badge"
-                    :class="payment.status === 'Complété' ? 'status-badge--completed' : 'status-badge--pending'"
+                    :class="payment.status === 'completed' ? 'status-badge--completed' : 'status-badge--pending'"
                   >
-                    <svg v-if="payment.status === 'Complété'" width="14" height="14" viewBox="0 0 24 24" fill="none">
+                    <svg v-if="payment.status === 'completed'" width="14" height="14" viewBox="0 0 24 24" fill="none">
                       <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z" fill="#008236"/>
                     </svg>
                     <svg v-else width="14" height="14" viewBox="0 0 24 24" fill="none">
                       <circle cx="12" cy="12" r="9" stroke="#CA3500" stroke-width="2" fill="none"/>
                       <path d="M12 7v5l3 3" stroke="#CA3500" stroke-width="2" stroke-linecap="round"/>
                     </svg>
-                    {{ payment.status }}
+                    {{ statusLabel(payment.status) }}
                   </span>
                 </td>
               </tr>
@@ -195,50 +195,100 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
-import navbar from '../components/navbar.vue'
+import { ref, computed, onMounted } from 'vue'
+import { useRouter } from 'vue-router'          // ← was missing
+import { getPaymentStats } from '../api/payments'
 
-const searchQuery = ref('')
+const router = useRouter()
+const user   = ref(null)
+
+function loadUser() {
+  try {
+    const raw = localStorage.getItem('user')
+    user.value = raw ? JSON.parse(raw) : null
+  } catch {
+    user.value = null
+  }
+}
+
+// ── Filters ───────────────────────────────────────────────────────────────────
+const searchQuery  = ref('')
 const activeFilter = ref('all')
 
 const filters = [
-  { label: 'Tous', value: 'all' },
-  { label: 'Complétés', value: 'Complété' },
-  { label: 'En cours', value: 'En cours' },
+  { label: 'Tous',      value: 'all'       },
+  { label: 'Complétés', value: 'completed' },
+  { label: 'En cours',  value: 'pending'   },
 ]
 
-const payments = ref([
-  { id: 1,  initials: 'M', client: 'Mohammed Alami',   service: 'Réparation fuite cuisine',    amount: 450,  method: 'Carte bancaire', date: '14/12/2024', status: 'Complété' },
-  { id: 2,  initials: 'F', client: 'Fatima Zahra',     service: 'Installation lavabo',         amount: 650,  method: 'Carte bancaire', date: '13/12/2024', status: 'Complété' },
-  { id: 3,  initials: 'K', client: 'Karim Benjelloun', service: 'Dépannage urgence',           amount: 800,  method: 'Virement',       date: '15/12/2024', status: 'En cours' },
-  { id: 4,  initials: 'A', client: 'Amina Tahiri',     service: 'Rénovation salle de bain',   amount: 2500, method: 'Virement',       date: '15/12/2024', status: 'En cours' },
-  { id: 5,  initials: 'Y', client: 'Youssef Mansouri', service: 'Installation chauffe-eau',   amount: 1200, method: 'Carte bancaire', date: '12/12/2024', status: 'Complété' },
-  { id: 6,  initials: 'S', client: 'Sara Benmoussa',   service: 'Peinture intérieure',        amount: 600,  method: 'Virement',       date: '11/12/2024', status: 'Complété' },
-  { id: 7,  initials: 'H', client: 'Hassan Tazi',      service: 'Plomberie générale',         amount: 650,  method: 'Carte bancaire', date: '10/12/2024', status: 'Complété' },
-  { id: 8,  initials: 'Y', client: 'Yassine Chraibi',  service: 'Réparation climatisation',  amount: 550,  method: 'Virement',       date: '16/12/2024', status: 'En cours' },
-])
+// ── Data ──────────────────────────────────────────────────────────────────────
+const payments = ref([])
+const stats    = ref({
+  total_revenue:   0,
+  completed_total: 0,
+  completed_count: 0,
+  pending_total:   0,
+  pending_count:   0,
+})
+const loading = ref(false)
 
-const filteredPayments = computed(() => {
-  return payments.value.filter(p => {
-    const matchesSearch =
-      !searchQuery.value ||
-      p.client.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
-      p.service.toLowerCase().includes(searchQuery.value.toLowerCase())
-    const matchesFilter = activeFilter.value === 'all' || p.status === activeFilter.value
-    return matchesSearch && matchesFilter
-  })
+async function loadPayments() {
+  loading.value = true
+  try {
+    const { data } = await getPaymentStats()
+    payments.value = data.payments ?? []
+    stats.value    = data.stats    ?? stats.value
+  } catch {
+    // keep empty state on error
+  } finally {
+    loading.value = false
+  }
+}
+
+onMounted(async () => {        // ← call BOTH functions here
+  loadUser()
+  await loadPayments()
 })
 
+// ── Computed ──────────────────────────────────────────────────────────────────
+const filteredPayments = computed(() =>
+  payments.value.filter(p => {
+    const q = searchQuery.value.toLowerCase()
+    const matchesSearch =
+      !q ||
+      p.client.toLowerCase().includes(q) ||
+      p.service.toLowerCase().includes(q)
+    const matchesFilter =
+      activeFilter.value === 'all' || p.status === activeFilter.value
+    return matchesSearch && matchesFilter
+  })
+)
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
+
+/** Format a number with space-separated thousands: 7400 → "7 400" */
+function formatAmount(n) {
+  return Math.round(n ?? 0)
+    .toString()
+    .replace(/\B(?=(\d{3})+(?!\d))/g, '\u00A0')
+}
+
+/** Map API status → display label */
+function statusLabel(status) {
+  return status === 'completed' ? 'Complété' : 'En cours'
+}
+
+// ── Export ────────────────────────────────────────────────────────────────────
 function exportPayments() {
   const headers = ['Client', 'Service', 'Montant (MAD)', 'Méthode', 'Date', 'Statut']
-  const rows = filteredPayments.value.map(p =>
-    [p.client, p.service, p.amount, p.method, p.date, p.status].join(',')
+  const rows    = filteredPayments.value.map(p =>
+    [p.client, p.service, p.amount, p.method ?? '—', p.date, statusLabel(p.status)].join(',')
   )
-  const csv = [headers.join(','), ...rows].join('\n')
+  const csv  = [headers.join(','), ...rows].join('\n')
   const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
-  const url = URL.createObjectURL(blob)
+  const url  = URL.createObjectURL(blob)
   const link = document.createElement('a')
-  link.href = url
+  link.href     = url
   link.download = 'paiements.csv'
   link.click()
   URL.revokeObjectURL(url)

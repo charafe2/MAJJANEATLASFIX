@@ -50,6 +50,9 @@ export const rejectOffer = (requestId, offerId) =>
 
 // ── Artisan: Browse & respond ─────────────────────────────────────────────
 
+export const getArtisanServiceRequest = (id) =>
+  api.get(`/artisan/service-requests/${id}`)
+
 export const getArtisanServiceRequests = (params = {}) =>
   api.get('/artisan/service-requests', { params })
 

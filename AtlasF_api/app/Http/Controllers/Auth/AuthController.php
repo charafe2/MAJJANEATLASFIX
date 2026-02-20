@@ -389,21 +389,17 @@ class AuthController extends Controller
         ], 200);
     }
 
-   public function googleRedirect()
+    public function googleRedirect()
     {
-       
-
-        return Socialite::driver('google')->redirect();
+        return Socialite::driver('google')->stateless()->redirect();
     }
 
-    
     public function googleCallback(Request $request)
     {
-        $frontend = 'http://localhost:5173';
+        $frontend = env('FRONTEND_URL', 'http://localhost:5173');
 
-      
         try {
-            $googleUser = Socialite::driver('google')->user();
+            $googleUser = Socialite::driver('google')->stateless()->user();
         } catch (\Exception $e) {
             Log::error('Google OAuth callback failed', ['error' => $e->getMessage()]);
             return redirect("{$frontend}/login?error=google_failed");
@@ -663,11 +659,11 @@ class AuthController extends Controller
         ?string $referralCode = null,
         ?string $city         = null,
         ?string $address      = null,
-        ?string $service      = null,   // kept in signature for backward compat but not used
-        ?string $serviceType  = null,   // kept in signature for backward compat but not used
+        ?string $service      = null,
+        ?string $serviceType  = null,
         ?string $bio          = null,
-        ?string $diplomaPath  = null,   // kept in signature for backward compat but not used
-        array   $photoPaths   = [],     // kept in signature for backward compat but not used
+        ?string $diplomaPath  = null,
+        array   $photoPaths   = [],
     ): void {
         if ($user->account_type === 'client') {
             Client::firstOrCreate(
@@ -688,20 +684,44 @@ class AuthController extends Controller
                 $referredById = $referrer?->id;
             }
 
+            $serviceCategoryId = $this->resolveServiceCategoryId($service);
+
             Artisan::firstOrCreate(
                 ['user_id' => $user->id],
                 [
-                    'referral_code'     => $this->generateReferralCode($user),
-                    'referred_by_id'    => $referredById,
-                    'city'              => $city,
-                    'address'           => $address,
-                    'bio'               => $bio,
-                    'is_available'      => true,
-                    'is_verified'       => false,
-                    'profile_completed' => false,
+                    'referral_code'       => $this->generateReferralCode($user),
+                    'referred_by_id'      => $referredById,
+                    'service_category_id' => $serviceCategoryId,
+                    'city'                => $city,
+                    'address'             => $address,
+                    'bio'                 => $bio,
+                    'is_available'        => true,
+                    'is_verified'         => false,
+                    'profile_completed'   => false,
                 ]
             );
         }
+    }
+
+    private function resolveServiceCategoryId(?string $serviceSlug): ?int
+    {
+        if (!$serviceSlug) return null;
+
+        $slugMap = [
+            'plomberie'     => 'Plomberie',
+            'electricite'   => 'Électricité',
+            'menuiserie'    => 'Menuiserie',
+            'peinture'      => 'Peinture',
+            'maconnerie'    => 'Maçonnerie',
+            'climatisation' => 'Chauffage, Ventilation et Climatisation',
+            'carrelage'     => 'Carrelage',
+            'jardinage'     => 'Jardinage',
+        ];
+
+        $categoryName = $slugMap[$serviceSlug] ?? null;
+        if (!$categoryName) return null;
+
+        return \App\Models\ServiceCategory::where('name', $categoryName)->value('id');
     }
 
     // PRIVATE: generate unique referral code
@@ -766,27 +786,43 @@ class AuthController extends Controller
         $tier = SubscriptionTier::where('name', $request->plan)->firstOrFail();
 
         // ── Create artisan profile row if not already there ───────────────
-        if (!$user->artisan()->exists()) {
-            $pending = Cache::get("pending_artisan_profile_{$user->id}", []);
+        $pending = Cache::get("pending_artisan_profile_{$user->id}", []);
 
+        if (!$user->artisan()->exists()) {
             $this->createProfile(
                 $user,
                 $pending['referral_code'] ?? null,
                 $pending['city']          ?? null,
                 $pending['address']       ?? null,
-                null,
+                $pending['service']       ?? null,
                 null,
                 $pending['bio']           ?? null,
                 null,
                 [],
             );
-
-            Cache::forget("pending_artisan_profile_{$user->id}");
         }
 
         // ── CRITICAL: refresh so $user->artisan is no longer null ─────────
         $user->refresh();
         $artisan = $user->artisan;
+
+        // ── Always apply pending profile data ────────────────────────────
+        // This handles the case where the artisan row was created without
+        // profile data (e.g., via the login safety net before completePlan ran).
+        if (!empty($pending)) {
+            $profileUpdate = [];
+            if (!empty($pending['city']))    $profileUpdate['city']    = $pending['city'];
+            if (!empty($pending['address'])) $profileUpdate['address'] = $pending['address'];
+            if (!empty($pending['bio']))     $profileUpdate['bio']     = $pending['bio'];
+            if (!empty($pending['service'])) {
+                $categoryId = $this->resolveServiceCategoryId($pending['service']);
+                if ($categoryId) $profileUpdate['service_category_id'] = $categoryId;
+            }
+            if (!empty($profileUpdate)) {
+                $artisan->update($profileUpdate);
+            }
+            Cache::forget("pending_artisan_profile_{$user->id}");
+        }
 
         if (!$artisan) {
             Log::error('completePlan: artisan row missing after createProfile', ['user_id' => $user->id]);

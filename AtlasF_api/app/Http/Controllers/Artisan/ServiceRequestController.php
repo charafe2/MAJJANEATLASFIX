@@ -170,6 +170,42 @@ class ServiceRequestController extends Controller
         return response()->json(['data' => $offers]);
     }
 
+    // ── SHOW a single accepted request (artisan-side detail) ─────────────
+
+    public function show(Request $request, ServiceRequest $serviceRequest): JsonResponse
+    {
+        $user    = $request->user();
+        $artisan = $user->artisan;
+
+        if ($user->account_type !== 'artisan' || !$artisan) {
+            return response()->json(['error' => 'Only artisans can access this.'], 403);
+        }
+
+        // Verify the artisan has an accepted offer on this request
+        $offer = ArtisanOffer::where('service_request_id', $serviceRequest->id)
+            ->where('artisan_id', $artisan->id)
+            ->where('status', 'accepted')
+            ->first();
+
+        if (!$offer) {
+            return response()->json(['error' => 'Not found.'], 404);
+        }
+
+        $serviceRequest->load([
+            'category',
+            'serviceType',
+            'photos',
+            'client.user',
+            'timeline',
+            'payment',
+        ]);
+
+        return response()->json([
+            'data'  => $serviceRequest,
+            'offer' => $offer,
+        ]);
+    }
+
     // ── CLIENT PROFILE (artisan-side view) ───────────────────────────────
 
     public function clientProfile(Request $request, Client $client): JsonResponse

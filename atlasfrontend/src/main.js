@@ -18,7 +18,7 @@ import Contact from './views/Contact.vue'
 import './assets/css/profile.css'
 import Faq from './views/faq.vue'
 import ArtisanProfile from './views/ArtisanProfile.vue'
-import ServicesPlombier from './views/ServicesPlombier.vue'
+import ServicePage from './views/ServicePage.vue'
 import Artisanprofilevisit from './views/Artisanprofilevisit.vue'
 import Paymentstats from './views/paymentstats.vue'
 import Agenda from './views/agenda.vue'
@@ -26,6 +26,8 @@ import MesDemandes from './views/client/MesDemandes.vue'
 import NouvelleDemande from './views/client/NouvelleDemande.vue'
 import DemandesClients from './views/artisan/DemandesClients.vue'
 import MesDemandesAcceptees from './views/artisan/MesDemandesAcceptees.vue'
+import Messages from './views/Messages.vue'
+import DemandeDetail from './views/DemandeDetail.vue'
 
 // Axios base URL
 axios.defaults.baseURL = 'http://127.0.0.1:8000'
@@ -36,7 +38,7 @@ const router = createRouter({
     { path: '/login', component: loginvue },
     { path: '/register', component: register },
     { path: '/register/client', component: RegC },
- { path: '/register/artisan/pricing', component: pricing },
+    { path: '/register/artisan/pricing', component: pricing },
     { path: '/register/artisan', component: regA },
     { path: '/verify', component: verify },
     { path: '/Home', component: home },
@@ -46,7 +48,7 @@ const router = createRouter({
     { path: '/Contact', component: Contact },
     { path: '/faq', component: Faq },
     { path: '/artisan/profile', component: ArtisanProfile },
-    { path: '/services/plombier', component: ServicesPlombier },
+    { path: '/services/:slug',    component: ServicePage },
     { path: '/Client/Artisan/Profile', component: Artisanprofilevisit },
     { path: '/Artisan/Payments', component: Paymentstats },
     { path: '/Artisan/agenda',            component: Agenda },
@@ -55,6 +57,13 @@ const router = createRouter({
     { path: '/artisan/demandes-clients',   component: DemandesClients },
     { path: '/artisan/clients/:id',        component: profileC },
     { path: '/artisan/mes-demandes',       component: MesDemandesAcceptees },
+    { path: '/messages/:id',       component: Messages },
+    { path: '/messages',       component: Messages },
+    { path: '/payments',       component: Paymentstats },
+    { path: '/client/demandes/:id',  component: DemandeDetail, props: { role: 'client' } },
+    { path: '/artisan/demandes/:id', component: DemandeDetail, props: { role: 'artisan' } },
+
+
 
 
   ]

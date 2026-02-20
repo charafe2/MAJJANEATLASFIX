@@ -79,7 +79,7 @@
               </div>
             </div>
 
-            <button class="service-btn">
+            <button class="service-btn" @click="goToService(service.slug)">
               <span>Voir les artisans</span>
               <svg viewBox="0 0 20 20" fill="none">
                 <path d="M7 10h10M12 5l5 5-5 5" stroke="white" stroke-width="1.667" stroke-linecap="round" stroke-linejoin="round"/>
@@ -142,6 +142,11 @@ const SecuriseIcon = defineComponent({
 export default defineComponent({
   name: 'HeroSection',
   components: { ArtisansIcon, SatisfactionIcon, DisponibiliteIcon, SecuriseIcon },
+  methods: {
+    goToService(slug) {
+      this.$router.push(`/services/${slug}`)
+    },
+  },
   data() {
     return {
       searchQuery: '',
@@ -154,6 +159,7 @@ export default defineComponent({
       services: [
         {
           title: 'Plomberie',
+          slug: 'plomberie',
           items: ['Réparation de fuite', 'Installation sanitaire', 'Réparation de toilette', 'Débouchage'],
           iconComponent: defineComponent({
             render: () => h('svg', { width: 24, height: 24, viewBox: '0 0 24 24', fill: 'none' }, [
@@ -163,6 +169,7 @@ export default defineComponent({
         },
         {
           title: 'Électricité',
+          slug: 'electricite',
           items: ['Installation de luminaires', 'Réparation prises & interrupteurs', 'Installation ventilateur de plafond'],
           iconComponent: defineComponent({
             render: () => h('svg', { width: 24, height: 24, viewBox: '0 0 24 24', fill: 'none' }, [
@@ -172,6 +179,7 @@ export default defineComponent({
         },
         {
           title: 'Peinture',
+          slug: 'peinture',
           items: ['Travaux de peinture intérieure'],
           iconComponent: defineComponent({
             render: () => h('svg', { width: 24, height: 24, viewBox: '0 0 24 24', fill: 'none' }, [
@@ -182,6 +190,7 @@ export default defineComponent({
         },
         {
           title: 'Réparations générales',
+          slug: 'reparations-generales',
           items: ['Montage TV, étagères, tringles', 'Réparation portes & serrures', 'Petites menuiseries', 'Joints & silicone'],
           iconComponent: defineComponent({
             render: () => h('svg', { width: 24, height: 24, viewBox: '0 0 24 24', fill: 'none' }, [
@@ -191,6 +200,7 @@ export default defineComponent({
         },
         {
           title: 'Déménagement',
+          slug: 'demenagement',
           items: ['Déménagement local', 'Emballage & déballage', 'Transport de meubles'],
           iconComponent: defineComponent({
             render: () => h('svg', { width: 24, height: 24, viewBox: '0 0 24 24', fill: 'none' }, [
@@ -201,6 +211,7 @@ export default defineComponent({
         },
         {
           title: 'Électroménager',
+          slug: 'electromenager',
           items: ['Réparation lave-linge / sèche-linge', 'Réparation réfrigérateur', 'Réparation four / cuisinière'],
           iconComponent: defineComponent({
             render: () => h('svg', { width: 24, height: 24, viewBox: '0 0 24 24', fill: 'none' }, [
@@ -211,6 +222,7 @@ export default defineComponent({
         },
         {
           title: 'Nettoyage',
+          slug: 'nettoyage',
           items: ['Nettoyage standard', 'Nettoyage en profondeur', 'Nettoyage après déménagement'],
           iconComponent: defineComponent({
             render: () => h('svg', { width: 24, height: 24, viewBox: '0 0 24 24', fill: 'none' }, [
@@ -221,6 +233,7 @@ export default defineComponent({
         },
         {
           title: 'Chauffage, Ventilation et Climatisation',
+          slug: 'chauffage-ventilation-climatisation',
           items: ['Entretien climatisation', 'Réparation climatisation', 'Entretien chauffage'],
           iconComponent: defineComponent({
             render: () => h('svg', { width: 24, height: 24, viewBox: '0 0 24 24', fill: 'none' }, [

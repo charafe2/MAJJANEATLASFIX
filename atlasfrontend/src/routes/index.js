@@ -30,12 +30,14 @@ const routes = [
   {
     path: '/payments',
     component: () => import('../views/paymentstats.vue'),
+    meta: { requiresAuth: true },
   },
 
   // ── Agenda ───────────────────────────────────────────────────────────
   {
     path: '/agenda',
     component: () => import('../views/agenda.vue'),
+    meta: { requiresAuth: true },
   },
 
   // ── Protected ────────────────────────────────────────────────────────
@@ -48,6 +50,44 @@ const routes = [
     path: '/artisan/dashboard',
     component: () => import('../views/artisan/Dashboard.vue'),
     meta: { requiresAuth: true, accountType: 'artisan' },
+  },
+
+  // ── Service request list pages ────────────────────────────────────────
+  {
+    path: '/client/mes-demandes',
+    component: () => import('../views/client/MesDemandes.vue'),
+    meta: { requiresAuth: true, accountType: 'client' },
+  },
+  {
+    path: '/artisan/mes-demandes',
+    component: () => import('../views/artisan/MesDemandesAcceptees.vue'),
+    meta: { requiresAuth: true, accountType: 'artisan' },
+  },
+
+  // ── Service request detail pages ─────────────────────────────────────
+  {
+    path: '/client/demandes/:id',
+    component: () => import('../views/DemandeDetail.vue'),
+    meta: { requiresAuth: true, accountType: 'client' },
+    props: { role: 'client' },
+  },
+  {
+    path: '/artisan/demandes/:id',
+    component: () => import('../views/DemandeDetail.vue'),
+    meta: { requiresAuth: true, accountType: 'artisan' },
+    props: { role: 'artisan' },
+  },
+
+  // ── Messaging (accessible to both clients and artisans) ──────────────
+  {
+    path: '/messages',
+    component: () => import('../views/Messages.vue'),
+    meta: { requiresAuth: true },
+  },
+  {
+    path: '/messages/:id',
+    component: () => import('../views/Messages.vue'),
+    meta: { requiresAuth: true },
   },
 ]
 

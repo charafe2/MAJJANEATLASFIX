@@ -177,6 +177,7 @@ class ServiceRequestController extends Controller
             'offers.artisan.user',
             'acceptedOffer.artisan.user',
             'timeline',
+            'payment',
         ]);
 
         return response()->json(['data' => $serviceRequest]);

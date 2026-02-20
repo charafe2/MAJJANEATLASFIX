@@ -137,11 +137,15 @@
             </svg>
             Contacter le client
           </button>
-          <button class="btn-profile" @click="viewClientProfile(offer.service_request?.client)">
+          <button
+            v-if="offerStatusKey(offer) !== 'pending'"
+            class="btn-profile"
+            @click="router.push(`/artisan/demandes/${offer.service_request?.id}`)"
+          >
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
+              <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>
             </svg>
-            Voir le profil
+            Voir les détails
           </button>
         </div>
       </div>
@@ -153,6 +157,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { getMyOffers } from '../../api/serviceRequests.js'
+import { getOrCreateConversation } from '../../api/messages.js'
 
 const router = useRouter()
 
@@ -206,10 +211,19 @@ function viewClientProfile(client) {
   if (client?.id) router.push(`/artisan/clients/${client.id}`)
 }
 
-function contactClient(offer) {
-  // Navigate to messaging / conversation (placeholder)
-  const clientName = offer.service_request?.client?.user?.name ?? 'le client'
-  alert(`Contacter ${clientName} — à implémenter avec le module de messagerie.`)
+async function contactClient(offer) {
+  const clientId         = offer.service_request?.client?.id
+  const serviceRequestId = offer.service_request?.id
+  if (!clientId) return
+  try {
+    const { data } = await getOrCreateConversation({
+      client_id:          clientId,
+      service_request_id: serviceRequestId ?? null,
+    })
+    router.push(`/messages/${data.data.id}`)
+  } catch {
+    alert('Impossible d\'ouvrir la conversation. Veuillez réessayer.')
+  }
 }
 
 // ── Helpers ───────────────────────────────────────────────────────────────

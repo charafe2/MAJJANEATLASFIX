@@ -291,8 +291,13 @@
 
         <!-- Footer buttons -->
         <div class="modal-footer">
-          <button class="mf-btn mf-btn--cancel" @click="closeNewRdv">Annuler</button>
-          <button class="mf-btn mf-btn--submit" @click="submitNewRdv">Ajouter le rendez-vous</button>
+          <p v-if="submitError" class="mf-error">{{ submitError }}</p>
+          <div class="mf-footer-btns">
+            <button class="mf-btn mf-btn--cancel" @click="closeNewRdv" :disabled="submitting">Annuler</button>
+            <button class="mf-btn mf-btn--submit" @click="submitNewRdv" :disabled="submitting">
+              {{ submitting ? 'Enregistrement...' : 'Ajouter le rendez-vous' }}
+            </button>
+          </div>
         </div>
 
       </div>
@@ -302,45 +307,70 @@
 </template>
 
 <script setup>
-import { ref, computed, reactive } from 'vue'
+import { ref, computed, reactive, onMounted } from 'vue'
+import { getAgenda, createAppointment } from '../api/agenda'
 
-// ── Static placeholder data ──────────────────────────────────────────────────
-const appointments = [
-  {
-    date: { year: 2025, month: 12, day: 23 },
-    dateLabel: '23 Décembre',
-    time: '17:00',
-    duration: '1h',
-    title: 'Réparation Fuite',
-    client: 'Mohammad Alami',
-    phone: '+212 07 00 00 00 00',
-    city: 'Rabat',
-    status: 'terminee',
-  },
-  {
-    date: { year: 2025, month: 12, day: 23 },
-    dateLabel: '23 Décembre',
-    time: '17:00',
-    duration: '1h',
-    title: 'Réparation Fuite',
-    client: 'Mohammad Alami',
-    phone: '+212 07 00 00 00 00',
-    city: 'Rabat',
-    status: 'enattente',
-  },
-]
-
-// ── Calendar state ────────────────────────────────────────────────────────────
-const todayDate    = new Date()
-const focusedYear  = ref(2025)  // default: month where appointments live
-const focusedMonth = ref(12)    // 1-based (12 = Décembre)
-const selectedDay  = ref(23)    // first day that has appointments
-
-const weekdays   = ['Dim', 'Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam']
+// ── Locale helpers ────────────────────────────────────────────────────────────
 const monthNames = [
   '', 'Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin',
   'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre',
 ]
+const weekdays = ['Dim', 'Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam']
+
+// ── Duration helper ───────────────────────────────────────────────────────────
+function formatDuration(minutes) {
+  if (!minutes) return '—'
+  if (minutes < 60) return `${minutes} min`
+  const h = Math.floor(minutes / 60)
+  const m = minutes % 60
+  return m === 0 ? `${h}h` : `${h}h${String(m).padStart(2, '0')}`
+}
+
+// ── Map API item → template shape ─────────────────────────────────────────────
+function mapAppointment(item) {
+  const d     = new Date(item.scheduled_at)
+  const year  = d.getFullYear()
+  const month = d.getMonth() + 1
+  const day   = d.getDate()
+  return {
+    id:        item.id,
+    type:      item.type,
+    date:      { year, month, day },
+    dateLabel: `${day} ${monthNames[month]}`,
+    time:      d.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }),
+    duration:  formatDuration(item.duration_minutes),
+    title:     item.title || 'Rendez-vous',
+    client:    item.contact_name  || '—',
+    phone:     item.contact_phone || '—',
+    city:      item.city          || '—',
+    status:    item.status === 'completed' ? 'terminee' : 'enattente',
+  }
+}
+
+// ── Appointments state (real data) ────────────────────────────────────────────
+const appointments  = ref([])
+const loadingAgenda = ref(false)
+const agendaError   = ref('')
+
+async function loadAgenda() {
+  loadingAgenda.value = true
+  agendaError.value   = ''
+  try {
+    const { data } = await getAgenda()
+    appointments.value = (data.data ?? []).map(mapAppointment)
+  } catch (e) {
+    agendaError.value  = e.response?.data?.error || 'Impossible de charger l\'agenda.'
+    appointments.value = []
+  } finally {
+    loadingAgenda.value = false
+  }
+}
+
+// ── Calendar state ────────────────────────────────────────────────────────────
+const todayDate    = new Date()
+const focusedYear  = ref(todayDate.getFullYear())
+const focusedMonth = ref(todayDate.getMonth() + 1)
+const selectedDay  = ref(todayDate.getDate())
 
 // ── Computed ──────────────────────────────────────────────────────────────────
 const monthTitle = computed(() =>
@@ -358,7 +388,7 @@ const startOffset = computed(() =>
 
 const selectedRdvs = computed(() => {
   if (!selectedDay.value) return []
-  return appointments.filter(
+  return appointments.value.filter(
     a =>
       a.date.year  === focusedYear.value  &&
       a.date.month === focusedMonth.value &&
@@ -366,7 +396,7 @@ const selectedRdvs = computed(() => {
   )
 })
 
-// ── Methods ───────────────────────────────────────────────────────────────────
+// ── Navigation ────────────────────────────────────────────────────────────────
 function prevMonth() {
   if (focusedMonth.value === 1) { focusedMonth.value = 12; focusedYear.value-- }
   else focusedMonth.value--
@@ -387,8 +417,44 @@ function goToToday() {
 
 function selectDay(day) { selectedDay.value = day }
 
+// ── Appointment helpers ────────────────────────────────────────────────────────
+function dayAppointments(day) {
+  return appointments.value.filter(
+    a =>
+      a.date.year  === focusedYear.value  &&
+      a.date.month === focusedMonth.value &&
+      a.date.day   === day
+  )
+}
+
+function hasAppointments(day) { return dayAppointments(day).length > 0 }
+
+function appointmentColor(day) {
+  const rdvs = dayAppointments(day)
+  if (!rdvs.length) return null
+  return rdvs.some(r => r.status === 'terminee') ? '#02BB05' : '#FC5A15'
+}
+
+function dayCellClass(day) {
+  const isSelected = selectedDay.value === day
+  const isToday    =
+    todayDate.getFullYear()  === focusedYear.value  &&
+    todayDate.getMonth() + 1 === focusedMonth.value &&
+    todayDate.getDate()      === day
+  const color   = appointmentColor(day)
+  const hasAppt = !!color
+
+  return {
+    'cal-cell--selected-green':  isSelected && hasAppt && color === '#02BB05',
+    'cal-cell--selected-orange': isSelected && hasAppt && color === '#FC5A15',
+    'cal-cell--today':           isToday && !(isSelected && hasAppt),
+  }
+}
+
 // ── New-RDV modal ─────────────────────────────────────────────────────────────
 const showNewRdvModal = ref(false)
+const submitting      = ref(false)
+const submitError     = ref('')
 
 const newRdv = reactive({
   clientName:  '',
@@ -408,49 +474,45 @@ function resetNewRdv() {
     clientName: '', phone: '', service: '', serviceType: '',
     date: '', time: '', duration: '', rdvType: 'sur_place', lieu: '', notes: '',
   })
+  submitError.value = ''
 }
 
 function openNewRdv()  { showNewRdvModal.value = true }
 function closeNewRdv() { showNewRdvModal.value = false; resetNewRdv() }
 
-function submitNewRdv() {
-  // TODO: send newRdv to backend / push into appointments
-  closeNewRdv()
-}
+async function submitNewRdv() {
+  submitError.value = ''
+  if (!newRdv.date || !newRdv.time) {
+    submitError.value = 'Veuillez renseigner la date et l\'heure.'
+    return
+  }
+  const title = newRdv.serviceType || newRdv.service || 'Rendez-vous'
 
-// ── Appointment helpers ────────────────────────────────────────────────────────
-function dayAppointments(day) {
-  return appointments.filter(
-    a =>
-      a.date.year  === focusedYear.value  &&
-      a.date.month === focusedMonth.value &&
-      a.date.day   === day
-  )
-}
-
-function hasAppointments(day) { return dayAppointments(day).length > 0 }
-
-function appointmentColor(day) {
-  const rdvs = dayAppointments(day)
-  if (!rdvs.length) return null
-  return rdvs.some(r => r.status === 'terminee') ? '#02BB05' : '#FC5A15'
-}
-
-function dayCellClass(day) {
-  const isSelected = selectedDay.value === day
-  const isToday    =
-    todayDate.getFullYear()   === focusedYear.value  &&
-    todayDate.getMonth() + 1  === focusedMonth.value &&
-    todayDate.getDate()       === day
-  const color   = appointmentColor(day)
-  const hasAppt = !!color
-
-  return {
-    'cal-cell--selected-green':  isSelected && hasAppt && color === '#02BB05',
-    'cal-cell--selected-orange': isSelected && hasAppt && color === '#FC5A15',
-    'cal-cell--today':           isToday && !(isSelected && hasAppt),
+  submitting.value  = true
+  submitError.value = ''
+  try {
+    const { data } = await createAppointment({
+      title,
+      client_name:  newRdv.clientName  || null,
+      client_phone: newRdv.phone       || null,
+      date:         newRdv.date,
+      time:         newRdv.time,
+      duration:     newRdv.duration    || null,
+      rdv_type:     newRdv.rdvType,
+      city:         newRdv.lieu        || null,
+      notes:        newRdv.notes       || null,
+    })
+    appointments.value.push(mapAppointment(data.data))
+    closeNewRdv()
+  } catch (e) {
+    submitError.value = e.response?.data?.message || 'Impossible de créer le rendez-vous.'
+  } finally {
+    submitting.value = false
   }
 }
+
+// ── Init ──────────────────────────────────────────────────────────────────────
+onMounted(loadAgenda)
 </script>
 
 <style scoped>
@@ -1054,11 +1116,24 @@ function dayCellClass(day) {
 /* ── Footer buttons ──────────────────────────────────────────────────────── */
 .modal-footer {
   display: flex;
-  flex-direction: row;
-  align-items: center;
-  gap: 12px;
+  flex-direction: column;
+  gap: 8px;
   padding: 16px 40px 24px;
   flex-shrink: 0;
+}
+
+.mf-error {
+  margin: 0;
+  font-family: 'Inter', sans-serif;
+  font-size: 13px;
+  color: #DC2626;
+  text-align: center;
+}
+
+.mf-footer-btns {
+  display: flex;
+  flex-direction: row;
+  gap: 12px;
 }
 
 .mf-btn {
