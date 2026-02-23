@@ -6,6 +6,7 @@ use App\Models\Artisan;
 use App\Models\ServiceCategory;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 
 class ArtisanBrowseController extends Controller
 {
@@ -58,7 +59,9 @@ class ArtisanBrowseController extends Controller
             return [
                 'id'               => $artisan->id,
                 'name'             => $user?->full_name ?? 'Artisan',
-                'avatar'           => $user?->avatar_url,
+                'avatar'           => $user?->avatar_url && !str_starts_with($user->avatar_url, 'http')
+                    ? Storage::url($user->avatar_url)
+                    : $user?->avatar_url,
                 'city'             => $artisan->city ?? 'Maroc',
                 'bio'              => $artisan->bio ?? 'Artisan professionnel à votre service.',
                 'rating'           => number_format((float) ($artisan->rating_average ?? 0), 1) . '/5',

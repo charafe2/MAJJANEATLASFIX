@@ -9,6 +9,12 @@
           <p class="artisan-subtitle">Rejoignez notre plateforme et développez votre activité</p>
         </div>
 
+        <!-- Referral banner (shown when arriving via a referral link) -->
+        <div v-if="referrerName" class="referral-banner">
+          <span class="referral-icon">🔗</span>
+          Vous avez été invité par <strong>{{ referrerName }}</strong> — bienvenue !
+        </div>
+
         <!-- Stepper -->
         <div class="stepper">
           <div class="step-item">
@@ -164,15 +170,16 @@
 </template>
 
 <script setup>
-import { ref, reactive } from 'vue'
-import { useRouter } from 'vue-router'
+import { ref, reactive, onMounted } from 'vue'
+import { useRouter, useRoute } from 'vue-router'
 import Navbar from '../components/navbar.vue'
 import AuthBackground from '../components/Authbackground.vue'
 // import Footer from '../components/footer.vue'
-import { registerArtisan } from '../api/auth.js'
+import { registerArtisan, validateReferral } from '../api/auth.js'
 import '../assets/css/registerartisan.css'
 
 const router      = useRouter()
+const route       = useRoute()
 const step        = ref(1)
 const loading     = ref(false)
 const authError   = ref('')
@@ -180,6 +187,7 @@ const photos      = ref([])
 const diplomaFile = ref(null)
 const showPwd     = ref(false)
 const showPwd2    = ref(false)
+const referrerName = ref('')
 
 const form = reactive({
   full_name: '', birth_date: '', email: '', phone: '',
@@ -187,6 +195,18 @@ const form = reactive({
   verification_method: 'phone',
   service: '', service_type: '', city: '', address: '',
   description: '', terms: false,
+  referral_code: '',
+})
+
+onMounted(async () => {
+  const refCode = route.query.ref
+  if (refCode) {
+    form.referral_code = refCode
+    try {
+      const { data } = await validateReferral(refCode)
+      if (data?.valid) referrerName.value = data.referrer_name
+    } catch (_) { /* invalid or unknown code — ignore */ }
+  }
 })
 const errors = reactive({})
 
@@ -270,6 +290,7 @@ async function handleSubmit() {
     fd.append('city',                  form.city)
     fd.append('address',               form.address)
     fd.append('bio',                   form.description)
+    if (form.referral_code) fd.append('referral_code', form.referral_code)
     if (diplomaFile.value) fd.append('diploma', diplomaFile.value)
     photos.value.forEach((p, i) => fd.append(`photos[${i}]`, p.file))
 

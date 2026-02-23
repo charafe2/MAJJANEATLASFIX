@@ -9,7 +9,8 @@ const routes = [
   { path: '/register/client',  component: () => import('../views/registerClient.vue') },
   { path: '/register/artisan', component: () => import('../views/registerArtisan.vue') },
   { path: '/forgot-password',  component: () => import('../views/ForgotPassword.vue') },
-  { path: '/cient/profile',  component: () => import('../components/profile/profileView.vue') },
+  { path: '/client/profile',           component: () => import('../components/profile/profileView.vue'), meta: { requiresAuth: true, accountType: 'client' } },
+  { path: '/artisan/clients/:id',      component: () => import('../components/profile/profileView.vue'), meta: { requiresAuth: true, accountType: 'artisan' } },
   {path:'/auth/google/success',component: GoogleSuccess,},
 {  path:'/register/google-complete',component: GoogleComplete,},
 
@@ -98,7 +99,7 @@ const router = createRouter({
 })
 
 // ── Navigation guard ──────────────────────────────────────────────────────
-router.beforeEach((to, from, next) => {
+router.beforeEach((to, _from, next) => {
   const token = localStorage.getItem('token')
   const user  = JSON.parse(localStorage.getItem('user') || 'null')
 

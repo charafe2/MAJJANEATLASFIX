@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Conversation;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 
 class ConversationController extends Controller
 {
@@ -61,7 +62,9 @@ class ConversationController extends Controller
             return [
                 'id'              => $conv->id,
                 'other_name'      => $other?->full_name ?? 'Utilisateur',
-                'other_avatar'    => $other?->avatar_url,
+                'other_avatar'    => $other?->avatar_url && !str_starts_with($other->avatar_url, 'http')
+                    ? Storage::url($other->avatar_url)
+                    : $other?->avatar_url,
                 'other_role'      => $otherRole,
                 'last_message'    => $latest?->content,
                 'last_message_at' => $conv->last_message_at,
@@ -151,7 +154,9 @@ class ConversationController extends Controller
             'data' => [
                 'id'           => $conversation->id,
                 'other_name'   => $other?->full_name ?? 'Utilisateur',
-                'other_avatar' => $other?->avatar_url,
+                'other_avatar' => $other?->avatar_url && !str_starts_with($other->avatar_url, 'http')
+                    ? Storage::url($other->avatar_url)
+                    : $other?->avatar_url,
                 'other_role'   => $otherRole,
                 'status'       => $conversation->status,
             ],

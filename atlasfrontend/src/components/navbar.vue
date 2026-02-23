@@ -30,16 +30,50 @@
         </li>
       </ul>
 
+      <!-- HAMBURGER (mobile only) -->
+      <button class="hamburger" @click="toggleMobile" :aria-expanded="mobileOpen" aria-label="Menu">
+        <span class="bar" :class="{ open: mobileOpen }"></span>
+        <span class="bar" :class="{ open: mobileOpen }"></span>
+        <span class="bar" :class="{ open: mobileOpen }"></span>
+      </button>
+
       <!-- RIGHT -->
       <div class="right">
 
-        <!-- Bell -->
-        <div class="bell">
+        <!-- Bell (only shown when logged in) -->
+        <div v-if="user" class="bell-wrap" ref="bellRef" @click="toggleNotifications">
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
             <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" fill="#FC5A15"/>
             <path d="M13.73 21a2 2 0 0 1-3.46 0" fill="#FC5A15"/>
-            <circle cx="18" cy="6" r="3.5" fill="#FC5A15"/>
           </svg>
+          <span v-if="unreadCount > 0" class="bell-badge">{{ unreadCount > 9 ? '9+' : unreadCount }}</span>
+
+          <!-- Notifications panel -->
+          <transition name="dropdown">
+            <div v-if="notifOpen" class="notif-dropdown" @click.stop>
+              <div class="notif-header">
+                <span class="notif-title">Notifications</span>
+                <button v-if="unreadCount > 0" class="notif-read-all" @click="markAllRead">Tout marquer lu</button>
+              </div>
+              <div v-if="notifLoading" class="notif-loading">Chargement…</div>
+              <div v-else-if="notifications.length === 0" class="notif-empty">Aucune notification</div>
+              <ul v-else class="notif-list">
+                <li
+                  v-for="n in notifications"
+                  :key="n.id"
+                  :class="['notif-item', !n.is_read ? 'notif-item--unread' : '']"
+                  @click="markRead(n)"
+                >
+                  <div v-if="!n.is_read" class="notif-dot"></div>
+                  <div class="notif-body">
+                    <p class="notif-item-title">{{ n.title }}</p>
+                    <p class="notif-item-msg">{{ n.message }}</p>
+                    <span class="notif-item-time">{{ timeAgo(n.created_at) }}</span>
+                  </div>
+                </li>
+              </ul>
+            </div>
+          </transition>
         </div>
 
         <!-- Logged OUT -->
@@ -109,17 +143,91 @@
 
       </div>
     </div>
+  <!-- MOBILE MENU PANEL -->
+  <transition name="mobile-menu">
+    <div v-if="mobileOpen" class="mobile-menu">
+      <ul class="mobile-nav">
+        <li @click="mobileNavigate('/Aboutus')">À propos</li>
+        <li @click="mobileNavigate('/services')">Services</li>
+        <li @click="mobileNavigate('/contact')">Contact</li>
+        <li @click="mobileNavigate('/faq')">FAQ's</li>
+      </ul>
+      <div class="mobile-actions">
+        <template v-if="!user">
+          <button class="signin" @click="mobileNavigate('/login')">Log in</button>
+          <button class="get-started" @click="mobileNavigate('/register')">Sign Up</button>
+        </template>
+        <template v-else>
+          <button class="mobile-account-btn" @click="mobileNavigate(user.account_type === 'client' ? '/client/profile' : '/artisan/profile')">Mon profil</button>
+          <button class="mobile-account-btn" @click="mobileNavigate('/messages')">Mes messages</button>
+          <button class="mobile-account-btn" @click="mobileNavigate(user.account_type === 'client' ? '/client/mes-demandes' : '/artisan/demandes-clients')">Toutes les demandes</button>
+          <button class="mobile-logout-btn" @click="logout">Se déconnecter</button>
+        </template>
+      </div>
+    </div>
+  </transition>
   </nav>
 </template>
 
 <script setup>
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
+import api from '../api/auth.js'
 
 const router       = useRouter()
 const user         = ref(null)
 const dropdownOpen = ref(false)
 const menuRef      = ref(null)
+const mobileOpen   = ref(false)
+
+// ── Notifications ──────────────────────────────────────────────────────────
+const bellRef       = ref(null)
+const notifOpen     = ref(false)
+const notifLoading  = ref(false)
+const notifications = ref([])
+const unreadCount   = ref(0)
+
+async function fetchNotifications() {
+  if (!user.value) return
+  notifLoading.value = true
+  try {
+    const { data } = await api.get('/notifications')
+    notifications.value = data.notifications ?? []
+    unreadCount.value   = data.unread_count   ?? 0
+  } catch { /* silent */ } finally {
+    notifLoading.value = false
+  }
+}
+
+function toggleNotifications() {
+  notifOpen.value = !notifOpen.value
+  if (notifOpen.value) fetchNotifications()
+}
+
+async function markRead(notification) {
+  if (notification.is_read) return
+  notification.is_read = true
+  unreadCount.value = Math.max(0, unreadCount.value - 1)
+  try { await api.patch(`/notifications/${notification.id}/read`) } catch { /* silent */ }
+}
+
+async function markAllRead() {
+  notifications.value.forEach(n => { n.is_read = true })
+  unreadCount.value = 0
+  try { await api.patch('/notifications/read-all') } catch { /* silent */ }
+}
+
+function timeAgo(iso) {
+  if (!iso) return ''
+  const diff = Math.floor((Date.now() - new Date(iso).getTime()) / 1000)
+  if (diff < 60)   return "À l'instant"
+  if (diff < 3600) return `Il y a ${Math.floor(diff / 60)} min`
+  if (diff < 86400) return `Il y a ${Math.floor(diff / 3600)}h`
+  return `Il y a ${Math.floor(diff / 86400)}j`
+}
+
+function toggleMobile() { mobileOpen.value = !mobileOpen.value }
+function mobileNavigate(path) { mobileOpen.value = false; router.push(path) }
 
 function loadUser() {
   try {
@@ -128,6 +236,14 @@ function loadUser() {
   } catch {
     user.value = null
   }
+  if (user.value) fetchUnreadCount()
+}
+
+async function fetchUnreadCount() {
+  try {
+    const { data } = await api.get('/notifications')
+    unreadCount.value = data.unread_count ?? 0
+  } catch { /* silent — user may not be authenticated yet */ }
 }
 
 const initials = computed(() => {
@@ -151,6 +267,12 @@ function navigate(path) {
 function onClickOutside(e) {
   if (menuRef.value && !menuRef.value.contains(e.target)) {
     dropdownOpen.value = false
+  }
+  if (bellRef.value && !bellRef.value.contains(e.target)) {
+    notifOpen.value = false
+  }
+  if (!e.target.closest('.hamburger') && !e.target.closest('.mobile-menu')) {
+    mobileOpen.value = false
   }
 }
 
@@ -295,7 +417,8 @@ background-color: white;
   flex-shrink: 0;
 }
 
-.bell {
+.bell-wrap {
+  position: relative;
   width: 24px;
   height: 24px;
   display: flex;
@@ -303,6 +426,116 @@ background-color: white;
   justify-content: center;
   cursor: pointer;
   flex-shrink: 0;
+}
+.bell-badge {
+  position: absolute;
+  top: -5px;
+  right: -6px;
+  min-width: 17px;
+  height: 17px;
+  background: #EF4444;
+  color: #fff;
+  border-radius: 99px;
+  font-size: 10px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 3px;
+  pointer-events: none;
+  border: 2px solid #fff;
+}
+.notif-dropdown {
+  position: absolute;
+  top: calc(100% + 14px);
+  right: -8px;
+  width: 340px;
+  background: #fff;
+  border-radius: 14px;
+  box-shadow: 0 8px 32px rgba(0,0,0,.13), 0 2px 8px rgba(0,0,0,.06);
+  z-index: 999;
+  overflow: hidden;
+}
+.notif-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 18px 12px;
+  border-bottom: 1px solid #F0F2F5;
+}
+.notif-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: #314158;
+  font-family: 'Poppins', sans-serif;
+}
+.notif-read-all {
+  background: none;
+  border: none;
+  color: #FC5A15;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  font-family: 'Poppins', sans-serif;
+  padding: 0;
+}
+.notif-read-all:hover { text-decoration: underline; }
+.notif-loading,
+.notif-empty {
+  padding: 24px 18px;
+  font-size: 13px;
+  color: #62748E;
+  text-align: center;
+  font-family: 'Poppins', sans-serif;
+}
+.notif-list {
+  list-style: none;
+  margin: 0;
+  padding: 6px 0;
+  max-height: 340px;
+  overflow-y: auto;
+}
+.notif-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 12px 18px;
+  cursor: pointer;
+  transition: background 0.15s;
+  position: relative;
+}
+.notif-item:hover { background: #F9FAFB; }
+.notif-item--unread { background: #FFF7ED; }
+.notif-item--unread:hover { background: #FFF0E0; }
+.notif-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #FC5A15;
+  flex-shrink: 0;
+  margin-top: 5px;
+}
+.notif-body { flex: 1; min-width: 0; }
+.notif-item-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: #314158;
+  margin: 0 0 2px;
+  font-family: 'Poppins', sans-serif;
+}
+.notif-item-msg {
+  font-size: 12px;
+  color: #62748E;
+  margin: 0 0 4px;
+  line-height: 1.4;
+  font-family: 'Poppins', sans-serif;
+  white-space: normal;
+  word-break: break-word;
+}
+.notif-item-time {
+  font-size: 11px;
+  color: #99A1AF;
+  font-family: 'Poppins', sans-serif;
 }
 
 .signin {
@@ -441,4 +674,131 @@ background-color: white;
 }
 
 .flag { font-size: 14px; line-height: 1; }
+
+/* ── HAMBURGER ────────────────────────────────────────────── */
+.hamburger {
+  display: none;
+  flex-direction: column;
+  justify-content: center;
+  gap: 5px;
+  width: 36px;
+  height: 36px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px;
+  flex-shrink: 0;
+  z-index: 1100;
+}
+
+.bar {
+  display: block;
+  width: 22px;
+  height: 2px;
+  background: #314158;
+  border-radius: 2px;
+  transition: transform 0.25s ease, opacity 0.25s ease;
+  transform-origin: center;
+}
+
+/* ── MOBILE MENU ──────────────────────────────────────────── */
+.mobile-menu {
+  position: fixed;
+  top: 102px;
+  left: 0;
+  right: 0;
+  background: #fff;
+  border-top: 1px solid #E5E7EB;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.10);
+  z-index: 999;
+  padding: 20px 24px 32px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.mobile-nav {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.mobile-nav li {
+  padding: 14px 0;
+  font-family: 'Poppins', sans-serif;
+  font-size: 17px;
+  font-weight: 500;
+  color: #314158;
+  border-bottom: 1px solid #F3F4F6;
+  cursor: pointer;
+  transition: color 0.15s;
+}
+.mobile-nav li:last-child { border-bottom: none; }
+.mobile-nav li:hover { color: #FC5A15; }
+
+.mobile-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.mobile-account-btn {
+  width: 100%;
+  padding: 12px 20px;
+  background: #F9FAFB;
+  border: 1px solid #E5E7EB;
+  border-radius: 10px;
+  font-family: 'Poppins', sans-serif;
+  font-size: 15px;
+  font-weight: 500;
+  color: #314158;
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.15s;
+}
+.mobile-account-btn:hover { background: #F3F4F6; }
+
+.mobile-logout-btn {
+  width: 100%;
+  padding: 12px 20px;
+  background: #FEF2F2;
+  border: 1px solid #FECACA;
+  border-radius: 10px;
+  font-family: 'Poppins', sans-serif;
+  font-size: 15px;
+  font-weight: 500;
+  color: #DC2626;
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.15s;
+}
+.mobile-logout-btn:hover { background: #FEE2E2; }
+
+/* ── MOBILE MENU TRANSITION ───────────────────────────────── */
+.mobile-menu-enter-active,
+.mobile-menu-leave-active { transition: opacity 0.2s ease, transform 0.2s ease; }
+.mobile-menu-enter-from,
+.mobile-menu-leave-to { opacity: 0; transform: translateY(-8px); }
+
+/* ── RESPONSIVE ───────────────────────────────────────────── */
+@media (max-width: 900px) {
+  .navbar { padding: 16px 24px; height: auto; min-height: 70px; }
+  .wrapper { gap: 0; height: auto; }
+  .nav-box { display: none; }
+  .right .signin,
+  .right .get-started,
+  .right .account-menu,
+  .right .lang { display: none; }
+  .bell-wrap { display: none; }
+  .hamburger { display: flex; }
+  .mobile-menu { top: 70px; }
+}
+
+@media (min-width: 901px) {
+  .hamburger { display: none; }
+  .mobile-menu { display: none; }
+}
 </style>

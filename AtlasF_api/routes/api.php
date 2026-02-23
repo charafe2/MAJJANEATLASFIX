@@ -9,14 +9,16 @@ use App\Http\Controllers\Messaging\MessageController;
 use App\Http\Controllers\AgendaController;
 use App\Http\Controllers\PaymentStatsController;
 use App\Http\Controllers\ArtisanBrowseController;
+use App\Http\Controllers\NotificationController;
 
 /*
 |--------------------------------------------------------------------------
 | Public browse routes (no auth required)
 |--------------------------------------------------------------------------
 */
-Route::get('public/categories', [ArtisanBrowseController::class, 'categories']);
-Route::get('public/artisans',   [ArtisanBrowseController::class, 'artisans']);
+Route::get('public/categories',    [ArtisanBrowseController::class, 'categories']);
+Route::get('public/artisans',      [ArtisanBrowseController::class, 'artisans']);
+Route::get('referral/{code}',      [AuthController::class, 'validateReferral']);
 
 /*
 |--------------------------------------------------------------------------
@@ -42,8 +44,9 @@ Route::post('complete-plan',     [AuthController::class, 'completePlan']);
 |--------------------------------------------------------------------------
 */
 Route::middleware('auth:sanctum')->group(function () {
-    Route::post('logout', [AuthController::class, 'logout']);
-    Route::get ('me',     [AuthController::class, 'me']);
+    Route::post ('logout', [AuthController::class, 'logout']);
+    Route::get  ('me',     [AuthController::class, 'me']);
+    Route::post ('me',     [AuthController::class, 'updateMe']);
 
     // ── Service categories & types ────────────────────────────────────────
     Route::get('categories',                          [ServiceRequestController::class, 'getCategories']);
@@ -61,6 +64,8 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // ── Artisan endpoints ─────────────────────────────────────────────────
     Route::prefix('artisan')->group(function () {
+        Route::post  ('service',                                  [AuthController::class, 'addService']);
+        Route::delete('portfolio/{photo}',                        [AuthController::class, 'deletePortfolioPhoto']);
         Route::get  ('service-requests',                         [ArtisanServiceRequestController::class, 'index']);
         Route::get  ('service-requests/{serviceRequest}',        [ArtisanServiceRequestController::class, 'show']);
         Route::post ('service-requests/{serviceRequest}/offers', [ArtisanServiceRequestController::class, 'submitOffer']);
@@ -74,6 +79,11 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // ── Payment stats endpoint ────────────────────────────────────────────
     Route::get('payment-stats', [PaymentStatsController::class, 'index']);
+
+    // ── Notification endpoints ────────────────────────────────────────────
+    Route::get  ('notifications',              [NotificationController::class, 'index']);
+    Route::patch('notifications/read-all',     [NotificationController::class, 'markAllRead']);
+    Route::patch('notifications/{notification}/read', [NotificationController::class, 'markRead']);
 
     // ── Messaging endpoints ───────────────────────────────────────────────
     Route::prefix('conversations')->group(function () {

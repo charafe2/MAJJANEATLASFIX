@@ -703,4 +703,25 @@ select.form-input { appearance: none; padding-right: 40px; cursor: pointer; }
 /* ── Misc ─────────────────────────────────────────────────────────────────── */
 .loading-msg { text-align: center; padding: 40px; color: #62748E; }
 .error-msg   { color: #EF4444; font-size: 14px; margin-bottom: 12px; }
+
+/* ── Responsive ──────────────────────────────────────────────────────────── */
+@media (max-width: 640px) {
+  .page-wrap   { padding: 20px 16px 20px; }
+  .step-header { padding: 12px 16px; }
+  .step-title  { font-size: 22px; }
+  .step1-wrap,
+  .step2-wrap,
+  .step3-wrap  { padding: 20px 16px 48px; }
+  .step2-heading,
+  .step2-cat-name { font-size: 18px; }
+  .step3-heading  { font-size: 18px; }
+  .step3-wrap     { padding: 20px 16px; }
+}
+
+@media (max-width: 480px) {
+  .page-wrap   { padding: 16px 12px; }
+  .step-title  { font-size: 18px; }
+  .btn-orange,
+  .btn-ghost   { width: 100%; }
+}
 </style>

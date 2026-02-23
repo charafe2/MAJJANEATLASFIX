@@ -27,6 +27,23 @@
 }
 .back-btn:hover { color: #FC5A15; }
 
+/* ── Referral banner ──────────────────────────────────── */
+.referral-banner {
+  width: 864px;
+  max-width: 100%;
+  background: #FFF4EE;
+  border: 1px solid #FC5A15;
+  border-radius: 10px;
+  padding: 12px 18px;
+  color: #7A2400;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 4px;
+}
+.referral-banner .referral-icon { font-size: 18px; }
+
 /* ── Header ───────────────────────────────────────────── */
 .artisan-header {
   display: flex;

@@ -15,8 +15,15 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use Laravel\Socialite\Facades\Socialite;
 use App\Models\ArtisanSubscription;
+use App\Models\ArtisanPortfolio;
+use App\Models\ArtisanCertification;
+use App\Models\ArtisanService;
 use App\Models\SubscriptionTier;
 use App\Models\Payment;
+use App\Models\Referral;
+use App\Models\ArtisanBoostCredit;
+use App\Models\Notification;
+use Illuminate\Support\Facades\Storage;
 class AuthController extends Controller
 {
     public function __construct(private SmsService $smsService) {}
@@ -580,7 +587,9 @@ class AuthController extends Controller
                 'memberSince'       => $user->created_at
                     ? $user->created_at->locale('fr')->translatedFormat('F Y')
                     : null,
-                'avatar'            => $user->avatar_url,
+                'avatar'            => $user->avatar_url && !str_starts_with($user->avatar_url, 'http')
+                    ? Storage::url($user->avatar_url)
+                    : $user->avatar_url,
                 'city'              => $client?->city,
                 'activeRequests'    => 0,
                 'completedRequests' => (int) ($client?->total_requests ?? 0),
@@ -609,7 +618,9 @@ class AuthController extends Controller
             'memberSince'          => $user->created_at
                 ? $user->created_at->locale('fr')->translatedFormat('F Y')
                 : null,
-            'avatar'               => $user->avatar_url,
+            'avatar'               => $user->avatar_url && !str_starts_with($user->avatar_url, 'http')
+                ? Storage::url($user->avatar_url)
+                : $user->avatar_url,
             'city'                 => $artisan?->city,
             'account_type'         => $user->account_type,
             'business_name'        => $artisan?->business_name,
@@ -622,14 +633,175 @@ class AuthController extends Controller
             'confidence_score'     => $artisan?->confidence_score,
             'is_available'         => (bool) ($artisan?->is_available ?? false),
             'is_verified'          => (bool) ($artisan?->is_verified ?? false),
-            'referral_code'        => $artisan?->referral_code,
+            'referral_code'              => $artisan?->referral_code,
+            'boost_credits'              => $artisan
+                ? $artisan->boostCredits()
+                    ->where('is_used', false)
+                    ->where(fn($q) => $q->whereNull('expires_at')->orWhere('expires_at', '>', now()))
+                    ->count()
+                : 0,
+            'unread_notifications_count' => Notification::where('user_id', $user->id)
+                ->where('is_read', false)
+                ->count(),
             'service_category'     => $serviceCategory?->name,
             'subscription_tier'    => $artisan?->activeSubscription?->tier?->name ?? null,
             'certifications'       => [],
-            'portfolio'            => [],
+            'services'             => $artisan
+                ? $artisan->services()->with('serviceCategory')->get()->map(fn($s) => [
+                    'id'                  => $s->id,
+                    'category'            => $s->serviceCategory?->name,
+                    'service_category_id' => $s->service_category_id,
+                    'type'                => $s->service_type,
+                    'description'         => $s->description,
+                    'diploma_url'         => $s->diploma_url ? Storage::url($s->diploma_url) : null,
+                ])->values()->toArray()
+                : [],
+            'portfolio'            => $artisan
+                ? $artisan->portfolio()->where('is_visible', true)->get()->map(fn($p) => [
+                    'id'                  => $p->id,
+                    'url'                 => Storage::url($p->image_url),
+                    'caption'             => $p->title,
+                    'service_category_id' => $p->service_category_id,
+                ])->values()->toArray()
+                : [],
             'requests'             => [],
         ]);
     }
+    // --------------------------------------------------------
+    // UPDATE ME  (authenticated artisan/client profile edit)
+    // POST /me  (multipart/form-data to support avatar upload)
+    // --------------------------------------------------------
+    public function updateMe(Request $request)
+    {
+        $user = $request->user();
+
+        $request->validate([
+            'full_name'        => 'sometimes|string|max:255',
+            'phone'            => 'sometimes|string|unique:users,phone,' . $user->id,
+            'city'             => 'sometimes|nullable|string|max:255',
+            'address'          => 'sometimes|nullable|string|max:255',
+            'bio'              => 'sometimes|nullable|string',
+            'business_name'    => 'sometimes|nullable|string|max:255',
+            'experience_years' => 'sometimes|nullable|integer|min:0|max:60',
+            'avatar'           => 'sometimes|file|image|mimes:jpg,jpeg,png,webp|max:5120',
+        ]);
+
+        // ── Update User row ───────────────────────────────────────────────
+        $userUpdate = [];
+        if ($request->filled('full_name')) $userUpdate['full_name'] = $request->full_name;
+        if ($request->filled('phone'))     $userUpdate['phone']     = $request->phone;
+
+        if ($request->hasFile('avatar')) {
+            // Delete old locally-stored avatar
+            if ($user->avatar_url && !str_starts_with($user->avatar_url, 'http')) {
+                Storage::disk('public')->delete($user->avatar_url);
+            }
+            $userUpdate['avatar_url'] = $request->file('avatar')->store('avatars', 'public');
+        }
+
+        if (!empty($userUpdate)) {
+            $user->update($userUpdate);
+        }
+
+        // ── Update Artisan row ────────────────────────────────────────────
+        if ($user->account_type === 'artisan' && $user->artisan) {
+            $artisanUpdate = [];
+            if ($request->has('city'))             $artisanUpdate['city']             = $request->city;
+            if ($request->has('address'))          $artisanUpdate['address']          = $request->address;
+            if ($request->has('bio'))              $artisanUpdate['bio']              = $request->bio;
+            if ($request->has('business_name'))    $artisanUpdate['business_name']    = $request->business_name;
+            if ($request->has('experience_years')) $artisanUpdate['experience_years'] = $request->experience_years;
+
+            if (!empty($artisanUpdate)) {
+                $user->artisan->update($artisanUpdate);
+            }
+        }
+
+        // Reload relations and return fresh profile
+        $user->refresh();
+        return $this->me($request);
+    }
+
+    // --------------------------------------------------------
+    // ADD SERVICE  (authenticated artisan only)
+    // POST /artisan/service  (multipart/form-data)
+    // --------------------------------------------------------
+    public function addService(Request $request)
+    {
+        $user = $request->user();
+
+        if ($user->account_type !== 'artisan' || !$user->artisan) {
+            return response()->json(['message' => 'Accès réservé aux artisans.'], 403);
+        }
+
+        $request->validate([
+            'service_category' => 'required|string',
+            'type_service'     => 'required|string',
+            'description'      => 'required|string|max:2000',
+            'diplome'          => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:5120',
+            'photos.*'         => 'file|image|mimes:jpg,jpeg,png,webp|max:10240',
+        ]);
+
+        $artisan    = $user->artisan;
+        $categoryId = $this->resolveServiceCategoryId($request->service_category);
+
+        // Store diploma file if provided
+        $diplomaPath = null;
+        if ($request->hasFile('diplome')) {
+            $diplomaPath = $request->file('diplome')->store('diplomas', 'public');
+        }
+
+        // Create the service record — does NOT overwrite the artisan's existing data
+        ArtisanService::create([
+            'artisan_id'          => $artisan->id,
+            'service_category_id' => $categoryId,
+            'service_type'        => $request->type_service,
+            'description'         => $request->description,
+            'diploma_url'         => $diplomaPath,
+        ]);
+
+        // Store portfolio photos linked to this service's category
+        if ($request->hasFile('photos')) {
+            foreach ($request->file('photos') as $photo) {
+                $path = $photo->store('portfolio', 'public');
+                ArtisanPortfolio::create([
+                    'artisan_id'          => $artisan->id,
+                    'service_category_id' => $categoryId,
+                    'image_url'           => $path,
+                    'title'               => $request->type_service,
+                    'is_visible'          => true,
+                ]);
+            }
+        }
+
+        $user->refresh();
+        return $this->me($request);
+    }
+
+    // --------------------------------------------------------
+    // DELETE PORTFOLIO PHOTO  (authenticated artisan only)
+    // DELETE /artisan/portfolio/{photo}
+    // --------------------------------------------------------
+    public function deletePortfolioPhoto(Request $request, int $photoId)
+    {
+        $user = $request->user();
+
+        if ($user->account_type !== 'artisan' || !$user->artisan) {
+            return response()->json(['message' => 'Accès réservé aux artisans.'], 403);
+        }
+
+        $photo = ArtisanPortfolio::where('id', $photoId)
+            ->where('artisan_id', $user->artisan->id)
+            ->firstOrFail();
+
+        // Delete the file from storage
+        Storage::disk('public')->delete($photo->image_url);
+
+        $photo->delete();
+
+        return response()->json(['message' => 'Photo supprimée.']);
+    }
+
     // PRIVATE: send verification code via email or SMS
     private function sendVerificationCode(User $user): void
     {
@@ -686,7 +858,7 @@ class AuthController extends Controller
 
             $serviceCategoryId = $this->resolveServiceCategoryId($service);
 
-            Artisan::firstOrCreate(
+            $artisan = Artisan::firstOrCreate(
                 ['user_id' => $user->id],
                 [
                     'referral_code'       => $this->generateReferralCode($user),
@@ -700,6 +872,17 @@ class AuthController extends Controller
                     'profile_completed'   => false,
                 ]
             );
+
+            // Save portfolio photos to artisan_portfolios table
+            if (!empty($photoPaths)) {
+                foreach ($photoPaths as $path) {
+                    ArtisanPortfolio::create([
+                        'artisan_id' => $artisan->id,
+                        'image_url'  => $path,
+                        'is_visible' => true,
+                    ]);
+                }
+            }
         }
     }
 
@@ -722,6 +905,25 @@ class AuthController extends Controller
         if (!$categoryName) return null;
 
         return \App\Models\ServiceCategory::where('name', $categoryName)->value('id');
+    }
+
+    // --------------------------------------------------------
+    // VALIDATE REFERRAL LINK  (public)
+    // GET /referral/{code}
+    // Returns referrer name so the frontend can show a banner.
+    // --------------------------------------------------------
+    public function validateReferral(string $code)
+    {
+        $artisan = Artisan::where('referral_code', $code)->with('user')->first();
+
+        if (!$artisan) {
+            return response()->json(['valid' => false], 404);
+        }
+
+        return response()->json([
+            'valid'         => true,
+            'referrer_name' => $artisan->user?->full_name,
+        ]);
     }
 
     // PRIVATE: generate unique referral code
@@ -797,8 +999,8 @@ class AuthController extends Controller
                 $pending['service']       ?? null,
                 null,
                 $pending['bio']           ?? null,
-                null,
-                [],
+                $pending['diploma_path']  ?? null,
+                $pending['photo_paths']   ?? [],
             );
         }
 
@@ -877,6 +1079,48 @@ class AuthController extends Controller
 
         // ── Stamp the current tier on the artisan row ─────────────────────
         $artisan->update(['current_subscription_tier_id' => $tier->id]);
+
+        // ── Referral rewards ──────────────────────────────────────────────
+        if ($artisan->referred_by_id && !Referral::where('referred_id', $user->id)->exists()) {
+            $referrer = Artisan::find($artisan->referred_by_id);
+            if ($referrer) {
+                // Boost credit for the referrer (reward for bringing someone in)
+                $boostCredit = ArtisanBoostCredit::create([
+                    'artisan_id'           => $referrer->id,
+                    'boost_duration_hours' => 24,
+                    'source'               => 'referral',
+                    'is_used'              => false,
+                    'expires_at'           => now()->addDays(30),
+                ]);
+
+                // Boost credit for the invited artisan (welcome gift)
+                ArtisanBoostCredit::create([
+                    'artisan_id'           => $artisan->id,
+                    'boost_duration_hours' => 24,
+                    'source'               => 'referral',
+                    'is_used'              => false,
+                    'expires_at'           => now()->addDays(30),
+                ]);
+
+                // Referral record
+                Referral::create([
+                    'referrer_id'            => $referrer->user_id,
+                    'referred_id'            => $user->id,
+                    'referral_code_used'     => $referrer->referral_code,
+                    'status'                 => 'completed',
+                    'reward_boost_credit_id' => $boostCredit->id,
+                ]);
+
+                // Notification for the referrer
+                Notification::create([
+                    'user_id' => $referrer->user_id,
+                    'type'    => 'system',
+                    'title'   => 'Nouveau artisan parrainé !',
+                    'message' => "{$user->full_name} a rejoint AtlasFix grâce à votre lien. Votre boost gratuit de 24h est disponible dans la section Booster un service.",
+                    'is_read' => false,
+                ]);
+            }
+        }
 
         // ── Return token ──────────────────────────────────────────────────
         $token = $user->createToken('auth_token')->plainTextToken;

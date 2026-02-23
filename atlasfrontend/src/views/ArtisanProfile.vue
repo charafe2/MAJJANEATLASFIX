@@ -33,7 +33,7 @@
               <h1 class="page-title">Mon profil</h1>
               <p class="page-subtitle">Gérez vos informations personnelles</p>
             </div>
-            <button class="edit-btn">
+            <button class="edit-btn" @click="openEditModal">
               <svg viewBox="0 0 20 20" fill="none">
                 <path d="M14.5 2.5a2.121 2.121 0 0 1 3 3L6 17l-4 1 1-4L14.5 2.5z" stroke="white" stroke-width="1.667" stroke-linecap="round" stroke-linejoin="round"/>
               </svg>
@@ -92,11 +92,13 @@
             <div class="avatar-wrap">
               <img v-if="artisan.avatar" :src="artisan.avatar" :alt="artisan.name" class="avatar avatar--img" />
               <div v-else class="avatar">{{ avatarInitials }}</div>
-              <button class="avatar-edit-btn">
-                <svg viewBox="0 0 20 20" fill="none">
+              <button class="avatar-edit-btn" @click="triggerAvatarInput" :disabled="savingAvatar" :title="savingAvatar ? 'Upload en cours…' : 'Changer la photo'">
+                <svg v-if="!savingAvatar" viewBox="0 0 20 20" fill="none">
                   <path d="M14.5 2.5a2.121 2.121 0 0 1 3 3L6 17l-4 1 1-4L14.5 2.5z" stroke="#FC5A15" stroke-width="1.5"/>
                 </svg>
+                <span v-else class="avatar-spinner"></span>
               </button>
+              <input ref="avatarInputRef" type="file" accept="image/jpg,image/jpeg,image/png,image/webp" class="input-hidden" @change="onAvatarChange" />
             </div>
 
             <h2 class="profile-name">{{ artisan.name || '—' }}</h2>
@@ -146,6 +148,17 @@
               <h3>Booster un service</h3>
             </div>
 
+            <!-- Free boost credits banner -->
+            <div v-if="artisan.boost_credits > 0" class="boost-free-banner">
+              <svg viewBox="0 0 20 20" fill="none" width="16" height="16">
+                <path d="M10 2l-2 8h6l-2 8M4 10h12" stroke="#00A63E" stroke-width="1.667" stroke-linecap="round"/>
+              </svg>
+              <span>
+                <strong>{{ artisan.boost_credits }} boost{{ artisan.boost_credits > 1 ? 's' : '' }} gratuit{{ artisan.boost_credits > 1 ? 's' : '' }} disponible{{ artisan.boost_credits > 1 ? 's' : '' }}</strong>
+                — offert{{ artisan.boost_credits > 1 ? 's' : '' }} via parrainage
+              </span>
+            </div>
+
             <div class="boost-list">
               <div class="boost-item boost-item--selected">
                 <div class="boost-item-left">
@@ -181,23 +194,25 @@
             </div>
             <h3 class="referral-title">Programme de Parrainage</h3>
             <p class="referral-desc">Partagez AtlasFix avec vos amis et gagnez un boost gratuit pour chaque inscription</p>
-            <div v-if="artisan.referral_code" class="referral-code-box">
-              <span class="referral-code-label">Mon code</span>
-              <code class="referral-code-val">{{ artisan.referral_code }}</code>
+            <div v-if="artisan.referral_code" class="referral-link-box">
+              <span class="referral-link-label">Mon lien de parrainage</span>
+              <div class="referral-link-row">
+                <span class="referral-link-val">{{ referralLink }}</span>
+              </div>
             </div>
-            <button class="referral-btn" @click="copyReferralCode">
+            <button class="referral-btn" @click="copyReferralLink">
               <svg viewBox="0 0 20 20" fill="none">
                 <rect x="8" y="8" width="10" height="10" rx="1.5" stroke="white" stroke-width="1.667"/>
                 <path d="M4 12H3a1 1 0 0 1-1-1V3a1 1 0 0 1 1-1h8a1 1 0 0 1 1 1v1" stroke="white" stroke-width="1.667"/>
               </svg>
-              Copier mon code de parrainage
+              Copier mon lien de parrainage
             </button>
             <div class="referral-notice">
               <svg viewBox="0 0 16 16" fill="none">
                 <path d="M8 2a6 6 0 1 0 0 12A6 6 0 0 0 8 2z" fill="#D08700" stroke="#D08700" stroke-width="1.333"/>
               </svg>
               <div>
-                <strong>Gagnez 1 boost gratuit</strong> (7 jours) pour chaque ami qui crée un compte artisan et effectue sa première intervention.
+                <strong>Gagnez 24h de boost gratuit</strong> pour chaque artisan qui s'inscrit via votre lien.
               </div>
             </div>
           </div>
@@ -257,9 +272,16 @@
               Type de services
             </h3>
             <div class="service-tags">
-              <span v-if="artisan.service_category" class="service-tag">{{ artisan.service_category }}</span>
+              <template v-if="artisan.services && artisan.services.length">
+                <span
+                  v-for="svc in artisan.services"
+                  :key="svc.id"
+                  class="service-tag"
+                  :title="svc.description"
+                >{{ svc.category }} — {{ svc.type }}</span>
+              </template>
               <span v-else class="no-data">Aucun service configuré</span>
-              <button class="service-tag-add">
+              <button class="service-tag-add" @click="openAddServiceModal" title="Ajouter un service">
                 <svg viewBox="0 0 22 22" fill="none">
                   <path d="M11 5v12M5 11h12" stroke="white" stroke-width="1.833" stroke-linecap="round" stroke-linejoin="round"/>
                 </svg>
@@ -320,7 +342,7 @@
             </div>
           </div>
 
-          <!-- Portfolio -->
+          <!-- Portfolio grouped by service -->
           <div class="portfolio-card">
             <h3 class="portfolio-title">
               <svg viewBox="0 0 20 20" fill="none">
@@ -330,15 +352,94 @@
               </svg>
               Photos de mes travaux
             </h3>
-            <p v-if="!artisan.portfolio || artisan.portfolio.length === 0" class="no-data">Aucune photo ajoutée.</p>
-            <div v-else class="portfolio-grid">
-              <div v-for="photo in artisan.portfolio" :key="photo.id" class="portfolio-item">
-                <img :src="photo.url" :alt="photo.caption" class="portfolio-img" />
-                <div class="portfolio-overlay">
-                  <span class="portfolio-caption">{{ photo.caption }}</span>
+
+            <!-- No services yet -->
+            <p v-if="!artisan.services || artisan.services.length === 0" class="no-data">
+              Aucun service configuré. Ajoutez un service pour voir vos photos ici.
+            </p>
+
+            <!-- One block per service -->
+            <template v-else>
+              <div
+                v-for="svc in artisan.services"
+                :key="svc.id"
+                class="portfolio-service-group"
+              >
+                <!-- Service header -->
+                <div class="portfolio-service-header">
+                  <span class="portfolio-service-label">
+                    <svg width="14" height="14" viewBox="0 0 20 20" fill="none">
+                      <circle cx="10" cy="10" r="8" stroke="#FC5A15" stroke-width="1.667"/>
+                      <path d="M10 6v4l3 2" stroke="#FC5A15" stroke-width="1.667" stroke-linecap="round"/>
+                    </svg>
+                    {{ svc.category }}
+                  </span>
+                  <span class="portfolio-service-type">{{ svc.type }}</span>
+                </div>
+
+                <!-- Photos for this service -->
+                <p
+                  v-if="!photosForService(svc).length"
+                  class="no-data portfolio-no-photos"
+                >
+                  Aucune photo pour ce service.
+                </p>
+                <div v-else class="portfolio-grid">
+                  <div
+                    v-for="photo in photosForService(svc)"
+                    :key="photo.id"
+                    class="portfolio-item"
+                  >
+                    <img :src="photo.url" :alt="photo.caption" class="portfolio-img" />
+                    <div class="portfolio-overlay">
+                      <span class="portfolio-caption">{{ photo.caption }}</span>
+                    </div>
+                    <!-- Delete button shown on hover -->
+                    <button
+                      class="portfolio-delete-btn"
+                      @click.stop="deletePhoto(photo)"
+                      :disabled="deletingPhotoId === photo.id"
+                      title="Supprimer cette photo"
+                    >
+                      <svg v-if="deletingPhotoId !== photo.id" viewBox="0 0 20 20" fill="none" width="14" height="14">
+                        <path d="M3 5h14M8 5V3h4v2M6 5l1 12h6l1-12" stroke="white" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+                      </svg>
+                      <span v-else class="portfolio-delete-spinner"></span>
+                    </button>
+                  </div>
                 </div>
               </div>
-            </div>
+
+              <!-- Photos not linked to any service (uploaded before services existed) -->
+              <div v-if="orphanPhotos.length" class="portfolio-service-group">
+                <div class="portfolio-service-header">
+                  <span class="portfolio-service-label">Autres photos</span>
+                </div>
+                <div class="portfolio-grid">
+                  <div
+                    v-for="photo in orphanPhotos"
+                    :key="photo.id"
+                    class="portfolio-item"
+                  >
+                    <img :src="photo.url" :alt="photo.caption" class="portfolio-img" />
+                    <div class="portfolio-overlay">
+                      <span class="portfolio-caption">{{ photo.caption }}</span>
+                    </div>
+                    <button
+                      class="portfolio-delete-btn"
+                      @click.stop="deletePhoto(photo)"
+                      :disabled="deletingPhotoId === photo.id"
+                      title="Supprimer cette photo"
+                    >
+                      <svg v-if="deletingPhotoId !== photo.id" viewBox="0 0 20 20" fill="none" width="14" height="14">
+                        <path d="M3 5h14M8 5V3h4v2M6 5l1 12h6l1-12" stroke="white" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+                      </svg>
+                      <span v-else class="portfolio-delete-spinner"></span>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </template>
           </div>
 
           </template><!-- /info -->
@@ -482,6 +583,120 @@
       <div v-if="toast.show" :class="['toast', 'toast--' + toast.type]">{{ toast.message }}</div>
     </transition>
 
+    <!-- ── Edit Profile Modal ────────────────────────────────── -->
+    <transition name="modal-fade">
+      <div v-if="showEditModal" class="modal-overlay" @click.self="closeEditModal">
+        <div class="modal-card">
+
+          <div class="modal-scroll">
+            <h2 class="modal-heading">Modifier mon profil</h2>
+
+            <!-- Full name -->
+            <div class="modal-field">
+              <label class="modal-label">
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                  <circle cx="8" cy="5" r="3" stroke="#FC5A15" stroke-width="1.333"/>
+                  <path d="M2 14c0-3.314 2.686-5 6-5s6 1.686 6 5" stroke="#FC5A15" stroke-width="1.333" stroke-linecap="round"/>
+                </svg>
+                Nom complet *
+              </label>
+              <input v-model="editForm.full_name" type="text" class="modal-input" placeholder="Votre nom complet" />
+              <span v-if="editErrors.full_name" class="modal-error">{{ editErrors.full_name }}</span>
+            </div>
+
+            <!-- Phone -->
+            <div class="modal-field">
+              <label class="modal-label">
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                  <path d="M14 11.08v1.92A1.2 1.2 0 0 1 12.8 14c-5.28 0-9.6-4.32-9.6-9.6A1.2 1.2 0 0 1 4.4 3.2h1.92a.6.6 0 0 1 .6.6c0 .806.134 1.586.384 2.31a.6.6 0 0 1-.136.632L5.936 7.984a9.6 9.6 0 0 0 3.766 3.765l1.242-1.242a.6.6 0 0 1 .632-.136c.724.25 1.504.384 2.31.384a.6.6 0 0 1 .6.6z" stroke="#FC5A15" stroke-width="1.333"/>
+                </svg>
+                Téléphone
+              </label>
+              <input v-model="editForm.phone" type="tel" class="modal-input" placeholder="Votre numéro de téléphone" />
+              <span v-if="editErrors.phone" class="modal-error">{{ editErrors.phone }}</span>
+            </div>
+
+            <!-- City -->
+            <div class="modal-field">
+              <label class="modal-label">
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                  <path d="M8 1.5C5.515 1.5 3.5 3.515 3.5 6c0 3.75 4.5 8.5 4.5 8.5S12.5 9.75 12.5 6C12.5 3.515 10.485 1.5 8 1.5z" stroke="#FC5A15" stroke-width="1.333"/>
+                  <circle cx="8" cy="6" r="1.5" stroke="#FC5A15" stroke-width="1.333"/>
+                </svg>
+                Ville
+              </label>
+              <div class="modal-select-wrap">
+                <select v-model="editForm.city" class="modal-select">
+                  <option value="">Sélectionnez une ville</option>
+                  <option value="Casablanca">Casablanca</option>
+                  <option value="Rabat">Rabat</option>
+                  <option value="Marrakech">Marrakech</option>
+                  <option value="Fès">Fès</option>
+                  <option value="Tanger">Tanger</option>
+                  <option value="Meknès">Meknès</option>
+                  <option value="Agadir">Agadir</option>
+                  <option value="Oujda">Oujda</option>
+                  <option value="Kenitra">Kénitra</option>
+                  <option value="Tetouan">Tétouan</option>
+                  <option value="Safi">Safi</option>
+                  <option value="El Jadida">El Jadida</option>
+                </select>
+                <svg class="modal-chevron" viewBox="0 0 10 6" fill="none">
+                  <path d="M1 1l4 4 4-4" stroke="#62748E" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+              </div>
+            </div>
+
+            <!-- Business name -->
+            <div class="modal-field">
+              <label class="modal-label">
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                  <rect x="1" y="5" width="14" height="9" rx="1" stroke="#FC5A15" stroke-width="1.333"/>
+                  <path d="M5 5V4a3 3 0 0 1 6 0v1" stroke="#FC5A15" stroke-width="1.333" stroke-linecap="round"/>
+                </svg>
+                Nom de l'entreprise
+              </label>
+              <input v-model="editForm.business_name" type="text" class="modal-input" placeholder="Nom de votre entreprise (optionnel)" />
+            </div>
+
+            <!-- Experience years -->
+            <div class="modal-field">
+              <label class="modal-label">
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                  <circle cx="8" cy="8" r="6" stroke="#FC5A15" stroke-width="1.333"/>
+                  <path d="M8 5v3l2 1" stroke="#FC5A15" stroke-width="1.333" stroke-linecap="round"/>
+                </svg>
+                Années d'expérience
+              </label>
+              <input v-model.number="editForm.experience_years" type="number" min="0" max="60" class="modal-input" placeholder="Ex: 5" />
+            </div>
+
+            <!-- Bio -->
+            <div class="modal-field">
+              <label class="modal-label">
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                  <rect x="2" y="1.5" width="10" height="13" rx="1" stroke="#FC5A15" stroke-width="1.333"/>
+                  <path d="M4.5 6h5M4.5 8.5h5M4.5 11h3" stroke="#FC5A15" stroke-width="1.333" stroke-linecap="round"/>
+                </svg>
+                Description / Bio
+              </label>
+              <textarea v-model="editForm.bio" class="modal-textarea" placeholder="Décrivez votre expérience et vos compétences…"></textarea>
+              <span class="modal-char-count">{{ (editForm.bio || '').length }} caractères</span>
+            </div>
+
+          </div>
+
+          <div class="modal-footer">
+            <button class="modal-cancel-btn" @click="closeEditModal">Annuler</button>
+            <button class="modal-submit-btn" @click="saveProfile" :disabled="savingProfile">
+              {{ savingProfile ? 'Enregistrement…' : 'Enregistrer' }}
+            </button>
+          </div>
+
+        </div>
+      </div>
+    </transition>
+
     <!-- ── Add Service Modal ──────────────────────────────────── -->
     <transition name="modal-fade">
       <div v-if="showAddServiceModal" class="modal-overlay" @click.self="closeAddServiceModal">
@@ -614,7 +829,9 @@
               <input type="checkbox" v-model="newService.acceptTerms" class="modal-checkbox" />
               <span>J'accepte les <a href="#" class="modal-link">conditions générales d'utilisation</a> et la <a href="#" class="modal-link">politique de confidentialité</a></span>
             </label>
-            <button class="modal-submit-btn" @click="submitNewService">Ajouter</button>
+            <button class="modal-submit-btn" @click="submitNewService" :disabled="submittingService">
+              {{ submittingService ? 'Envoi en cours…' : 'Ajouter' }}
+            </button>
           </div>
 
         </div>
@@ -663,6 +880,122 @@ export default {
     const language     = ref('fr')
     const twoFa        = ref(false)
 
+    // ── Edit profile modal ─────────────────────────────────────
+    const showEditModal  = ref(false)
+    const savingProfile  = ref(false)
+    const savingAvatar   = ref(false)
+    const avatarInputRef = ref(null)
+    const editErrors     = ref({})
+    const editForm       = ref({
+      full_name:        '',
+      phone:            '',
+      city:             '',
+      business_name:    '',
+      experience_years: '',
+      bio:              '',
+    })
+
+    function openEditModal() {
+      editForm.value = {
+        full_name:        artisan.value.name            ?? '',
+        phone:            artisan.value.phone           ?? '',
+        city:             artisan.value.city            ?? '',
+        business_name:    artisan.value.business_name   ?? '',
+        experience_years: artisan.value.experience_years ?? '',
+        bio:              artisan.value.bio             ?? '',
+      }
+      editErrors.value = {}
+      showEditModal.value = true
+    }
+
+    function closeEditModal() {
+      showEditModal.value = false
+    }
+
+    async function saveProfile() {
+      editErrors.value = {}
+      if (!editForm.value.full_name.trim()) {
+        editErrors.value.full_name = 'Le nom complet est requis.'
+        return
+      }
+      savingProfile.value = true
+      try {
+        const fd = new FormData()
+        fd.append('full_name',        editForm.value.full_name)
+        fd.append('phone',            editForm.value.phone)
+        fd.append('city',             editForm.value.city)
+        fd.append('business_name',    editForm.value.business_name)
+        fd.append('bio',              editForm.value.bio)
+        if (editForm.value.experience_years !== '' && editForm.value.experience_years !== null) {
+          fd.append('experience_years', editForm.value.experience_years)
+        }
+        const res = await api.post('/me', fd, { headers: { 'Content-Type': 'multipart/form-data' } })
+        artisan.value = res.data
+        closeEditModal()
+        notify('Profil mis à jour avec succès !')
+      } catch (e) {
+        const errs = e.response?.data?.errors ?? {}
+        editErrors.value = Object.fromEntries(
+          Object.entries(errs).map(([k, v]) => [k, Array.isArray(v) ? v[0] : v])
+        )
+        if (!Object.keys(editErrors.value).length) {
+          notify(e.response?.data?.message ?? 'Une erreur est survenue.', 'error')
+        }
+      } finally {
+        savingProfile.value = false
+      }
+    }
+
+    function triggerAvatarInput() {
+      avatarInputRef.value?.click()
+    }
+
+    async function onAvatarChange(e) {
+      const file = e.target.files[0]
+      if (!file) return
+      savingAvatar.value = true
+      try {
+        const fd = new FormData()
+        fd.append('avatar', file)
+        const res = await api.post('/me', fd, { headers: { 'Content-Type': 'multipart/form-data' } })
+        artisan.value = res.data
+        notify('Photo de profil mise à jour !')
+      } catch {
+        notify('Impossible de mettre à jour la photo.', 'error')
+      } finally {
+        savingAvatar.value = false
+        e.target.value = ''
+      }
+    }
+
+    // ── Portfolio delete ───────────────────────────────────────
+    const deletingPhotoId = ref(null)
+
+    function photosForService(svc) {
+      if (!artisan.value.portfolio) return []
+      return artisan.value.portfolio.filter(p => p.service_category_id === svc.service_category_id)
+    }
+
+    const orphanPhotos = computed(() => {
+      if (!artisan.value.portfolio) return []
+      const categoryIds = new Set((artisan.value.services ?? []).map(s => s.service_category_id))
+      return artisan.value.portfolio.filter(p => !categoryIds.has(p.service_category_id))
+    })
+
+    async function deletePhoto(photo) {
+      if (!confirm('Supprimer cette photo ?')) return
+      deletingPhotoId.value = photo.id
+      try {
+        await api.delete(`/artisan/portfolio/${photo.id}`)
+        artisan.value.portfolio = artisan.value.portfolio.filter(p => p.id !== photo.id)
+        notify('Photo supprimée.')
+      } catch {
+        notify('Impossible de supprimer la photo.', 'error')
+      } finally {
+        deletingPhotoId.value = null
+      }
+    }
+
     // ── Add Service Modal ──────────────────────────────────────
     const showAddServiceModal = ref(false)
     const newService = ref({
@@ -688,10 +1021,41 @@ export default {
       e.preventDefault()
       newService.value.photos = Array.from(e.dataTransfer.files).filter(f => f.type.startsWith('image/'))
     }
-    function submitNewService() {
-      if (!newService.value.acceptTerms) { notify('Veuillez accepter les conditions.', 'warning'); return }
-      notify('Service ajouté avec succès !')
-      closeAddServiceModal()
+    const submittingService = ref(false)
+
+    async function submitNewService() {
+      const svc = newService.value
+      if (!svc.servicePrincipal)  { notify('Veuillez sélectionner un service principal.', 'warning'); return }
+      if (!svc.typeService)       { notify('Veuillez sélectionner un type de service.', 'warning'); return }
+      if (!svc.description.trim()) { notify('Veuillez ajouter une description.', 'warning'); return }
+      if (svc.photos.length < 1)  { notify('Veuillez ajouter au moins une photo de réalisation.', 'warning'); return }
+      if (!svc.acceptTerms)       { notify('Veuillez accepter les conditions.', 'warning'); return }
+
+      submittingService.value = true
+      try {
+        const fd = new FormData()
+        fd.append('service_category', svc.servicePrincipal)
+        fd.append('type_service',     svc.typeService)
+        fd.append('description',      svc.description)
+        if (svc.diplome) fd.append('diplome', svc.diplome)
+        svc.photos.forEach(p => fd.append('photos[]', p))
+
+        const res = await api.post('/artisan/service', fd, { headers: { 'Content-Type': 'multipart/form-data' } })
+        artisan.value = res.data
+        closeAddServiceModal()
+        notify('Service ajouté avec succès !')
+      } catch (e) {
+        const msg = e.response?.data?.message ?? 'Une erreur est survenue.'
+        const errs = e.response?.data?.errors
+        if (errs) {
+          const first = Object.values(errs)[0]
+          notify(Array.isArray(first) ? first[0] : first, 'error')
+        } else {
+          notify(msg, 'error')
+        }
+      } finally {
+        submittingService.value = false
+      }
     }
 
     const avatarInitials = computed(() => {
@@ -741,12 +1105,18 @@ export default {
       }
     }
 
-    function copyReferralCode() {
+    const referralLink = computed(() => {
       const code = artisan.value.referral_code
-      if (!code) { notify('Code de parrainage non disponible.', 'warning'); return }
-      navigator.clipboard?.writeText(code)
-        .then(() => notify('Code copié dans le presse-papier !'))
-        .catch(() => notify('Impossible de copier le code.', 'error'))
+      if (!code) return ''
+      return `${window.location.origin}/register/artisan?ref=${code}`
+    })
+
+    function copyReferralLink() {
+      const link = referralLink.value
+      if (!link) { notify('Lien de parrainage non disponible.', 'warning'); return }
+      navigator.clipboard?.writeText(link)
+        .then(() => notify('Lien copié dans le presse-papier !'))
+        .catch(() => notify('Impossible de copier le lien.', 'error'))
     }
 
     onMounted(fetchProfile)
@@ -755,10 +1125,18 @@ export default {
       loading, error, artisan, toast, activeTab,
       emailNotifs, smsNotifs, language, twoFa,
       avatarInitials, filledStars, emptyStars, responseTimeDisplay,
-      fetchProfile, goBack, copyReferralCode, handleDeleteAccount,
-      showAddServiceModal, newService, descCharCount,
+      referralLink,
+      fetchProfile, goBack, copyReferralLink, handleDeleteAccount,
+      showAddServiceModal, newService, descCharCount, submittingService,
       openAddServiceModal, closeAddServiceModal,
       onDescInput, onDiplomeChange, onPhotosChange, onPhotosDrop, submitNewService,
+      // portfolio
+      deletingPhotoId, photosForService, orphanPhotos, deletePhoto,
+      // edit profile
+      showEditModal, editForm, editErrors, savingProfile,
+      savingAvatar, avatarInputRef,
+      openEditModal, closeEditModal, saveProfile,
+      triggerAvatarInput, onAvatarChange,
     }
   },
 }
@@ -1187,6 +1565,20 @@ export default {
 .boost-edit-btn:hover { opacity: 0.8; }
 .boost-edit-btn svg { width: 20px; height: 20px; }
 
+.boost-free-banner {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: #F0FDF4;
+  border: 1px solid #86EFAC;
+  border-radius: 10px;
+  padding: 10px 14px;
+  font-size: 13px;
+  color: #15803D;
+  margin-bottom: 12px;
+}
+.boost-free-banner svg { flex-shrink: 0; }
+
 .boost-notice {
   padding: 17px;
   background: linear-gradient(90deg, rgba(255,247,237,0.41) 0%, rgba(255,237,212,0.41) 100%);
@@ -1246,11 +1638,8 @@ export default {
   margin: 0 0 16px;
 }
 
-.referral-code-box {
+.referral-link-box {
   width: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
   background: #FFF7ED;
   border: 1px solid #FFEDD4;
   border-radius: 10px;
@@ -1259,17 +1648,23 @@ export default {
   box-sizing: border-box;
 }
 
-.referral-code-label {
-  font-size: 13px;
+.referral-link-label {
+  font-size: 12px;
   color: #62748E;
+  display: block;
+  margin-bottom: 4px;
 }
 
-.referral-code-val {
-  font-family: 'Poppins', monospace;
-  font-size: 15px;
-  font-weight: 600;
+.referral-link-row {
+  overflow: hidden;
+}
+
+.referral-link-val {
+  font-size: 12px;
+  font-weight: 500;
   color: #FC5A15;
-  letter-spacing: 1px;
+  word-break: break-all;
+  line-height: 1.4;
 }
 
 .referral-btn {
@@ -1646,6 +2041,74 @@ export default {
   color: #fff;
 }
 
+/* Delete button on hover */
+.portfolio-delete-btn {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: rgba(239, 68, 68, 0.85);
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 0.2s, background 0.15s;
+  z-index: 10;
+}
+.portfolio-item:hover .portfolio-delete-btn { opacity: 1; }
+.portfolio-delete-btn:hover { background: #dc2626; }
+.portfolio-delete-btn:disabled { cursor: not-allowed; opacity: 0.7; }
+
+.portfolio-delete-spinner {
+  width: 10px;
+  height: 10px;
+  border: 2px solid rgba(255,255,255,0.4);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: spin 0.6s linear infinite;
+}
+
+/* Service group headers */
+.portfolio-service-group {
+  margin-bottom: 20px;
+}
+.portfolio-service-group:last-child { margin-bottom: 0; }
+
+.portfolio-service-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid #F0F0F0;
+}
+
+.portfolio-service-label {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #314158;
+}
+
+.portfolio-service-type {
+  font-size: 12px;
+  color: #62748E;
+  background: #F5F5F5;
+  padding: 2px 8px;
+  border-radius: 10px;
+}
+
+.portfolio-no-photos {
+  font-size: 13px;
+  margin: 0 0 4px;
+}
+
 /* Empty / no-data */
 .no-data {
   font-size: 14px;
@@ -1902,13 +2365,100 @@ export default {
   .stats-row { grid-template-columns: repeat(2, 1fr); }
 }
 
+@media (max-width: 768px) {
+  .header-banner { padding: 0 20px; }
+  .stats-row { padding: 0 12px; }
+  .content-cols { padding: 0 12px; margin-top: 16px; }
+  .tabs { overflow-x: auto; white-space: nowrap; -webkit-overflow-scrolling: touch; }
+  .tab-btn { flex-shrink: 0; padding: 12px 16px 10px; font-size: 13px; }
+  .page-title { font-size: 22px; line-height: 28px; }
+  .page-subtitle { font-size: 13px; }
+  .edit-btn { height: 40px; padding: 0 16px; font-size: 14px; }
+  .stat-value { font-size: 24px; }
+}
+
 @media (max-width: 640px) {
   .header-banner { padding: 0 16px; }
-  .stats-row { grid-template-columns: 1fr; }
+  .stats-row { grid-template-columns: repeat(2, 1fr); padding: 0 12px; }
   .info-row { grid-template-columns: 1fr; }
   .portfolio-grid { grid-template-columns: repeat(2, 1fr); }
   .service-selector { flex-direction: column; }
   .add-service-btn { width: 100%; }
+  .profile-card { padding: 20px 16px 24px; }
+  .section-card { padding: 18px 16px; }
+  .portfolio-card { padding: 18px 16px; }
+  .avatar { width: 96px; height: 96px; font-size: 28px; }
+  .avatar--img { width: 96px; height: 96px; }
+  .artisan-name { font-size: 18px; }
+  .cert-list { gap: 10px; }
+  .referral-card { padding: 16px; }
+  .tab-panel { padding: 16px; }
+}
+
+@media (max-width: 480px) {
+  .stats-row { grid-template-columns: 1fr 1fr; gap: 10px; }
+  .stat-card { padding: 16px 14px 12px; }
+  .stat-value { font-size: 20px; }
+  .stat-label { font-size: 12px; }
+  .portfolio-grid { grid-template-columns: repeat(2, 1fr); gap: 8px; }
+  .header-content { flex-direction: column; align-items: flex-start; gap: 10px; }
+  .edit-btn { width: 100%; justify-content: center; }
+  .page-title { font-size: 20px; }
+  .service-tags { flex-wrap: wrap; gap: 8px; }
+  .service-tag { font-size: 12px; padding: 4px 10px; }
+}
+
+/* ─── Shared modal helpers ───────────────────────────── */
+.input-hidden { display: none; }
+
+.modal-input {
+  width: 100%;
+  height: 47px;
+  padding: 0 16px;
+  border: 1px solid #D1D5DC;
+  border-radius: 10px;
+  font-family: 'Inter', sans-serif;
+  font-size: 16px;
+  color: #314158;
+  outline: none;
+  box-sizing: border-box;
+  background: #fff;
+}
+.modal-input:focus { border-color: #FC5A15; }
+.modal-input::placeholder { color: rgba(10,10,10,0.4); }
+
+.modal-error {
+  font-size: 13px;
+  color: #EF4444;
+  margin-top: -4px;
+}
+
+.modal-cancel-btn {
+  height: 50px;
+  padding: 0 28px;
+  background: #fff;
+  border: 1.5px solid #D1D5DC;
+  border-radius: 10px;
+  font-family: 'Inter', sans-serif;
+  font-size: 16px;
+  color: #62748E;
+  cursor: pointer;
+  transition: border-color 0.2s;
+}
+.modal-cancel-btn:hover { border-color: #FC5A15; color: #FC5A15; }
+
+/* Disabled state for submit */
+.modal-submit-btn:disabled { opacity: 0.65; cursor: not-allowed; }
+
+/* Avatar spinner */
+.avatar-spinner {
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  border: 2px solid #FC5A15;
+  border-top-color: transparent;
+  border-radius: 50%;
+  animation: spin .6s linear infinite;
 }
 
 /* ─── Add Service Modal ───────────────────────────────── */

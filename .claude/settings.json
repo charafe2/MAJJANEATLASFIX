@@ -2,7 +2,9 @@
   "permissions": {
     "allow": [
       "Bash(php artisan:*)",
-      "Bash(php artisan tinker:*)"
+      "Bash(php artisan tinker:*)",
+      "Bash(find:*)",
+      "Read(//c/xampp/htdocs/AtlasFixMajjane/**)"
     ]
   }
 }

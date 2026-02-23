@@ -106,6 +106,11 @@ class Artisan extends Model
         return $this->hasMany(ArtisanPortfolio::class);
     }
 
+    public function services(): HasMany
+    {
+        return $this->hasMany(ArtisanService::class);
+    }
+
     public function teamMembers(): HasMany
     {
         return $this->hasMany(ArtisanTeamMember::class, 'artisan_owner_id');

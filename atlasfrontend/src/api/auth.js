@@ -33,4 +33,6 @@ export const resetPassword = (data) => api.post('/reset-password', data)
 
 export const logout = () => api.post('/logout')
 
+export const validateReferral = (code) => api.get(`/referral/${code}`)
+
 export default api
