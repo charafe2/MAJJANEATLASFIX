@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Artisan;
 use App\Http\Controllers\Controller;
 use App\Models\ArtisanOffer;
 use App\Models\Client;
+use App\Models\Notification;
 use App\Models\ServiceRequest;
 use App\Models\ServiceTimeline;
 use Illuminate\Http\JsonResponse;
@@ -120,6 +121,15 @@ class ServiceRequestController extends Controller
             ]);
 
             DB::commit();
+
+            // Notify the client that a new offer was received
+            $requestTitle = $serviceRequest->title ?? 'sans titre';
+            Notification::create([
+                'user_id' => $serviceRequest->client->user_id,
+                'type'    => 'new_offer',
+                'title'   => 'Nouvelle offre reçue',
+                'message' => $user->full_name . " a soumis une offre pour votre demande \"{$requestTitle}\".",
+            ]);
 
             return response()->json(['message' => 'Offer submitted successfully.', 'data' => $offer], 201);
 

@@ -66,6 +66,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::prefix('artisan')->group(function () {
         Route::post  ('service',                                  [AuthController::class, 'addService']);
         Route::delete('portfolio/{photo}',                        [AuthController::class, 'deletePortfolioPhoto']);
+        Route::post  ('boost/activate',                           [AuthController::class, 'activateBoost']);
         Route::get  ('service-requests',                         [ArtisanServiceRequestController::class, 'index']);
         Route::get  ('service-requests/{serviceRequest}',        [ArtisanServiceRequestController::class, 'show']);
         Route::post ('service-requests/{serviceRequest}/offers', [ArtisanServiceRequestController::class, 'submitOffer']);

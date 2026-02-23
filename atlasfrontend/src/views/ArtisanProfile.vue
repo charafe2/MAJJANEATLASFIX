@@ -188,34 +188,83 @@
           <div class="referral-card">
             <div class="referral-icon-wrap">
               <svg viewBox="0 0 32 32" fill="none">
-                <path d="M8 21v-8M16 21V11M24 21v-6" stroke="white" stroke-width="2.667" stroke-linecap="round"/>
-                <path d="M8 8h.01M16 8h.01M24 12h.01" stroke="white" stroke-width="2.667" stroke-linecap="round"/>
+                <rect x="4" y="14" width="24" height="14" rx="2" stroke="white" stroke-width="2"/>
+                <path d="M4 19h24" stroke="white" stroke-width="2"/>
+                <path d="M16 14v14" stroke="white" stroke-width="2"/>
+                <path d="M16 14c0 0-5-6.5-8-4.5S12 14 16 14z" stroke="white" stroke-width="1.8" stroke-linejoin="round" fill="none"/>
+                <path d="M16 14c0 0 5-6.5 8-4.5S20 14 16 14z" stroke="white" stroke-width="1.8" stroke-linejoin="round" fill="none"/>
               </svg>
             </div>
             <h3 class="referral-title">Programme de Parrainage</h3>
             <p class="referral-desc">Partagez AtlasFix avec vos amis et gagnez un boost gratuit pour chaque inscription</p>
-            <div v-if="artisan.referral_code" class="referral-link-box">
-              <span class="referral-link-label">Mon lien de parrainage</span>
-              <div class="referral-link-row">
-                <span class="referral-link-val">{{ referralLink }}</span>
+
+            <!-- Stats row — only when artisan has referrals -->
+            <div v-if="showReferralActive" class="referral-stats-row">
+              <div class="referral-stat-card referral-stat-card--purple">
+                <span class="referral-stat-val">{{ artisan.referrals_count || 0 }}</span>
+                <span class="referral-stat-label">Parrainages</span>
+              </div>
+              <div class="referral-stat-card referral-stat-card--green">
+                <span class="referral-stat-val">{{ artisan.boost_credits || 0 }}</span>
+                <span class="referral-stat-label">Boosts gagnés</span>
               </div>
             </div>
-            <button class="referral-btn" @click="copyReferralLink">
+
+            <!-- Generate link button — always shown -->
+            <button class="referral-btn" @click="showLinkModal = true">
               <svg viewBox="0 0 20 20" fill="none">
-                <rect x="8" y="8" width="10" height="10" rx="1.5" stroke="white" stroke-width="1.667"/>
-                <path d="M4 12H3a1 1 0 0 1-1-1V3a1 1 0 0 1 1-1h8a1 1 0 0 1 1 1v1" stroke="white" stroke-width="1.667"/>
+                <path d="M13 10a3 3 0 0 0-3-3H7a3 3 0 0 0 0 6h3" stroke="white" stroke-width="1.6" stroke-linecap="round"/>
+                <path d="M10 13a3 3 0 0 0 3 3h3a3 3 0 0 0 0-6h-3" stroke="white" stroke-width="1.6" stroke-linecap="round"/>
               </svg>
-              Copier mon lien de parrainage
+              Générer mon lien de parrainage
             </button>
+
+            <!-- Use boost button — only when credits available -->
+            <button v-if="showReferralActive && artisan.boost_credits > 0" class="referral-use-boost-btn" :disabled="activatingBoost" @click="activateBoost">
+              <svg viewBox="0 0 20 20" fill="none">
+                <path d="M11 2L4 11h6l-1 7 7-9h-6l1-7z" stroke="white" stroke-width="1.6" stroke-linejoin="round"/>
+              </svg>
+              {{ activatingBoost ? 'Activation...' : `Utiliser un boost (${artisan.boost_credits})` }}
+            </button>
+
+            <!-- Yellow notice -->
             <div class="referral-notice">
               <svg viewBox="0 0 16 16" fill="none">
-                <path d="M8 2a6 6 0 1 0 0 12A6 6 0 0 0 8 2z" fill="#D08700" stroke="#D08700" stroke-width="1.333"/>
+                <circle cx="8" cy="8" r="6" fill="#D08700"/>
+                <path d="M8 5.5v3M8 10.5v.5" stroke="white" stroke-width="1.4" stroke-linecap="round"/>
               </svg>
               <div>
                 <strong>Gagnez 24h de boost gratuit</strong> pour chaque artisan qui s'inscrit via votre lien.
               </div>
             </div>
           </div>
+
+          <!-- Link modal -->
+          <teleport to="body">
+            <div v-if="showLinkModal" class="link-modal-backdrop" @click.self="showLinkModal = false">
+              <div class="link-modal">
+                <div class="link-modal-header">
+                  <h3 class="link-modal-title">Mon lien de parrainage</h3>
+                  <button class="link-modal-close" @click="showLinkModal = false">
+                    <svg viewBox="0 0 20 20" fill="none">
+                      <path d="M5 5l10 10M15 5L5 15" stroke="#62748E" stroke-width="1.8" stroke-linecap="round"/>
+                    </svg>
+                  </button>
+                </div>
+                <p class="link-modal-sub">Partagez ce lien avec vos amis artisans pour gagner des boosts gratuits.</p>
+                <div class="link-modal-box">
+                  <span class="link-modal-url">{{ referralLink }}</span>
+                </div>
+                <button class="link-modal-copy-btn" @click="copyReferralLink">
+                  <svg viewBox="0 0 20 20" fill="none">
+                    <rect x="8" y="8" width="10" height="10" rx="1.5" stroke="white" stroke-width="1.6"/>
+                    <path d="M4 12H3a1 1 0 0 1-1-1V3a1 1 0 0 1 1-1h8a1 1 0 0 1 1 1v1" stroke="white" stroke-width="1.6"/>
+                  </svg>
+                  Copier le lien
+                </button>
+              </div>
+            </div>
+          </teleport>
 
         </div>
 
@@ -1111,6 +1160,10 @@ export default {
       return `${window.location.origin}/register/artisan?ref=${code}`
     })
 
+    // ── Referral card state ──────────────────────────────────────
+    const showLinkModal = ref(false)
+    const showReferralActive = computed(() => (artisan.value.referrals_count || 0) > 0)
+
     function copyReferralLink() {
       const link = referralLink.value
       if (!link) { notify('Lien de parrainage non disponible.', 'warning'); return }
@@ -1119,14 +1172,32 @@ export default {
         .catch(() => notify('Impossible de copier le lien.', 'error'))
     }
 
+    // ── Boost activation ─────────────────────────────────────────
+    const activatingBoost = ref(false)
+
+    async function activateBoost() {
+      if (activatingBoost.value) return
+      activatingBoost.value = true
+      try {
+        const res = await api.post('/artisan/boost/activate')
+        notify(res.data.message ?? 'Boost activé !', 'success')
+        // Refresh profile to update boost_credits count
+        await fetchProfile()
+      } catch (e) {
+        notify(e.response?.data?.error ?? 'Une erreur est survenue.', 'error')
+      } finally {
+        activatingBoost.value = false
+      }
+    }
+
     onMounted(fetchProfile)
 
     return {
       loading, error, artisan, toast, activeTab,
       emailNotifs, smsNotifs, language, twoFa,
       avatarInitials, filledStars, emptyStars, responseTimeDisplay,
-      referralLink,
-      fetchProfile, goBack, copyReferralLink, handleDeleteAccount,
+      referralLink, showReferralActive, showLinkModal, activatingBoost,
+      fetchProfile, goBack, copyReferralLink, activateBoost, handleDeleteAccount,
       showAddServiceModal, newService, descCharCount, submittingService,
       openAddServiceModal, closeAddServiceModal,
       onDescInput, onDiplomeChange, onPhotosChange, onPhotosDrop, submitNewService,
@@ -1638,34 +1709,72 @@ export default {
   margin: 0 0 16px;
 }
 
-.referral-link-box {
+/* Referral stats row */
+.referral-stats-row {
+  display: flex;
+  gap: 12px;
   width: 100%;
-  background: #FFF7ED;
-  border: 1px solid #FFEDD4;
-  border-radius: 10px;
-  padding: 10px 16px;
-  margin-bottom: 12px;
-  box-sizing: border-box;
+  margin-bottom: 14px;
 }
 
-.referral-link-label {
-  font-size: 12px;
-  color: #62748E;
-  display: block;
+.referral-stat-card {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 12px 10px;
+  border-radius: 10px;
+  border: 1.5px solid;
+  background: #fff;
+}
+
+.referral-stat-card--purple {
+  border-color: #A78BFA;
+  color: #7C3AED;
+}
+
+.referral-stat-card--green {
+  border-color: #6EE7B7;
+  color: #059669;
+}
+
+.referral-stat-val {
+  font-size: 22px;
+  font-weight: 700;
+  line-height: 1;
   margin-bottom: 4px;
 }
 
-.referral-link-row {
-  overflow: hidden;
+.referral-stat-label {
+  font-size: 11px;
+  font-weight: 500;
+  text-align: center;
+  opacity: 0.85;
 }
 
-.referral-link-val {
-  font-size: 12px;
-  font-weight: 500;
-  color: #FC5A15;
-  word-break: break-all;
-  line-height: 1.4;
+/* Use boost button */
+.referral-use-boost-btn {
+  width: 100%;
+  height: 44px;
+  background: linear-gradient(90deg, #059669 0%, #10B981 100%);
+  border: none;
+  border-radius: 10px;
+  font-family: 'Inter', sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  cursor: pointer;
+  margin-bottom: 14px;
+  transition: opacity 0.2s;
 }
+
+.referral-use-boost-btn:hover { opacity: 0.9; }
+.referral-use-boost-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+.referral-use-boost-btn svg { width: 18px; height: 18px; }
 
 .referral-btn {
   width: 100%;
@@ -1707,6 +1816,101 @@ export default {
 
 .referral-notice svg { width: 16px; height: 16px; flex-shrink: 0; margin-top: 2px; }
 .referral-notice strong { font-weight: 700; }
+
+/* Link modal */
+.link-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+}
+
+.link-modal {
+  background: #fff;
+  border-radius: 18px;
+  padding: 28px 24px 24px;
+  width: 100%;
+  max-width: 420px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.link-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.link-modal-title {
+  font-size: 18px;
+  font-weight: 700;
+  color: #314158;
+  margin: 0;
+}
+
+.link-modal-close {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  transition: background 0.15s;
+}
+
+.link-modal-close:hover { background: #F3F4F6; }
+.link-modal-close svg { width: 20px; height: 20px; }
+
+.link-modal-sub {
+  font-size: 13px;
+  color: #62748E;
+  margin: 0;
+  line-height: 1.5;
+}
+
+.link-modal-box {
+  background: #FFF7ED;
+  border: 1.5px solid #FFEDD4;
+  border-radius: 10px;
+  padding: 12px 14px;
+  word-break: break-all;
+}
+
+.link-modal-url {
+  font-size: 13px;
+  font-weight: 500;
+  color: #FC5A15;
+  line-height: 1.5;
+}
+
+.link-modal-copy-btn {
+  width: 100%;
+  height: 48px;
+  background: linear-gradient(90deg, #FC5A15 0%, rgba(252,90,21,0.88) 100%);
+  border: none;
+  border-radius: 10px;
+  font-family: 'Inter', sans-serif;
+  font-size: 15px;
+  font-weight: 600;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+
+.link-modal-copy-btn:hover { opacity: 0.9; }
+.link-modal-copy-btn svg { width: 18px; height: 18px; }
 
 /* RIGHT COLUMN */
 .right-col {

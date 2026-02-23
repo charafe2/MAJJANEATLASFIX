@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Client;
 
 use App\Http\Controllers\Controller;
 use App\Models\ArtisanOffer;
+use App\Models\Notification;
 use App\Models\ServiceCategory;
 use App\Models\ServiceRequest;
 use App\Models\ServiceRequestPhoto;
@@ -229,6 +230,13 @@ class ServiceRequestController extends Controller
         try {
             $offer->update(['status' => 'accepted']);
 
+            // Collect auto-rejected offers before the bulk update so we can notify them
+            $autoRejectedOffers = ArtisanOffer::where('service_request_id', $serviceRequest->id)
+                ->where('id', '!=', $offer->id)
+                ->where('status', 'pending')
+                ->with('artisan:id,user_id')
+                ->get();
+
             ArtisanOffer::where('service_request_id', $serviceRequest->id)
                 ->where('id', '!=', $offer->id)
                 ->where('status', 'pending')
@@ -246,6 +254,26 @@ class ServiceRequestController extends Controller
             ]);
 
             DB::commit();
+
+            $requestTitle = $serviceRequest->title ?? 'sans titre';
+
+            // Notify the accepted artisan
+            Notification::create([
+                'user_id' => $offer->artisan->user_id,
+                'type'    => 'offer_accepted',
+                'title'   => 'Offre acceptée !',
+                'message' => "Votre offre pour la demande \"{$requestTitle}\" a été acceptée par le client.",
+            ]);
+
+            // Notify auto-rejected artisans
+            foreach ($autoRejectedOffers as $rejectedOffer) {
+                Notification::create([
+                    'user_id' => $rejectedOffer->artisan->user_id,
+                    'type'    => 'cancellation',
+                    'title'   => 'Offre non retenue',
+                    'message' => "Votre offre pour la demande \"{$requestTitle}\" n'a pas été retenue.",
+                ]);
+            }
 
             $serviceRequest->load(['offers.artisan.user', 'acceptedOffer.artisan.user']);
             return response()->json(['message' => 'Offer accepted.', 'data' => $serviceRequest]);
@@ -273,6 +301,14 @@ class ServiceRequestController extends Controller
         }
 
         $offer->update(['status' => 'rejected']);
+
+        $requestTitle = $serviceRequest->title ?? 'sans titre';
+        Notification::create([
+            'user_id' => $offer->artisan->user_id,
+            'type'    => 'cancellation',
+            'title'   => 'Offre refusée',
+            'message' => "Votre offre pour la demande \"{$requestTitle}\" a été refusée par le client.",
+        ]);
 
         return response()->json(['message' => 'Offer rejected.']);
     }

@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Messaging;
 use App\Http\Controllers\Controller;
 use App\Models\Conversation;
 use App\Models\Message;
+use App\Models\Notification;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -62,6 +63,18 @@ class MessageController extends Controller
         ]);
 
         $conversation->update(['last_message_at' => now()]);
+
+        // Notify the other participant
+        $recipientUserId = $user->account_type === 'client'
+            ? $conversation->artisan->user_id
+            : $conversation->client->user_id;
+
+        Notification::create([
+            'user_id' => $recipientUserId,
+            'type'    => 'message',
+            'title'   => 'Nouveau message',
+            'message' => $user->full_name . ' vous a envoyé un message.',
+        ]);
 
         $message->load('sender:id,full_name,avatar_url');
 

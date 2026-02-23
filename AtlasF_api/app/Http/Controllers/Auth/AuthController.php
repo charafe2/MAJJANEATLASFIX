@@ -634,6 +634,9 @@ class AuthController extends Controller
             'is_available'         => (bool) ($artisan?->is_available ?? false),
             'is_verified'          => (bool) ($artisan?->is_verified ?? false),
             'referral_code'              => $artisan?->referral_code,
+            'referrals_count'            => $artisan
+                ? Referral::where('referrer_id', $user->id)->where('status', 'completed')->count()
+                : 0,
             'boost_credits'              => $artisan
                 ? $artisan->boostCredits()
                     ->where('is_used', false)
@@ -923,6 +926,47 @@ class AuthController extends Controller
         return response()->json([
             'valid'         => true,
             'referrer_name' => $artisan->user?->full_name,
+        ]);
+    }
+
+    // --------------------------------------------------------
+    // ACTIVATE BOOST  (authenticated artisan)
+    // POST /artisan/boost/activate
+    // Consumes the oldest available boost credit and creates an ArtisanBoost.
+    // --------------------------------------------------------
+    public function activateBoost(Request $request)
+    {
+        $user    = $request->user();
+        $artisan = $user->artisan;
+
+        if (!$artisan) {
+            return response()->json(['error' => 'Profil artisan introuvable'], 404);
+        }
+
+        $credit = $artisan->boostCredits()
+            ->where('is_used', false)
+            ->where(fn($q) => $q->whereNull('expires_at')->orWhere('expires_at', '>', now()))
+            ->orderBy('created_at')
+            ->first();
+
+        if (!$credit) {
+            return response()->json(['error' => 'Aucun boost disponible'], 404);
+        }
+
+        $credit->update(['is_used' => true]);
+
+        $boost = \App\Models\ArtisanBoost::create([
+            'artisan_id'      => $artisan->id,
+            'boost_credit_id' => $credit->id,
+            'boost_type'      => 'referral',
+            'start_date'      => now(),
+            'end_date'        => now()->addHours($credit->boost_duration_hours),
+            'is_active'       => true,
+        ]);
+
+        return response()->json([
+            'message'    => 'Boost activé ! Votre profil est mis en avant pendant ' . $credit->boost_duration_hours . 'h.',
+            'boost_until' => $boost->end_date,
         ]);
     }
 
