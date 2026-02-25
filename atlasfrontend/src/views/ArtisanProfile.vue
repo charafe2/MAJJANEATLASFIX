@@ -160,22 +160,32 @@
             </div>
 
             <div class="boost-list">
-              <div class="boost-item boost-item--selected">
-                <div class="boost-item-left">
-                  <div class="boost-icon boost-icon--active">
+              <template v-if="artisan.services && artisan.services.length">
+                <div
+                  v-for="svc in artisan.services"
+                  :key="svc.id"
+                  class="boost-item boost-item--selected"
+                >
+                  <div class="boost-item-left">
+                    <div class="boost-icon boost-icon--active">
+                      <svg viewBox="0 0 20 20" fill="none">
+                        <path d="M10 2l-2 8h6l-2 8M4 10h12" stroke="white" stroke-width="1.667"/>
+                      </svg>
+                    </div>
+                    <div class="boost-item-text">
+                      <span>{{ svc.category || '—' }}</span>
+                      <small v-if="svc.type" style="display:block;font-size:12px;color:#62748E;">{{ svc.type }}</small>
+                    </div>
+                  </div>
+                  <button class="boost-edit-btn">
                     <svg viewBox="0 0 20 20" fill="none">
-                      <path d="M10 2l-2 8h6l-2 8M4 10h12" stroke="white" stroke-width="1.667"/>
+                      <path d="M15 7l-6 6M15 13V7h-6" stroke="#62748E" stroke-width="1.667" stroke-linecap="round" stroke-linejoin="round"/>
                     </svg>
-                  </div>
-                  <div class="boost-item-text">
-                    <span>{{ artisan.service_category || '—' }}</span>
-                  </div>
+                  </button>
                 </div>
-                <button class="boost-edit-btn">
-                  <svg viewBox="0 0 20 20" fill="none">
-                    <path d="M15 7l-6 6M15 13V7h-6" stroke="#62748E" stroke-width="1.667" stroke-linecap="round" stroke-linejoin="round"/>
-                  </svg>
-                </button>
+              </template>
+              <div v-else class="boost-item" style="justify-content:center;color:#62748E;font-size:14px;">
+                Aucun service ajouté pour le moment
               </div>
             </div>
 
@@ -282,12 +292,17 @@
 
           <!-- Service selector -->
           <div class="service-selector">
-            <div class="service-dropdown">
-              <svg viewBox="0 0 32 32" fill="none">
-                <circle cx="16" cy="16" r="8" stroke="#FC5A15" stroke-width="1.586"/>
-              </svg>
-              <span>{{ artisan.service_category || '—' }}</span>
-              <svg class="chevron" viewBox="0 0 10 6" fill="none">
+            <div class="modal-select-wrap" style="flex:1">
+              <select class="modal-select" style="height:63px; font-size:15px; color:#314158;">
+                <option value="" disabled selected>Sélectionnez un service</option>
+                <template v-if="artisan.services && artisan.services.length">
+                  <option v-for="svc in artisan.services" :key="svc.id" :value="svc.id">
+                    {{ svc.category }} — {{ svc.type }}
+                  </option>
+                </template>
+                <option v-else disabled value="primary">{{ artisan.service_category || '—' }}</option>
+              </select>
+              <svg class="modal-chevron" viewBox="0 0 10 6" fill="none">
                 <path d="M1 1l4 4 4-4" stroke="#314158" stroke-width="1.698"/>
               </svg>
             </div>

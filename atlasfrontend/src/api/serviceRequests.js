@@ -42,11 +42,20 @@ export const getServiceRequest = (id) =>
 export const cancelServiceRequest = (id) =>
   api.patch(`/client/service-requests/${id}/cancel`)
 
-export const acceptOffer = (requestId, offerId) =>
-  api.post(`/client/service-requests/${requestId}/offers/${offerId}/accept`)
+export const acceptOffer = (requestId, offerId, body = {}) =>
+  api.post(`/client/service-requests/${requestId}/offers/${offerId}/accept`, body)
 
 export const rejectOffer = (requestId, offerId) =>
   api.post(`/client/service-requests/${requestId}/offers/${offerId}/reject`)
+
+export const markClientComplete = (id) =>
+  api.patch(`/client/service-requests/${id}/complete`)
+
+export const checkWorkedWith = (artisanId) =>
+  api.get(`/client/artisans/${artisanId}/worked-with`)
+
+export const postReview = (artisanId, data) =>
+  api.post(`/client/artisans/${artisanId}/reviews`, data)
 
 // ── Artisan: Browse & respond ─────────────────────────────────────────────
 

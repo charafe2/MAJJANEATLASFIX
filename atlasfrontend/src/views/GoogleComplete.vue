@@ -128,7 +128,7 @@ async function submit() {
   loading.value = true
   errors.value  = {}
   try {
-    const res = await axios.post('/api/auth/google/complete', {
+    const res = await axios.post('/api/google/complete', {
       temp_key:     tempKey.value,
       account_type: accountType.value,
       phone:        '+212' + phone.value.replace(/\s/g, ''),

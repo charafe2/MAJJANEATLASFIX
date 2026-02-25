@@ -88,7 +88,7 @@
                 </svg>
               </button>
               <button
-                v-if="req.status === 'open'"
+                v-if="req.status === 'open' || req.status === 'in_progress'"
                 class="action-btn action-delete"
                 title="Annuler"
                 @click="cancelReq(req)"
@@ -265,28 +265,130 @@
         {{ toast.message }}
       </div>
     </transition>
+
   </div>
+
+  <!-- ── Cancel Modal ────────────────────────────────────────────── -->
+  <CancelModal
+    :show="!!cancelTarget"
+    :request="cancelTarget"
+    @close="cancelTarget = null"
+    @success="onCancelSuccess"
+  />
+
+  <!-- ── Address Confirmation Modal ──────────────────────────────── -->
+  <Teleport to="body">
+    <div v-if="addrModal.show" class="addr-overlay" @click.self="closeAddressModal">
+      <div class="addr-modal">
+
+        <!-- Header -->
+        <div class="addr-header">
+          <div class="addr-header-left">
+            <div class="addr-icon-wrap">
+              <svg width="20" height="20" fill="none" stroke="#FC5A15" stroke-width="1.8" viewBox="0 0 24 24">
+                <path d="M3 9.5L12 3l9 6.5V20a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9.5z" stroke-linecap="round" stroke-linejoin="round"/>
+                <path d="M9 21V12h6v9" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </div>
+            <div>
+              <div class="addr-title">Confirmation de l'adresse</div>
+              <div class="addr-sub">Service à domicile</div>
+            </div>
+          </div>
+          <button class="addr-close-btn" @click="closeAddressModal">
+            <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path d="M18 6L6 18M6 6l12 12" stroke-linecap="round"/>
+            </svg>
+          </button>
+        </div>
+
+        <!-- Body -->
+        <div class="addr-body">
+          <div class="addr-notice">
+            <svg width="16" height="16" fill="none" stroke="#92400E" stroke-width="1.5" viewBox="0 0 24 24" style="flex-shrink:0;margin-top:1px">
+              <rect x="3" y="11" width="18" height="11" rx="2"/>
+              <path d="M7 11V7a5 5 0 0 1 10 0v4" stroke-linecap="round"/>
+            </svg>
+            Veuillez confirmer l'adresse où l'artisan doit se rendre.
+          </div>
+
+          <div class="addr-field">
+            <label class="addr-label">Adresse complète</label>
+            <div class="addr-input-row">
+              <input
+                v-model="addrInput"
+                type="text"
+                class="addr-input"
+                placeholder="casablanca..."
+              />
+              <button class="btn-locate" @click="locateMe" :disabled="addrLocating">
+                <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
+                  <circle cx="12" cy="12" r="3"/>
+                  <path d="M12 2v3M12 19v3M2 12h3M19 12h3" stroke-linecap="round"/>
+                </svg>
+                {{ addrLocating ? 'Localisation...' : 'Me localiser' }}
+              </button>
+            </div>
+          </div>
+
+          <div ref="mapContainer" class="addr-map"></div>
+        </div>
+
+        <!-- Footer -->
+        <div class="addr-footer">
+          <button class="addr-btn-cancel" @click="closeAddressModal">Annuler</button>
+          <button class="addr-btn-confirm" @click="confirmAcceptOffer">
+            <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
+              <path d="M20 6L9 17l-5-5" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            Confirmer
+          </button>
+        </div>
+
+      </div>
+    </div>
+  </Teleport>
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, nextTick } from 'vue'
 import { useRouter } from 'vue-router'
+import L from 'leaflet'
+import 'leaflet/dist/leaflet.css'
 import {
   getServiceRequests,
-  cancelServiceRequest,
   acceptOffer,
   rejectOffer,
 } from '../../api/serviceRequests'
 import { getOrCreateConversation } from '../../api/messages'
+import CancelModal from '../../components/modals/CancelModal.vue'
+
+// Fix Leaflet default icon for Vite bundler
+delete L.Icon.Default.prototype._getIconUrl
+L.Icon.Default.mergeOptions({
+  iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
+  iconRetinaUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png',
+  shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
+})
 
 const router = useRouter()
 
 // ── State ────────────────────────────────────────────────────────────────────
-const requests     = ref([])
-const loading      = ref(false)
-const error        = ref('')
-const activeFilter = ref('all')
-const toast        = ref({ show: false, message: '', type: 'success' })
+const requests      = ref([])
+const loading       = ref(false)
+const error         = ref('')
+const activeFilter  = ref('all')
+const toast         = ref({ show: false, message: '', type: 'success' })
+const cancelTarget  = ref(null)   // request passed to CancelModal
+
+// ── Address modal state ───────────────────────────────────────────────────────
+const addrModal    = ref({ show: false, req: null, offer: null })
+const addrInput    = ref('')
+const addrLocating = ref(false)
+const mapContainer = ref(null)
+let leafletMap     = null
+let leafletMarker  = null
+const DEFAULT_COORDS = [33.5731, -7.5898] // Casablanca
 
 // ── Fetch ─────────────────────────────────────────────────────────────────────
 onMounted(fetchRequests)
@@ -336,22 +438,117 @@ function viewArtisanProfile(artisanId) {
   router.push(`/artisans/profile/${artisanId}`)
 }
 
-async function cancelReq(req) {
-  if (!confirm('Annuler cette demande ?')) return
-  try {
-    await cancelServiceRequest(req.id)
-    req.status = 'cancelled'
-    showToast('Demande annulée.')
-  } catch {
-    showToast('Impossible d\'annuler la demande.', 'error')
+function cancelReq(req) {
+  cancelTarget.value = req
+}
+
+async function onCancelSuccess() {
+  if (cancelTarget.value) cancelTarget.value.status = 'cancelled'
+  cancelTarget.value = null
+  showToast('Demande annulée.')
+  await fetchRequests()
+}
+
+function handleAcceptOffer(req, offer) {
+  openAddressModal(req, offer)
+}
+
+async function openAddressModal(req, offer) {
+  addrModal.value = { show: true, req, offer }
+  addrInput.value = req.city || ''
+  await nextTick()
+  initMap()
+  if (req.city) {
+    const coords = await geocodeAddress(req.city + ', Maroc')
+    if (coords && leafletMap && leafletMarker) {
+      leafletMap.setView(coords, 13)
+      leafletMarker.setLatLng(coords)
+    }
   }
 }
 
-async function handleAcceptOffer(req, offer) {
+function closeAddressModal() {
+  if (leafletMap) {
+    leafletMap.remove()
+    leafletMap = null
+    leafletMarker = null
+  }
+  addrModal.value = { show: false, req: null, offer: null }
+}
+
+function initMap(lat = DEFAULT_COORDS[0], lng = DEFAULT_COORDS[1]) {
+  if (!mapContainer.value) return
+  leafletMap = L.map(mapContainer.value).setView([lat, lng], 13)
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '© OpenStreetMap contributors',
+  }).addTo(leafletMap)
+  leafletMarker = L.marker([lat, lng], { draggable: true }).addTo(leafletMap)
+  leafletMarker.on('dragend', (e) => {
+    const pos = e.target.getLatLng()
+    reverseGeocode(pos.lat, pos.lng)
+  })
+  leafletMap.on('click', (e) => {
+    leafletMarker.setLatLng(e.latlng)
+    reverseGeocode(e.latlng.lat, e.latlng.lng)
+  })
+}
+
+async function locateMe() {
+  if (!navigator.geolocation) {
+    showToast('Géolocalisation non supportée.', 'error')
+    return
+  }
+  addrLocating.value = true
+  navigator.geolocation.getCurrentPosition(
+    async (pos) => {
+      const { latitude, longitude } = pos.coords
+      if (leafletMap && leafletMarker) {
+        leafletMap.setView([latitude, longitude], 16)
+        leafletMarker.setLatLng([latitude, longitude])
+      }
+      await reverseGeocode(latitude, longitude)
+      addrLocating.value = false
+    },
+    () => {
+      showToast('Impossible d\'obtenir votre position.', 'error')
+      addrLocating.value = false
+    }
+  )
+}
+
+async function reverseGeocode(lat, lng) {
+  try {
+    const res = await fetch(
+      `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json&accept-language=fr`
+    )
+    const json = await res.json()
+    addrInput.value = json.display_name || `${lat.toFixed(5)}, ${lng.toFixed(5)}`
+  } catch {
+    addrInput.value = `${lat.toFixed(5)}, ${lng.toFixed(5)}`
+  }
+}
+
+async function geocodeAddress(query) {
+  try {
+    const res = await fetch(
+      `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query)}&format=json&limit=1&accept-language=fr`
+    )
+    const json = await res.json()
+    if (json.length > 0) return [parseFloat(json[0].lat), parseFloat(json[0].lon)]
+  } catch {}
+  return null
+}
+
+async function confirmAcceptOffer() {
+  const req   = addrModal.value.req
+  const offer = addrModal.value.offer
+  if (!req || !offer) return
+  const address = addrInput.value.trim()
+  closeAddressModal()
   offer._loading = true
   try {
-    const { data } = await acceptOffer(req.id, offer.id)
-    // Update offers list in place
+    const body = address ? { address } : {}
+    const { data } = await acceptOffer(req.id, offer.id, body)
     const updatedReq = data.data
     Object.assign(req, { ...updatedReq, _expanded: true })
     showToast('Offre acceptée ! L\'artisan sera notifié.')
@@ -862,4 +1059,178 @@ function showToast(message, type = 'success') {
   .offers-row      { grid-template-columns: 1fr; }
   .offer-cta       { flex-direction: column; }
 }
+
+/* ── Address Confirmation Modal ───────────────────────────────────────────── */
+.addr-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 16px;
+}
+.addr-modal {
+  background: #fff;
+  border-radius: 16px;
+  width: 100%;
+  max-width: 420px;
+  overflow: hidden;
+  box-shadow: 0 20px 60px rgba(0,0,0,.25);
+  display: flex;
+  flex-direction: column;
+}
+
+/* Header */
+.addr-header {
+  background: #FC5A15;
+  padding: 18px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.addr-header-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.addr-icon-wrap {
+  width: 40px;
+  height: 40px;
+  background: #fff;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.addr-title {
+  color: #fff;
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 1.3;
+}
+.addr-sub {
+  color: rgba(255,255,255,.78);
+  font-size: 12px;
+  margin-top: 1px;
+}
+.addr-close-btn {
+  background: rgba(255,255,255,.2);
+  border: none;
+  border-radius: 8px;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: #fff;
+  transition: background .15s;
+  flex-shrink: 0;
+}
+.addr-close-btn:hover { background: rgba(255,255,255,.35); }
+
+/* Body */
+.addr-body {
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.addr-notice {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  background: #FFFBEB;
+  border: 1px solid #FDE68A;
+  border-radius: 10px;
+  padding: 12px 14px;
+  font-size: 13px;
+  color: #92400E;
+  line-height: 1.5;
+}
+.addr-field    { display: flex; flex-direction: column; gap: 6px; }
+.addr-label    { font-size: 13px; color: #314158; font-weight: 500; }
+.addr-input-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+.addr-input {
+  flex: 1;
+  padding: 10px 14px;
+  border: 1px solid #E5E7EB;
+  border-radius: 10px;
+  font-size: 14px;
+  color: #314158;
+  font-family: 'Inter', sans-serif;
+  outline: none;
+  transition: border-color .15s;
+  min-width: 0;
+}
+.addr-input:focus { border-color: #FC5A15; }
+.btn-locate {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 14px;
+  background: #FC5A15;
+  color: #fff;
+  border: none;
+  border-radius: 10px;
+  font-size: 13px;
+  font-family: 'Inter', sans-serif;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background .15s;
+  flex-shrink: 0;
+}
+.btn-locate:hover    { background: #e04e0d; }
+.btn-locate:disabled { opacity: .6; cursor: not-allowed; }
+.addr-map {
+  height: 220px;
+  border-radius: 10px;
+  overflow: hidden;
+  border: 1px solid #E5E7EB;
+}
+
+/* Footer */
+.addr-footer {
+  padding: 16px 20px;
+  display: flex;
+  gap: 10px;
+  border-top: 1px solid #F3F4F6;
+}
+.addr-btn-cancel {
+  flex: 1;
+  padding: 11px;
+  border: 1px solid #E5E7EB;
+  background: none;
+  border-radius: 10px;
+  font-size: 14px;
+  font-family: 'Inter', sans-serif;
+  color: #62748E;
+  cursor: pointer;
+  transition: background .15s;
+}
+.addr-btn-cancel:hover { background: #F9FAFB; }
+.addr-btn-confirm {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 11px;
+  background: #FC5A15;
+  color: #fff;
+  border: none;
+  border-radius: 10px;
+  font-size: 14px;
+  font-family: 'Inter', sans-serif;
+  cursor: pointer;
+  transition: background .15s;
+}
+.addr-btn-confirm:hover { background: #e04e0d; }
 </style>

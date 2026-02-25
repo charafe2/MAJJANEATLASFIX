@@ -193,7 +193,7 @@
             </div>
           </div>
 
-          <!-- Review (client only) -->
+          <!-- Review (client only, completed, not yet reviewed) -->
           <div v-if="isClientView && req.status === 'completed'" class="card review-card">
             <h3 class="card-title">
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#F0B100" stroke-width="1.67">
@@ -201,36 +201,55 @@
               </svg>
               Donner votre avis
             </h3>
-            <p class="review-hint">Partagez votre expérience avec cet artisan.</p>
-            <div class="star-row">
-              <svg
-                v-for="n in 5"
-                :key="n"
-                width="28"
-                height="28"
-                viewBox="0 0 24 24"
-                :fill="n <= reviewStars ? '#FDC700' : 'none'"
-                stroke="#FDC700"
-                stroke-width="1.5"
-                class="star"
-                @click="reviewStars = n"
-              >
-                <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+
+            <!-- Already reviewed -->
+            <div v-if="reviewSubmitted" class="review-done">
+              <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#16A34A" stroke-width="2">
+                <circle cx="12" cy="12" r="10" />
+                <polyline points="9 12 11 14 15 10" />
               </svg>
+              <p>Merci ! Votre avis a été enregistré.</p>
             </div>
-            <div class="review-input-row">
-              <input
-                v-model="reviewText"
-                type="text"
-                placeholder="Laisser un avis…"
-                class="review-input"
-              />
-              <button class="btn-primary" @click="submitReview" :disabled="!reviewStars">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.33">
-                  <line x1="22" y1="2" x2="11" y2="13" /><polygon points="22 2 15 22 11 13 2 9 22 2" />
+
+            <!-- Review form -->
+            <template v-else>
+              <p class="review-hint">Partagez votre expérience avec cet artisan.</p>
+              <div class="star-row">
+                <svg
+                  v-for="n in 5"
+                  :key="n"
+                  width="28"
+                  height="28"
+                  viewBox="0 0 24 24"
+                  :fill="n <= reviewStars ? '#FDC700' : 'none'"
+                  stroke="#FDC700"
+                  stroke-width="1.5"
+                  class="star"
+                  @click="reviewStars = n"
+                >
+                  <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
                 </svg>
-              </button>
-            </div>
+              </div>
+              <div class="review-input-row">
+                <input
+                  v-model="reviewText"
+                  type="text"
+                  placeholder="Laisser un commentaire… (optionnel)"
+                  class="review-input"
+                />
+                <button
+                  class="btn-primary"
+                  :disabled="!reviewStars || reviewSubmitting"
+                  @click="submitReview"
+                >
+                  <svg v-if="!reviewSubmitting" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.33">
+                    <line x1="22" y1="2" x2="11" y2="13" /><polygon points="22 2 15 22 11 13 2 9 22 2" />
+                  </svg>
+                  <span v-else style="font-size:13px">…</span>
+                </button>
+              </div>
+              <p v-if="reviewError" class="review-error">{{ reviewError }}</p>
+            </template>
           </div>
 
         </div><!-- /left-col -->
@@ -273,7 +292,25 @@
               </div>
             </div>
 
-            <button class="btn-outline w-full">
+            <!-- Client: pay first, then download -->
+            <template v-if="isClientView">
+              <button v-if="!isPaid" class="btn-pay w-full" @click="showPaymentModal = true">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.33">
+                  <rect x="1" y="4" width="22" height="16" rx="2" ry="2" />
+                  <line x1="1" y1="10" x2="23" y2="10" />
+                </svg>
+                Effectuer le paiement
+              </button>
+              <button v-else class="btn-outline w-full">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.33">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                  <polyline points="7 10 12 15 17 10" /><line x1="12" y1="15" x2="12" y2="3" />
+                </svg>
+                Télécharger la facture
+              </button>
+            </template>
+            <!-- Artisan: always show download -->
+            <button v-else class="btn-outline w-full">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.33">
                 <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
                 <polyline points="7 10 12 15 17 10" /><line x1="12" y1="15" x2="12" y2="3" />
@@ -287,6 +324,20 @@
             <h3 class="card-title">Actions rapides</h3>
 
             <div class="actions-list">
+              <!-- Marquer comme complété — client only, requires payment -->
+              <button
+                v-if="isClientView && req.status !== 'completed'"
+                class="btn-complete w-full"
+                :disabled="!isPaid || markingComplete"
+                @click="markComplete"
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.33">
+                  <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
+                  <polyline points="22 4 12 14.01 9 11.01" />
+                </svg>
+                {{ markingComplete ? 'En cours…' : 'Marquer comme complété' }}
+              </button>
+
               <button class="btn-primary w-full" @click="openConversation">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.33">
                   <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
@@ -307,7 +358,7 @@
                 {{ isClientView ? "Appeler l'artisan" : "Appeler le client" }}
               </button>
 
-              <button class="btn-outline w-full">
+              <button class="btn-outline w-full" @click="showReportModal = true">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.33">
                   <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
                   <line x1="12" y1="9" x2="12" y2="13" /><line x1="12" y1="17" x2="12.01" y2="17" />
@@ -332,6 +383,22 @@
 
     </template>
 
+    <!-- ── Modals ────────────────────────────────────────────────────── -->
+    <PaymentModal
+      :show="showPaymentModal"
+      :amount="paymentAmount"
+      :service-request-id="req?.id"
+      @close="showPaymentModal = false"
+      @success="onPaymentSuccess"
+    />
+
+    <ReportModal
+      :show="showReportModal"
+      :service-request-id="req?.id"
+      @close="showReportModal = false"
+      @success="onReportSuccess"
+    />
+
     <!-- ── Toast ─────────────────────────────────────────────────────── -->
     <transition name="toast">
       <div v-if="toast.show" class="toast" :class="`toast-${toast.type}`">
@@ -345,8 +412,10 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { getServiceRequest, getArtisanServiceRequest } from '../api/serviceRequests.js'
+import { getServiceRequest, getArtisanServiceRequest, markClientComplete, checkWorkedWith, postReview } from '../api/serviceRequests.js'
 import { getOrCreateConversation } from '../api/messages.js'
+import PaymentModal from '../components/modals/PaymentModal.vue'
+import ReportModal  from '../components/modals/ReportModal.vue'
 
 // ── Props ─────────────────────────────────────────────────────────────────
 const props = defineProps({
@@ -362,9 +431,17 @@ const req         = ref(null)
 const artisanOffer = ref(null) // artisan role only
 const loading     = ref(false)
 const error       = ref('')
-const reviewStars = ref(0)
-const reviewText  = ref('')
-const toast       = ref({ show: false, message: '', type: 'success' })
+const reviewStars       = ref(0)
+const reviewText        = ref('')
+const reviewSubmitting  = ref(false)
+const reviewSubmitted   = ref(false)  // true after successful post or already exists
+const reviewError       = ref('')
+const toast             = ref({ show: false, message: '', type: 'success' })
+const markingComplete   = ref(false)
+
+// ── Modal visibility ──────────────────────────────────────────────────────
+const showPaymentModal = ref(false)
+const showReportModal  = ref(false)
 
 // ── Computed ──────────────────────────────────────────────────────────────
 const isClientView = computed(() => props.role === 'client')
@@ -399,7 +476,7 @@ const paymentAmount = computed(() =>
 
 const paymentMethod = computed(() => {
   const type = payment.value?.payment_type
-  return { card: 'Carte bancaire', cash: 'Espèces', bank_transfer: 'Virement bancaire' }[type] ?? '—'
+  return { service: 'Carte bancaire', card: 'Carte bancaire', cash: 'Espèces', bank_transfer: 'Virement bancaire' }[type] ?? '—'
 })
 
 const transactionId = computed(() => payment.value?.transaction_id ?? null)
@@ -407,17 +484,21 @@ const transactionId = computed(() => payment.value?.transaction_id ?? null)
 const paymentStatusLabel = computed(() => {
   const s = payment.value?.status
   if (!s) return req.value?.status === 'completed' ? 'Payé' : 'En attente'
-  return { paid: 'Payé', pending: 'En attente', failed: 'Échoué', refunded: 'Remboursé' }[s] ?? s
+  return { completed: 'Payé', pending: 'En attente', failed: 'Échoué', refunded: 'Remboursé' }[s] ?? s
 })
 
 const paymentStatusClass = computed(() => {
   const s = payment.value?.status
   if (!s) return req.value?.status === 'completed' ? 'pill-paid' : 'pill-pending'
-  return { paid: 'pill-paid', pending: 'pill-pending', failed: 'pill-failed', refunded: 'pill-refunded' }[s] ?? 'pill-pending'
+  return { completed: 'pill-paid', pending: 'pill-pending', failed: 'pill-failed', refunded: 'pill-refunded' }[s] ?? 'pill-pending'
 })
 
 const paymentStatusIcon = computed(() =>
   paymentStatusClass.value === 'pill-paid' ? '#008236' : '#A65F00'
+)
+
+const isPaid = computed(() =>
+  payment.value?.status === 'completed' || req.value?.status === 'completed'
 )
 
 // ── Fetch ─────────────────────────────────────────────────────────────────
@@ -435,6 +516,17 @@ async function fetchRequest() {
     const body = res.data
     req.value   = body.data
     if (body.offer) artisanOffer.value = body.offer
+
+    // After loading, check if client already reviewed this artisan
+    if (isClientView.value && req.value?.status === 'completed') {
+      const artisanId = req.value.accepted_offer?.artisan?.id
+      if (artisanId) {
+        try {
+          const { data } = await checkWorkedWith(artisanId)
+          if (data.already_reviewed) reviewSubmitted.value = true
+        } catch { /* ignore */ }
+      }
+    }
   } catch (e) {
     error.value = e.response?.data?.error || 'Impossible de charger la demande.'
   } finally {
@@ -457,11 +549,51 @@ async function openConversation() {
   }
 }
 
-function submitReview() {
-  // Placeholder — wire to a review API when available
-  showToast('Merci pour votre avis !')
-  reviewStars.value = 0
-  reviewText.value  = ''
+async function submitReview() {
+  if (!reviewStars.value || reviewSubmitting.value) return
+  reviewError.value      = ''
+  reviewSubmitting.value = true
+  try {
+    const artisanId = req.value?.accepted_offer?.artisan?.id
+    if (!artisanId) throw new Error('Artisan introuvable.')
+    await postReview(artisanId, {
+      rating:             reviewStars.value,
+      comment:            reviewText.value.trim() || null,
+      service_request_id: req.value.id,
+    })
+    reviewSubmitted.value = true
+    showToast('Merci pour votre avis !')
+  } catch (e) {
+    reviewError.value = e.response?.data?.error || e.message || 'Impossible de soumettre l\'avis.'
+  } finally {
+    reviewSubmitting.value = false
+  }
+}
+
+async function markComplete() {
+  if (!req.value || markingComplete.value) return
+  markingComplete.value = true
+  try {
+    await markClientComplete(req.value.id)
+    showToast('Demande marquée comme complétée !')
+    await fetchRequest()
+  } catch (e) {
+    showToast(e.response?.data?.error || 'Impossible de marquer comme complété.', 'error')
+  } finally {
+    markingComplete.value = false
+  }
+}
+
+// ── Modal handlers ────────────────────────────────────────────────────────
+async function onPaymentSuccess() {
+  showPaymentModal.value = false
+  showToast('Paiement effectué avec succès !')
+  await fetchRequest()
+}
+
+function onReportSuccess() {
+  showReportModal.value = false
+  showToast('Votre signalement a été envoyé avec succès.')
 }
 
 // ── Formatters ────────────────────────────────────────────────────────────
@@ -495,13 +627,13 @@ function initials(name) {
 }
 
 const TIMELINE_LABELS = {
-  created:          'Demande créée par le client',
-  offer_submitted:  'Offre reçue d\'un artisan',
-  offer_accepted:   'Artisan sélectionné',
-  completed:        'Service effectué',
-  payment_received: 'Paiement reçu',
-  cancelled:        'Demande annulée',
-  closed:           'Demande clôturée',
+  created:         'Demande créée par le client',
+  offer_submitted: 'Offre reçue d\'un artisan',
+  offer_accepted:  'Artisan sélectionné',
+  started:         'Service démarré',
+  completed:       'Service effectué',
+  payment_made:    'Paiement reçu',
+  cancelled:       'Demande annulée',
 }
 
 function timelineLabel(type) {
@@ -899,6 +1031,28 @@ function showToast(message, type = 'success') {
 .star { cursor: pointer; transition: transform 0.1s; }
 .star:hover { transform: scale(1.15); }
 
+.review-done {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 16px 0 8px;
+  color: #16A34A;
+  font-size: 15px;
+  text-align: center;
+}
+.review-done p { margin: 0; }
+
+.review-error {
+  font-size: 13px;
+  color: #DC2626;
+  background: #FEF2F2;
+  border: 1px solid #FECACA;
+  border-radius: 8px;
+  padding: 8px 12px;
+  margin: 0;
+}
+
 .review-input-row {
   display: flex;
   gap: 8px;
@@ -1056,6 +1210,48 @@ function showToast(message, type = 'success') {
 .btn-outline:hover { background: #FFF7ED; }
 .btn-outline:disabled { opacity: 0.5; cursor: not-allowed; border-color: #D1D5DC; color: #314158; }
 
+.btn-pay {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 0 20px;
+  height: 48px;
+  background: #FC5A15;
+  color: #fff;
+  border: none;
+  border-radius: 10px;
+  font-size: 15px;
+  font-family: 'Inter', sans-serif;
+  font-weight: 600;
+  cursor: pointer;
+  text-decoration: none;
+  transition: background 0.15s;
+  white-space: nowrap;
+}
+.btn-pay:hover { background: #e04e0f; }
+
+.btn-complete {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 0 20px;
+  height: 48px;
+  background: #16A34A;
+  color: #fff;
+  border: none;
+  border-radius: 10px;
+  font-size: 15px;
+  font-family: 'Inter', sans-serif;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s;
+  white-space: nowrap;
+}
+.btn-complete:hover:not(:disabled) { background: #15803D; }
+.btn-complete:disabled { opacity: 0.45; cursor: not-allowed; }
+
 /* Secondary outline (grey) */
 a.btn-outline,
 button.btn-outline:not(:first-of-type) {
@@ -1100,4 +1296,5 @@ button.btn-outline:not(:first-of-type):hover { background: #F9FAFB; }
   .photos-grid    { grid-template-columns: 1fr; }
   .counterpart-row{ flex-wrap: wrap; }
 }
+
 </style>

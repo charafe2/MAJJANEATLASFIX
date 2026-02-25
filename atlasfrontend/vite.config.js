@@ -25,13 +25,13 @@ export default defineConfig({
         changeOrigin: true,
         secure: false,
       },
-      // Google OAuth redirect (lives on web.php, no /api prefix)
-      '/auth/google': {
+      // Google OAuth — only the two backend routes, NOT /auth/google/success (frontend)
+      '^/auth/google(/callback)?$': {
         target: 'http://127.0.0.1:8000',
         changeOrigin: true,
         secure: false,
       },
-      '/auth/facebook': {
+      '^/auth/facebook(/callback)?$': {
         target: 'http://127.0.0.1:8000',
         changeOrigin: true,
         secure: false,
