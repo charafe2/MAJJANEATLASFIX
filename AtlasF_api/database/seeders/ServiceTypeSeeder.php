@@ -198,6 +198,34 @@ class ServiceTypeSeeder extends Seeder
                 'Rapport de diagnostic',
                 'Contrôle technique préparatoire',
             ],
+            'Menuiserie' => [
+                'Portes & fenêtres en bois',
+                'Placards & dressing',
+                'Parquet & lambris',
+                'Meubles sur mesure',
+                'Réparation menuiserie',
+            ],
+            'Maçonnerie' => [
+                'Construction murs',
+                'Démolition & percement',
+                'Enduit & crépissage',
+                'Chape & dallage',
+                'Réparation fissures',
+            ],
+            'Carrelage' => [
+                'Pose carrelage sol',
+                'Pose carrelage mural',
+                'Faïence salle de bain',
+                'Terrasse & extérieur',
+                'Rénovation carrelage',
+            ],
+            'Jardinage' => [
+                'Tonte de gazon',
+                'Taille de haies',
+                'Plantation & arrosage',
+                'Entretien jardin',
+                'Évacuation déchets verts',
+            ],
         ];
 
         $now        = now();

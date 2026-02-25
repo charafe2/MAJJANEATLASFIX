@@ -11,6 +11,8 @@ use App\Http\Controllers\PaymentStatsController;
 use App\Http\Controllers\ArtisanBrowseController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\ReviewController;
+use App\Http\Controllers\ReportController;
+use App\Http\Controllers\PaymentController;
 
 /*
 |--------------------------------------------------------------------------
@@ -64,6 +66,9 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post  ('service-requests',                                        [ServiceRequestController::class, 'store']);
         Route::get   ('service-requests/{serviceRequest}',                       [ServiceRequestController::class, 'show']);
         Route::patch ('service-requests/{serviceRequest}/cancel',                [ServiceRequestController::class, 'cancel']);
+        Route::patch ('service-requests/{serviceRequest}/complete',               [ServiceRequestController::class, 'complete']);
+        Route::post  ('service-requests/{serviceRequest}/pay',                    [PaymentController::class, 'pay']);
+        Route::post  ('service-requests/{serviceRequest}/report',                 [ReportController::class, 'store']);
         Route::post  ('service-requests/{serviceRequest}/offers/{offer}/accept', [ServiceRequestController::class, 'acceptOffer']);
         Route::post  ('service-requests/{serviceRequest}/offers/{offer}/reject', [ServiceRequestController::class, 'rejectOffer']);
     });

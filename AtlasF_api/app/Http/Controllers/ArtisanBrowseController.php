@@ -32,7 +32,7 @@ class ArtisanBrowseController extends Controller
             'primaryCategory',
             'portfolio',
             'certifications',
-            'services',
+            'services.serviceCategory',
             'reviews' => fn ($q) => $q->where('is_visible', true)->latest()->limit(10),
             'reviews.client.user',
         ]);
@@ -87,9 +87,9 @@ class ArtisanBrowseController extends Controller
                 'member_since'     => $user?->created_at?->year,
                 'portfolio'        => $artisan->portfolio->map(fn ($p) => [
                     'id'  => $p->id,
-                    'url' => $p->photo_url && !str_starts_with($p->photo_url, 'http')
-                        ? Storage::url($p->photo_url)
-                        : $p->photo_url,
+                    'url' => $p->image_url && !str_starts_with($p->image_url, 'http')
+                        ? Storage::url($p->image_url)
+                        : $p->image_url,
                 ]),
                 'certifications'   => $artisan->certifications->map(fn ($c) => [
                     'id'        => $c->id,
@@ -97,8 +97,9 @@ class ArtisanBrowseController extends Controller
                     'issued_at' => $c->issued_at,
                 ]),
                 'services'         => $artisan->services->map(fn ($s) => [
-                    'id'   => $s->id,
-                    'name' => $s->name ?? '—',
+                    'id'       => $s->id,
+                    'name'     => $s->serviceCategory?->name ?? '—',
+                    'type'     => $s->service_type ?? null,
                 ]),
                 'reviews'          => $reviews,
             ],

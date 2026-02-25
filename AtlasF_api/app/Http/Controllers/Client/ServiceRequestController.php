@@ -224,6 +224,42 @@ class ServiceRequestController extends Controller
         return response()->json(['message' => 'Request cancelled successfully.']);
     }
 
+    // ── MARK a request as complete (client confirms work is done + paid) ─────
+
+    public function complete(Request $request, ServiceRequest $serviceRequest): JsonResponse
+    {
+        $user   = $request->user();
+        $client = $user->client;
+
+        if (!$client || $serviceRequest->client_id !== $client->id) {
+            return response()->json(['error' => 'Not found.'], 404);
+        }
+
+        if ($serviceRequest->status === 'completed') {
+            return response()->json(['error' => 'Cette demande est déjà complétée.'], 422);
+        }
+
+        if (!in_array($serviceRequest->status, ['in_progress', 'open'])) {
+            return response()->json(['error' => 'Cette demande ne peut pas être marquée comme complétée.'], 422);
+        }
+
+        // Require payment before marking complete
+        $payment = $serviceRequest->payment;
+        if (!$payment || $payment->status !== 'completed') {
+            return response()->json(['error' => 'Vous devez effectuer le paiement avant de marquer la demande comme complétée.'], 422);
+        }
+
+        $serviceRequest->update(['status' => 'completed']);
+
+        ServiceTimeline::create([
+            'service_request_id'   => $serviceRequest->id,
+            'event_type'           => 'completed',
+            'triggered_by_user_id' => $user->id,
+        ]);
+
+        return response()->json(['message' => 'Demande marquée comme complétée.']);
+    }
+
     // ── ACCEPT an artisan offer ───────────────────────────────────────────────
 
     public function acceptOffer(Request $request, ServiceRequest $serviceRequest, ArtisanOffer $offer): JsonResponse

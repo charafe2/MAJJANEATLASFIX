@@ -13,14 +13,17 @@ class Report extends Model
     protected $fillable = [
         'reporter_id',
         'reported_id',
+        'service_request_id',
         'reason',
         'description',
+        'photos',
         'status',
         'review_deadline',
     ];
 
     protected $casts = [
         'review_deadline' => 'datetime',
+        'photos'          => 'array',
     ];
 
     // ── Relationships ─────────────────────────────────────────────────────
