@@ -311,7 +311,7 @@ async function handleSubmit() {
     // Client (or fallback): store token and go to dashboard
     localStorage.setItem('token', data.token)
     localStorage.setItem('user',  JSON.stringify(data.user))
-    router.push('/client/dashboard')
+    router.push('/client/profile')
 
   } catch (err) {
     const errData = err.response?.data

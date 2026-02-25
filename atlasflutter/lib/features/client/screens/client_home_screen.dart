@@ -364,25 +364,29 @@ class _CategoryChip extends StatelessWidget {
   final _Category cat;
   const _CategoryChip({required this.cat});
   @override
-  Widget build(BuildContext context) => Column(
-    mainAxisSize: MainAxisSize.min,
-    children: [
-      Container(
-        width: 48, height: 48,
-        decoration: BoxDecoration(
-          color: AppColors.primary.withOpacity(0.12),
-          shape: BoxShape.circle,
+  Widget build(BuildContext context) => GestureDetector(
+    onTap: () => context.push('/client/service-types',
+        extra: {'category': cat.label.replaceAll('\n', ' ')}),
+    child: Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          width: 48, height: 48,
+          decoration: BoxDecoration(
+            color: AppColors.primary.withValues(alpha: 0.12),
+            shape: BoxShape.circle,
+          ),
+          child: Icon(cat.icon, color: AppColors.primary, size: 22),
         ),
-        child: Icon(cat.icon, color: AppColors.primary, size: 22),
-      ),
-      const SizedBox(height: 6),
-      Text(cat.label,
-        textAlign: TextAlign.center,
-        style: const TextStyle(
-          fontFamily: 'Public Sans', fontSize: 9,
-          color: Color(0xFF191C24),
-        )),
-    ],
+        const SizedBox(height: 6),
+        Text(cat.label,
+          textAlign: TextAlign.center,
+          style: const TextStyle(
+            fontFamily: 'Public Sans', fontSize: 9,
+            color: Color(0xFF191C24),
+          )),
+      ],
+    ),
   );
 }
 
@@ -736,8 +740,9 @@ class _BottomNavBar extends StatelessWidget {
   void _onTap(BuildContext context, int index) {
     if (index == activeIndex) return;
     switch (index) {
-      case 0: context.go('/client/dashboard'); break;
-      case 4: context.go('/client/profile');   break;
+      case 0: context.go('/client/dashboard');            break;
+      case 2: context.push('/client/service-categories'); break;
+      case 4: context.go('/client/profile');              break;
     }
   }
 
@@ -763,13 +768,16 @@ class _BottomNavBar extends StatelessWidget {
         children: List.generate(icons.length, (i) {
           final active = i == activeIndex;
           if (i == 2) {
-            return Container(
-              width: 44, height: 44,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                border: Border.all(color: Colors.white),
+            return GestureDetector(
+              onTap: () => _onTap(context, i),
+              child: Container(
+                width: 44, height: 44,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  border: Border.all(color: Colors.white),
+                ),
+                child: const Icon(Icons.add, color: Colors.white, size: 22),
               ),
-              child: const Icon(Icons.add, color: Colors.white, size: 22),
             );
           }
           return GestureDetector(

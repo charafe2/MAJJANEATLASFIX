@@ -56,7 +56,7 @@ class ServiceRequestController extends Controller
 
         $data = $request->validate([
             'service_category_id' => 'required|exists:service_categories,id',
-            'service_type_id'     => 'required|exists:service_types,id',
+            'service_type_id'     => 'nullable|exists:service_types,id',
             'title'               => 'nullable|string|max:255',
             'description'         => 'nullable|string|max:2000',
             'city'                => 'required|string|max:100',
@@ -111,6 +111,20 @@ class ServiceRequestController extends Controller
 
             // Increment client's total_requests counter
             $client->increment('total_requests');
+
+            // Notify the target artisan for direct requests
+            if (($data['request_type'] ?? 'public') === 'direct' && !empty($data['target_artisan_id'])) {
+                $targetArtisan = \App\Models\Artisan::find($data['target_artisan_id']);
+                if ($targetArtisan) {
+                    $requestTitle = $data['title'] ?? 'sans titre';
+                    Notification::create([
+                        'user_id' => $targetArtisan->user_id,
+                        'type'    => 'new_direct_request',
+                        'title'   => 'Nouvelle réservation directe',
+                        'message' => "Un client vous a envoyé une demande directe : \"{$requestTitle}\".",
+                    ]);
+                }
+            }
 
             DB::commit();
 

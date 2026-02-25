@@ -138,11 +138,13 @@ async function submit() {
     localStorage.setItem('token', res.data.token)
     localStorage.setItem('user',  JSON.stringify(res.data.user))
 
-    const dest = res.data.account_type === 'artisan'
-      ? '/register/tier'   // artisan still picks a plan
-      : '/dashboard'
-
-    router.replace(dest)
+    if (res.data.account_type === 'artisan') {
+      const uid = res.data.user?.id
+      if (uid) localStorage.setItem('pending_user_id', uid)
+      router.replace({ path: '/register/artisan/pricing', query: { uid } })
+    } else {
+      router.replace('/client/profile')
+    }
   } catch (e) {
     const data = e.response?.data
     if (data?.errors) {

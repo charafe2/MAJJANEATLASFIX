@@ -23,6 +23,89 @@ class ArtisanBrowseController extends Controller
     }
 
     /**
+     * Public profile for a single artisan (by artisan ID).
+     */
+    public function show(Artisan $artisan): JsonResponse
+    {
+        $artisan->load([
+            'user',
+            'primaryCategory',
+            'portfolio',
+            'certifications',
+            'services',
+            'reviews' => fn ($q) => $q->where('is_visible', true)->latest()->limit(10),
+            'reviews.client.user',
+        ]);
+
+        $user = $artisan->user;
+
+        // Rating breakdown per star
+        $breakdown = [];
+        $total = max(1, $artisan->total_reviews ?? 0);
+        foreach ([5, 4, 3, 2, 1] as $star) {
+            $count = $artisan->reviews->where('rating', $star)->count();
+            $breakdown[$star] = [
+                'count'   => $count,
+                'percent' => $total > 0 ? round(($count / $total) * 100) : 0,
+            ];
+        }
+
+        $reviews = $artisan->reviews->map(function ($r) {
+            $clientUser = $r->client?->user;
+            return [
+                'id'         => $r->id,
+                'rating'     => $r->rating,
+                'comment'    => $r->comment,
+                'created_at' => $r->created_at,
+                'client'     => [
+                    'name'   => $clientUser?->full_name ?? 'Client',
+                    'avatar' => $clientUser?->avatar_url && !str_starts_with($clientUser->avatar_url, 'http')
+                        ? Storage::url($clientUser->avatar_url)
+                        : $clientUser?->avatar_url,
+                ],
+            ];
+        });
+
+        return response()->json([
+            'data' => [
+                'id'               => $artisan->id,
+                'name'             => $user?->full_name ?? 'Artisan',
+                'avatar'           => $user?->avatar_url && !str_starts_with($user->avatar_url, 'http')
+                    ? Storage::url($user->avatar_url)
+                    : $user?->avatar_url,
+                'city'             => $artisan->city ?? 'Maroc',
+                'bio'              => $artisan->bio ?? 'Artisan professionnel à votre service.',
+                'specialty'        => $artisan->primaryCategory?->name ?? 'Artisan',
+                'category_id'      => $artisan->service_category_id,
+                'rating'           => (float) ($artisan->rating_average ?? 0),
+                'reviews_count'    => (int) ($artisan->total_reviews ?? 0),
+                'rating_breakdown' => $breakdown,
+                'verified'         => (bool) $artisan->is_verified,
+                'experience_years' => $artisan->experience_years,
+                'jobs_completed'   => $artisan->total_jobs_completed ?? 0,
+                'response_rate'    => 98, // placeholder – could be calculated later
+                'member_since'     => $user?->created_at?->year,
+                'portfolio'        => $artisan->portfolio->map(fn ($p) => [
+                    'id'  => $p->id,
+                    'url' => $p->photo_url && !str_starts_with($p->photo_url, 'http')
+                        ? Storage::url($p->photo_url)
+                        : $p->photo_url,
+                ]),
+                'certifications'   => $artisan->certifications->map(fn ($c) => [
+                    'id'        => $c->id,
+                    'name'      => $c->name,
+                    'issued_at' => $c->issued_at,
+                ]),
+                'services'         => $artisan->services->map(fn ($s) => [
+                    'id'   => $s->id,
+                    'name' => $s->name ?? '—',
+                ]),
+                'reviews'          => $reviews,
+            ],
+        ]);
+    }
+
+    /**
      * Public list of artisans, optionally filtered by category.
      *
      * Query params:

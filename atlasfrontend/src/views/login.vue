@@ -145,7 +145,7 @@ async function handleLogin() {
     if (data.account_type === 'client') {
       router.push('/client/profile')
     } else {
-      router.push('/Home')
+      router.push('/artisan/profile')
     }
   } catch (err) {
     const status  = err.response?.status

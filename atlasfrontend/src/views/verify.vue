@@ -126,9 +126,9 @@ async function handleVerify() {
 
     // Redirect based on account type
     if (data.account_type === 'artisan') {
-      router.push('/artisan/dashboard')
+      router.push('/artisan/profile')
     } else {
-      router.push('/client/dashboard')
+      router.push('/client/profile')
     }
   } catch (err) {
     const status  = err.response?.status

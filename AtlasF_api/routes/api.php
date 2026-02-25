@@ -10,14 +10,16 @@ use App\Http\Controllers\AgendaController;
 use App\Http\Controllers\PaymentStatsController;
 use App\Http\Controllers\ArtisanBrowseController;
 use App\Http\Controllers\NotificationController;
+use App\Http\Controllers\ReviewController;
 
 /*
 |--------------------------------------------------------------------------
 | Public browse routes (no auth required)
 |--------------------------------------------------------------------------
 */
-Route::get('public/categories',    [ArtisanBrowseController::class, 'categories']);
-Route::get('public/artisans',      [ArtisanBrowseController::class, 'artisans']);
+Route::get('public/categories',       [ArtisanBrowseController::class, 'categories']);
+Route::get('public/artisans',         [ArtisanBrowseController::class, 'artisans']);
+Route::get('public/artisans/{artisan}', [ArtisanBrowseController::class, 'show']);
 Route::get('referral/{code}',      [AuthController::class, 'validateReferral']);
 
 /*
@@ -51,6 +53,10 @@ Route::middleware('auth:sanctum')->group(function () {
     // ── Service categories & types ────────────────────────────────────────
     Route::get('categories',                          [ServiceRequestController::class, 'getCategories']);
     Route::get('categories/{category}/service-types', [ServiceRequestController::class, 'getServiceTypes']);
+
+    // ── Review endpoints ──────────────────────────────────────────────────
+    Route::get ('client/artisans/{artisan}/worked-with', [ReviewController::class, 'checkWorkedWith']);
+    Route::post('client/artisans/{artisan}/reviews',     [ReviewController::class, 'store']);
 
     // ── Client endpoints ──────────────────────────────────────────────────
     Route::prefix('client')->group(function () {

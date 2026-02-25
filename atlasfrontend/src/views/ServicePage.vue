@@ -170,7 +170,7 @@
         <div class="artisan-card" v-for="artisan in artisans" :key="artisan.id">
           <!-- Header -->
           <div class="card-header">
-            <div class="avatar-wrapper">
+            <div class="avatar-wrapper avatar-clickable" @click="viewProfile(artisan.id)">
               <img
                 v-if="artisan.avatar"
                 :src="artisan.avatar"
@@ -185,7 +185,7 @@
 
             <div class="artisan-details">
               <div class="name-row">
-                <span class="artisan-name">{{ artisan.name }}</span>
+                <span class="artisan-name artisan-name-clickable" @click="viewProfile(artisan.id)">{{ artisan.name }}</span>
                 <svg v-if="artisan.verified" width="16" height="16" viewBox="0 0 16 16">
                   <circle cx="8" cy="8" r="8" fill="#155DFC"/>
                   <path d="M5 8l2 2 4-4" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
@@ -434,7 +434,7 @@ function changePage(page) {
 
 // ── Navigation actions ────────────────────────────────────────────────────────
 function viewProfile(artisanId) {
-  router.push(`/Client/Artisan/Profile?id=${artisanId}`)
+  router.push(`/artisans/profile/${artisanId}`)
 }
 
 function contactArtisan(artisanId) {
@@ -1035,6 +1035,12 @@ watch(() => route.params.slug, async () => {
 .page-btn.active { background: #FC5A15; color: white; border-color: #FC5A15; }
 .page-btn.disabled { opacity: 0.4; cursor: not-allowed; pointer-events: none; }
 .page-btn:not(.disabled):not(.active):hover { border-color: #FC5A15; }
+
+.avatar-clickable { cursor: pointer; }
+.avatar-clickable:hover .avatar-image,
+.avatar-clickable:hover .avatar-initials { opacity: 0.82; }
+.artisan-name-clickable { cursor: pointer; transition: color 0.15s; }
+.artisan-name-clickable:hover { color: #FC5A15; }
 
 /* ══════════════════════════════════════════════════════════════
    RESPONSIVE

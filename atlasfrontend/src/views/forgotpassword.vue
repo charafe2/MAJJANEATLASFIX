@@ -113,7 +113,7 @@ import { ref, reactive, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import Navbar from '../components/navbar.vue'
 import AuthBackground from '../components/Authbackground.vue'
-import Footer from '../components/footer.vue/index.js'
+import Footer from '../components/footer.vue'
 import { forgotPassword, resetPassword } from '../api/auth.js'
 import '../assets/css/forgot.css'
 

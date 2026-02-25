@@ -52,8 +52,8 @@ onMounted(() => {
       localStorage.setItem('user',  JSON.stringify(data.user))
 
       const dest = data.user?.account_type === 'artisan'
-        ? '/artisan/dashboard'
-        : '/dashboard'
+        ? '/artisan/profile'
+        : '/client/profile'
 
       router.replace(dest)
     } catch (e) {

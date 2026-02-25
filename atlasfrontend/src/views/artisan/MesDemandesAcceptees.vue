@@ -347,6 +347,7 @@ onMounted(loadOffers)
   gap: 8px;
   padding: 20px 0 0;
   flex-wrap: wrap;
+  margin-bottom: 8px;
 }
 .tab-btn {
   padding: 8px 16px;

@@ -11,6 +11,7 @@ const routes = [
   { path: '/forgot-password',  component: () => import('../views/ForgotPassword.vue') },
   { path: '/client/profile',           component: () => import('../components/profile/profileView.vue'), meta: { requiresAuth: true, accountType: 'client' } },
   { path: '/artisan/clients/:id',      component: () => import('../components/profile/profileView.vue'), meta: { requiresAuth: true, accountType: 'artisan' } },
+  { path: '/artisans/profile/:id',     component: () => import('../views/Artisanprofilevisit.vue'), meta: { requiresAuth: true } },
   {path:'/auth/google/success',component: GoogleSuccess,},
 {  path:'/register/google-complete',component: GoogleComplete,},
 

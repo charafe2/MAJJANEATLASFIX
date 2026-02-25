@@ -153,7 +153,7 @@
                   >
                     <!-- Artisan profile row -->
                     <div class="artisan-row">
-                      <div class="avatar-wrap">
+                      <div class="avatar-wrap" style="cursor:pointer" @click="viewArtisanProfile(offer.artisan?.id)">
                         <div class="avatar" :style="{ background: avatarColor(offer.artisan?.user?.full_name) }">
                           <img
                             v-if="offer.artisan?.user?.avatar_url"
@@ -166,7 +166,7 @@
                         <span class="online-dot"></span>
                       </div>
                       <div class="artisan-info">
-                        <div class="artisan-name">{{ offer.artisan?.user?.full_name || 'Artisan' }}</div>
+                        <div class="artisan-name artisan-name-link" @click="viewArtisanProfile(offer.artisan?.id)">{{ offer.artisan?.user?.full_name || 'Artisan' }}</div>
                         <div class="artisan-specialty">{{ offer.artisan?.business_name || 'Artisan indépendant' }}</div>
                         <div class="artisan-rating">
                           <span class="rating-badge">
@@ -234,7 +234,7 @@
                         </svg>
                         Appel
                       </button>
-                      <button class="btn-secondary">
+                      <button class="btn-secondary" @click="viewArtisanProfile(offer.artisan?.id)">
                         <svg width="15" height="15" fill="none" stroke="#62748E" stroke-width="1.25" viewBox="0 0 24 24">
                           <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
                           <circle cx="12" cy="7" r="4"/>
@@ -329,6 +329,11 @@ const filteredRequests = computed(() => {
 // ── Actions ───────────────────────────────────────────────────────────────────
 function viewRequest(req) {
   router.push(`/client/demandes/${req.id}`)
+}
+
+function viewArtisanProfile(artisanId) {
+  if (!artisanId) return
+  router.push(`/artisans/profile/${artisanId}`)
 }
 
 async function cancelReq(req) {
@@ -683,6 +688,8 @@ function showToast(message, type = 'success') {
 }
 .artisan-info { display: flex; flex-direction: column; gap: 2px; }
 .artisan-name      { font-size: 13.5px; color: #314158; font-weight: 500; }
+.artisan-name-link { cursor: pointer; transition: color 0.15s; }
+.artisan-name-link:hover { color: #FC5A15; }
 .artisan-specialty { font-size: 10.5px; color: #62748E; }
 .artisan-rating    { display: flex; align-items: center; gap: 6px; }
 .rating-badge {

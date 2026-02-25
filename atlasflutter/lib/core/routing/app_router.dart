@@ -17,6 +17,9 @@ import '../../features/client/screens/client_profile_screen.dart';
 import '../../features/client/screens/client_info_screen.dart';
 import '../../features/client/screens/client_home_screen.dart';
 import '../../features/client/screens/client_agenda_screen.dart';
+import '../../features/client/screens/client_service_category_screen.dart';
+import '../../features/client/screens/client_service_type_screen.dart';
+import '../../features/client/screens/client_request_details_screen.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // COMPLETE REGISTRATION FLOWS
@@ -97,12 +100,33 @@ final appRouter = GoRouter(
 
     // ── Client dashboard + sub-screens ───────────────────────────────────
     GoRoute(path: '/client/dashboard',
+      builder: (_, __) => const ClientHomeScreen()),
+    GoRoute(path: '/client/profile',
       builder: (_, __) => const ClientProfileScreen()),
     GoRoute(path: '/client/info',
       builder: (_, __) => const ClientInfoScreen()),
     GoRoute(path: '/client/agenda',
       builder: (_, __) => const ClientAgendaScreen()),
 
+    GoRoute(path: '/client/service-categories',
+      builder: (_, __) => const ClientServiceCategoryScreen()),
+
+    GoRoute(path: '/client/service-types',
+      builder: (_, state) {
+        final extra = state.extra as Map<String, dynamic>? ?? {};
+        final category = extra['category'] as String? ??
+            state.uri.queryParameters['category'] ?? '';
+        return ClientServiceTypeScreen(categoryName: category);
+      }),
+
+    GoRoute(path: '/client/nouvelle-demande',
+      builder: (_, state) {
+        final extra = state.extra as Map<String, dynamic>? ?? {};
+        return ClientRequestDetailsScreen(
+          category: extra['category'] as String? ?? '',
+          services: (extra['services'] as List?)?.cast<String>() ?? [],
+        );
+      }),
 
     // ── Artisan dashboard (placeholder) ───────────────────────────────────
     GoRoute(path: '/artisan/dashboard',

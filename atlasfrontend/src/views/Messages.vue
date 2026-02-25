@@ -51,7 +51,11 @@
           >
             <!-- Avatar -->
             <div class="conv-avatar-wrap">
-              <div class="conv-avatar" :style="{ background: avatarColor(conv.other_name) }">
+              <div
+                class="conv-avatar conv-avatar--clickable"
+                :style="{ background: avatarColor(conv.other_name) }"
+                @click.stop="goToProfile(conv, $event)"
+              >
                 <img
                   v-if="conv.other_avatar"
                   :src="conv.other_avatar"
@@ -69,7 +73,7 @@
             <!-- Info -->
             <div class="conv-info">
               <div class="conv-info-row">
-                <span class="conv-name">{{ conv.other_name }}</span>
+                <span class="conv-name conv-name--clickable" @click.stop="goToProfile(conv, $event)">{{ conv.other_name }}</span>
                 <span class="conv-time">{{ formatConvTime(conv.last_message_at) }}</span>
               </div>
               <span
@@ -97,7 +101,11 @@
         <div class="chat-header">
           <div class="chat-header-left">
             <div class="chat-avatar-wrap">
-              <div class="chat-avatar" :style="{ background: avatarColor(activeConv.other_name) }">
+              <div
+                class="chat-avatar chat-avatar--clickable"
+                :style="{ background: avatarColor(activeConv.other_name) }"
+                @click="goToProfile(activeConv)"
+              >
                 <img
                   v-if="activeConv.other_avatar"
                   :src="activeConv.other_avatar"
@@ -108,8 +116,8 @@
               </div>
               <span class="chat-online-dot"></span>
             </div>
-            <div class="chat-contact-info">
-              <span class="chat-contact-name">{{ activeConv.other_name }}</span>
+            <div class="chat-contact-info" @click="goToProfile(activeConv)" style="cursor:pointer">
+              <span class="chat-contact-name chat-contact-name--clickable">{{ activeConv.other_name }}</span>
               <span class="chat-contact-role">{{ activeConv.other_role }}</span>
             </div>
           </div>
@@ -242,14 +250,23 @@ const sending       = ref(false)
 
 const messagesAreaRef = ref(null)
 
-// ── Current user id ────────────────────────────────────────────────────────
-const currentUserId = computed(() => {
-  try {
-    return JSON.parse(localStorage.getItem('user'))?.id ?? null
-  } catch {
-    return null
-  }
+// ── Current user ───────────────────────────────────────────────────────────
+const currentUser = computed(() => {
+  try { return JSON.parse(localStorage.getItem('user')) ?? null } catch { return null }
 })
+const currentUserId   = computed(() => currentUser.value?.id ?? null)
+const currentUserType = computed(() => currentUser.value?.account_type ?? null)
+
+// ── Navigate to other user's profile ───────────────────────────────────────
+function goToProfile(conv, event) {
+  if (event) event.stopPropagation()
+  if (!conv?.other_profile_id) return
+  if (currentUserType.value === 'artisan') {
+    router.push(`/artisan/clients/${conv.other_profile_id}`)
+  } else {
+    router.push(`/artisans/profile/${conv.other_profile_id}`)
+  }
+}
 
 // ── Filtered list ──────────────────────────────────────────────────────────
 const filteredConversations = computed(() => {
@@ -601,6 +618,11 @@ watch(() => route.params.id, async (newId) => {
   font-weight: 500;
   overflow: hidden;
 }
+.conv-avatar--clickable {
+  cursor: pointer;
+  transition: opacity 0.15s, transform 0.15s;
+}
+.conv-avatar--clickable:hover { opacity: 0.85; transform: scale(1.05); }
 .conv-avatar-img {
   width: 100%;
   height: 100%;
@@ -655,6 +677,10 @@ watch(() => route.params.id, async (newId) => {
   overflow: hidden;
   text-overflow: ellipsis;
 }
+.conv-name--clickable {
+  cursor: pointer;
+}
+.conv-name--clickable:hover { color: #FC5A15; text-decoration: underline; }
 .conv-time {
   font-size: 12px;
   color: #62748E;
@@ -728,6 +754,11 @@ watch(() => route.params.id, async (newId) => {
   font-weight: 500;
   overflow: hidden;
 }
+.chat-avatar--clickable {
+  cursor: pointer;
+  transition: opacity 0.15s, transform 0.15s;
+}
+.chat-avatar--clickable:hover { opacity: 0.85; transform: scale(1.05); }
 .chat-avatar-img {
   width: 100%;
   height: 100%;
@@ -753,6 +784,7 @@ watch(() => route.params.id, async (newId) => {
   color: #314158;
   letter-spacing: -0.3125px;
 }
+.chat-contact-name--clickable:hover { color: #FC5A15; text-decoration: underline; }
 .chat-contact-role {
   font-size: 14px;
   color: #62748E;
