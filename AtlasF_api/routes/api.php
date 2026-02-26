@@ -4,6 +4,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Auth\AuthController;
 use App\Http\Controllers\Client\ServiceRequestController;
 use App\Http\Controllers\Artisan\ServiceRequestController as ArtisanServiceRequestController;
+use App\Http\Controllers\Artisan\BoostController;
 use App\Http\Controllers\Messaging\ConversationController;
 use App\Http\Controllers\Messaging\MessageController;
 use App\Http\Controllers\AgendaController;
@@ -38,7 +39,7 @@ Route::post('login',             [AuthController::class, 'login']);
 Route::post('forgot-password',   [AuthController::class, 'forgotPassword']);
 Route::post('reset-password',    [AuthController::class, 'resetPassword']);
 
-// ── Google OAuth ──────────────────────────────────────────────────────────
+// Google OAuth
 Route::post('google/complete',   [AuthController::class, 'googleComplete']);
 Route::post('complete-plan',     [AuthController::class, 'completePlan']);
 
@@ -52,15 +53,15 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get  ('me',     [AuthController::class, 'me']);
     Route::post ('me',     [AuthController::class, 'updateMe']);
 
-    // ── Service categories & types ────────────────────────────────────────
+    // Service categories & types
     Route::get('categories',                          [ServiceRequestController::class, 'getCategories']);
     Route::get('categories/{category}/service-types', [ServiceRequestController::class, 'getServiceTypes']);
 
-    // ── Review endpoints ──────────────────────────────────────────────────
+    // Review endpoints
     Route::get ('client/artisans/{artisan}/worked-with', [ReviewController::class, 'checkWorkedWith']);
     Route::post('client/artisans/{artisan}/reviews',     [ReviewController::class, 'store']);
 
-    // ── Client endpoints ──────────────────────────────────────────────────
+    // Client endpoints
     Route::prefix('client')->group(function () {
         Route::get   ('service-requests',                                        [ServiceRequestController::class, 'index']);
         Route::post  ('service-requests',                                        [ServiceRequestController::class, 'store']);
@@ -73,11 +74,16 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post  ('service-requests/{serviceRequest}/offers/{offer}/reject', [ServiceRequestController::class, 'rejectOffer']);
     });
 
-    // ── Artisan endpoints ─────────────────────────────────────────────────
+    // Artisan endpoints
     Route::prefix('artisan')->group(function () {
-        Route::post  ('service',                                  [AuthController::class, 'addService']);
-        Route::delete('portfolio/{photo}',                        [AuthController::class, 'deletePortfolioPhoto']);
-        Route::post  ('boost/activate',                           [AuthController::class, 'activateBoost']);
+        Route::post  ('service',           [AuthController::class, 'addService']);
+        Route::delete('portfolio/{photo}', [AuthController::class, 'deletePortfolioPhoto']);
+
+        // Boost sub-routes
+        Route::get  ('boost/packages', [BoostController::class, 'packages']);
+        Route::post ('boost/activate', [BoostController::class, 'activate']);
+        Route::post ('boost/buy',      [BoostController::class, 'buy']);
+
         Route::get  ('service-requests',                         [ArtisanServiceRequestController::class, 'index']);
         Route::get  ('service-requests/{serviceRequest}',        [ArtisanServiceRequestController::class, 'show']);
         Route::post ('service-requests/{serviceRequest}/offers', [ArtisanServiceRequestController::class, 'submitOffer']);
@@ -85,19 +91,19 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get  ('clients/{client}',                         [ArtisanServiceRequestController::class, 'clientProfile']);
     });
 
-    // ── Agenda endpoints ──────────────────────────────────────────────────
+    // Agenda endpoints
     Route::get ('agenda', [AgendaController::class, 'index']);
     Route::post('agenda', [AgendaController::class, 'store']);
 
-    // ── Payment stats endpoint ────────────────────────────────────────────
+    // Payment stats endpoint
     Route::get('payment-stats', [PaymentStatsController::class, 'index']);
 
-    // ── Notification endpoints ────────────────────────────────────────────
-    Route::get  ('notifications',              [NotificationController::class, 'index']);
-    Route::patch('notifications/read-all',     [NotificationController::class, 'markAllRead']);
-    Route::patch('notifications/{notification}/read', [NotificationController::class, 'markRead']);
+    // Notification endpoints
+    Route::get  ('notifications',                         [NotificationController::class, 'index']);
+    Route::patch('notifications/read-all',                [NotificationController::class, 'markAllRead']);
+    Route::patch('notifications/{notification}/read',     [NotificationController::class, 'markRead']);
 
-    // ── Messaging endpoints ───────────────────────────────────────────────
+    // Messaging endpoints
     Route::prefix('conversations')->group(function () {
         Route::get  ('',                        [ConversationController::class, 'index']);
         Route::post ('',                        [ConversationController::class, 'store']);
@@ -105,5 +111,6 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get  ('{conversation}/messages', [MessageController::class, 'index']);
         Route::post ('{conversation}/messages', [MessageController::class, 'store']);
         Route::post ('{conversation}/read',     [MessageController::class, 'markRead']);
+        Route::post ('{conversation}/report',   [ReportController::class, 'reportFromConversation']);
     });
 });

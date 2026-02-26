@@ -67,7 +67,7 @@ class ConversationController extends Controller
                     : $other?->avatar_url,
                 'other_role'       => $otherRole,
                 'other_profile_id' => $user->account_type === 'client' ? $conv->artisan_id : $conv->client_id,
-                'last_message'     => $latest?->content,
+                'last_message'     => $latest?->message_type === 'image' ? '📷 Photo' : $latest?->content,
                 'last_message_at'  => $conv->last_message_at,
                 'unread_count'     => $unread,
                 'status'           => $conv->status,

@@ -134,7 +134,7 @@
                 <rect x="1" y="5" width="15" height="14" rx="2" ry="2"/>
               </svg>
             </button>
-            <button class="chat-action-btn chat-action-btn--danger" title="Signaler">
+            <button class="chat-action-btn chat-action-btn--danger" title="Signaler" @click="showReportModal = true">
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#EF4444" stroke-width="1.67">
                 <circle cx="12" cy="12" r="10"/>
                 <line x1="12" y1="8" x2="12" y2="12"/>
@@ -157,12 +157,31 @@
               class="msg-row"
               :class="msg.sender_id === currentUserId ? 'msg-row--mine' : 'msg-row--theirs'"
             >
-              <div
-                class="msg-bubble"
-                :class="msg.sender_id === currentUserId ? 'msg-bubble--mine' : 'msg-bubble--theirs'"
-              >
-                <p class="msg-content">{{ msg.content }}</p>
-                <span class="msg-time">{{ formatMsgTime(msg.created_at) }}</span>
+              <div class="msg-col">
+                <div
+                  class="msg-bubble"
+                  :class="[
+                    msg.sender_id === currentUserId ? 'msg-bubble--mine' : 'msg-bubble--theirs',
+                    msg.message_type === 'image' ? 'msg-bubble--image' : ''
+                  ]"
+                >
+                  <!-- Image message -->
+                  <img
+                    v-if="msg.message_type === 'image'"
+                    :src="msg.image_url"
+                    class="msg-img"
+                    @click="openFullImage(msg.image_url)"
+                  />
+                  <!-- Optional caption below image -->
+                  <p v-if="msg.message_type === 'image' && msg.content" class="msg-content msg-caption">{{ msg.content }}</p>
+                  <!-- Text message -->
+                  <p v-else-if="msg.message_type !== 'image'" class="msg-content">{{ msg.content }}</p>
+                  <span class="msg-time">{{ formatMsgTime(msg.created_at) }}</span>
+                </div>
+                <span
+                  v-if="msg.sender_id === currentUserId && msg.id === lastReadSentId"
+                  class="msg-read-receipt"
+                >Vu</span>
               </div>
             </div>
 
@@ -174,14 +193,39 @@
 
         <!-- Input area -->
         <div class="chat-input-area">
+          <!-- Image preview strip -->
+          <div v-if="imagePreviewUrl" class="image-preview-strip">
+            <div class="image-preview-wrap">
+              <img :src="imagePreviewUrl" class="image-preview-thumb" />
+              <button class="image-preview-remove" @click="clearImage" title="Supprimer">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+                </svg>
+              </button>
+            </div>
+          </div>
+
           <div class="chat-input-inner">
+            <!-- Hidden file input -->
+            <input
+              ref="imageInputRef"
+              type="file"
+              accept="image/jpeg,image/png,image/gif,image/webp"
+              style="display:none"
+              @change="onImageSelected"
+            />
             <button class="input-icon-btn" title="Pièce jointe">
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#62748E" stroke-width="1.67">
                 <path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48" stroke-linecap="round" stroke-linejoin="round"/>
               </svg>
             </button>
-            <button class="input-icon-btn" title="Image">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#62748E" stroke-width="1.67">
+            <button
+              class="input-icon-btn"
+              :class="{ 'input-icon-btn--active': imagePreviewUrl }"
+              title="Image"
+              @click="openImagePicker"
+            >
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.67">
                 <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
                 <circle cx="8.5" cy="8.5" r="1.5"/>
                 <polyline points="21 15 16 10 5 21"/>
@@ -190,14 +234,14 @@
             <input
               v-model="newMessage"
               type="text"
-              placeholder="Écrivez votre message..."
+              :placeholder="imagePreviewUrl ? 'Ajouter une légende...' : 'Écrivez votre message...'"
               class="message-input"
               @keydown.enter.prevent="sendMessage"
             />
             <button
               class="send-btn"
-              :class="{ 'send-btn--active': newMessage.trim() }"
-              :disabled="!newMessage.trim() || sending"
+              :class="{ 'send-btn--active': newMessage.trim() || imagePreviewUrl }"
+              :disabled="(!newMessage.trim() && !imagePreviewUrl) || sending"
               @click="sendMessage"
             >
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="1.67">
@@ -218,7 +262,17 @@
       </div>
 
     </div>
+
   </div>
+
+  <!-- Report modal -->
+  <ChatReportModal
+    v-if="activeConv"
+    :show="showReportModal"
+    :conversation-id="activeConv.id"
+    @close="showReportModal = false"
+  />
+
 </template>
 
 <script setup>
@@ -229,8 +283,10 @@ import {
   getConversation,
   getMessages,
   sendMessageApi,
+  sendImageApi,
   markAsRead,
 } from '../api/messages'
+import ChatReportModal from '../components/modals/ChatReportModal.vue'
 
 const router = useRouter()
 const route  = useRoute()
@@ -248,7 +304,12 @@ const loadingMsgs   = ref(false)
 const newMessage    = ref('')
 const sending       = ref(false)
 
-const messagesAreaRef = ref(null)
+const selectedImage    = ref(null)   // File object
+const imagePreviewUrl  = ref(null)   // blob URL for preview
+const imageInputRef    = ref(null)   // hidden <input type="file">
+
+const messagesAreaRef  = ref(null)
+const showReportModal  = ref(false)
 
 // ── Current user ───────────────────────────────────────────────────────────
 const currentUser = computed(() => {
@@ -267,6 +328,15 @@ function goToProfile(conv, event) {
     router.push(`/artisans/profile/${conv.other_profile_id}`)
   }
 }
+
+// ── Read receipt: id of last sent message that was read by the other person ─
+const lastReadSentId = computed(() => {
+  for (let i = messages.value.length - 1; i >= 0; i--) {
+    const m = messages.value[i]
+    if (m.sender_id === currentUserId.value && m.is_read) return m.id
+  }
+  return null
+})
 
 // ── Filtered list ──────────────────────────────────────────────────────────
 const filteredConversations = computed(() => {
@@ -341,14 +411,42 @@ async function loadMessages(id, silent = false) {
   }
 }
 
+// ── Image picker ───────────────────────────────────────────────────────────
+function openImagePicker() {
+  imageInputRef.value?.click()
+}
+
+function onImageSelected(event) {
+  const file = event.target.files?.[0]
+  if (!file) return
+  selectedImage.value   = file
+  imagePreviewUrl.value = URL.createObjectURL(file)
+  // Reset the input so the same file can be reselected after clearing
+  event.target.value = ''
+}
+
+function clearImage() {
+  if (imagePreviewUrl.value) URL.revokeObjectURL(imagePreviewUrl.value)
+  selectedImage.value   = null
+  imagePreviewUrl.value = null
+}
+
 // ── Send message ──────────────────────────────────────────────────────────
 async function sendMessage() {
   const content = newMessage.value.trim()
-  if (!content || !selectedId.value || sending.value) return
+  const hasImage = !!selectedImage.value
+  if ((!content && !hasImage) || !selectedId.value || sending.value) return
 
   sending.value = true
 
-  // Optimistic insert
+  if (hasImage) {
+    await sendImageMessage(content)
+  } else {
+    await sendTextMessage(content)
+  }
+}
+
+async function sendTextMessage(content) {
   const tempId = `tmp-${Date.now()}`
   messages.value.push({
     id:              tempId,
@@ -364,23 +462,56 @@ async function sendMessage() {
 
   try {
     const { data } = await sendMessageApi(selectedId.value, content)
-    // Replace temp message with the real one
     const idx = messages.value.findIndex(m => m.id === tempId)
     if (idx !== -1) messages.value.splice(idx, 1, data.data)
-
-    // Update conversation last message preview
     const conv = conversations.value.find(c => c.id === selectedId.value)
-    if (conv) {
-      conv.last_message    = content
-      conv.last_message_at = new Date().toISOString()
-    }
+    if (conv) { conv.last_message = content; conv.last_message_at = new Date().toISOString() }
   } catch {
-    // Remove the optimistic message on failure and restore input
     messages.value   = messages.value.filter(m => m.id !== tempId)
     newMessage.value = content
   } finally {
     sending.value = false
   }
+}
+
+async function sendImageMessage(caption) {
+  const file       = selectedImage.value
+  const blobUrl    = imagePreviewUrl.value
+  const tempId     = `tmp-${Date.now()}`
+
+  // Optimistic image bubble using the local blob URL
+  messages.value.push({
+    id:              tempId,
+    conversation_id: selectedId.value,
+    sender_id:       currentUserId.value,
+    content:         caption || null,
+    image_url:       blobUrl,
+    message_type:    'image',
+    is_read:         false,
+    created_at:      new Date().toISOString(),
+  })
+  newMessage.value = ''
+  clearImage()
+  scrollToBottom()
+
+  try {
+    const { data } = await sendImageApi(selectedId.value, file, caption)
+    const idx = messages.value.findIndex(m => m.id === tempId)
+    if (idx !== -1) messages.value.splice(idx, 1, data.data)
+    const conv = conversations.value.find(c => c.id === selectedId.value)
+    if (conv) { conv.last_message = '📷 Photo'; conv.last_message_at = new Date().toISOString() }
+  } catch {
+    messages.value = messages.value.filter(m => m.id !== tempId)
+    selectedImage.value   = file
+    imagePreviewUrl.value = blobUrl
+  } finally {
+    sending.value = false
+  }
+}
+
+// ── Full-screen image viewer ────────────────────────────────────────────────
+function openFullImage(url) {
+  window.open(url, '_blank', 'noopener')
 }
 
 // ── Polling ────────────────────────────────────────────────────────────────
@@ -392,12 +523,20 @@ async function pollMessages() {
   try {
     const { data } = await getMessages(selectedId.value)
     const fresh = data.data ?? []
-    if (fresh.length !== messages.value.length) {
+    const hasNewMessages = fresh.length !== messages.value.length
+    // Also detect is_read changes so read receipts update live
+    const hasReadChanges = fresh.some(fm => {
+      const existing = messages.value.find(m => m.id === fm.id)
+      return existing && fm.is_read !== existing.is_read
+    })
+    if (hasNewMessages || hasReadChanges) {
       messages.value = fresh
-      await markAsRead(selectedId.value)
-      const conv = conversations.value.find(c => c.id === selectedId.value)
-      if (conv) conv.unread_count = 0
-      scrollToBottom()
+      if (hasNewMessages) {
+        await markAsRead(selectedId.value)
+        const conv = conversations.value.find(c => c.id === selectedId.value)
+        if (conv) conv.unread_count = 0
+        scrollToBottom()
+      }
     }
   } catch { /* ignore */ }
 }
@@ -844,9 +983,26 @@ watch(() => route.params.id, async (newId) => {
 .msg-row--mine   { justify-content: flex-end; }
 .msg-row--theirs { justify-content: flex-start; }
 
+/* Column wrapper so the "Vu" sits below the bubble, right-aligned */
+.msg-col {
+  display: flex;
+  flex-direction: column;
+  max-width: 60%;
+}
+.msg-row--mine   .msg-col { align-items: flex-end; }
+.msg-row--theirs .msg-col { align-items: flex-start; }
+
+/* Read receipt */
+.msg-read-receipt {
+  font-size: 11px;
+  color: #62748E;
+  margin-top: 2px;
+  padding-right: 4px;
+}
+
 /* Bubbles */
 .msg-bubble {
-  max-width: 60%;
+  max-width: 100%;
   padding: 10px 16px 4px;
   border-radius: 16px;
   display: flex;
@@ -879,6 +1035,24 @@ watch(() => route.params.id, async (newId) => {
 .msg-bubble--mine   .msg-time { color: #FFEDD4; }
 .msg-bubble--theirs .msg-time { color: #62748E; }
 
+/* Image bubble */
+.msg-bubble--image {
+  padding: 6px 6px 4px;
+}
+.msg-img {
+  display: block;
+  max-width: 280px;
+  max-height: 320px;
+  width: 100%;
+  border-radius: 10px;
+  object-fit: cover;
+  cursor: zoom-in;
+}
+.msg-caption {
+  margin-top: 4px;
+  padding: 0 4px;
+}
+
 /* Input area */
 .chat-input-area {
   background: #fff;
@@ -886,6 +1060,43 @@ watch(() => route.params.id, async (newId) => {
   padding: 17px 16px;
   flex-shrink: 0;
 }
+
+/* Image preview strip */
+.image-preview-strip {
+  padding: 0 0 10px;
+}
+.image-preview-wrap {
+  position: relative;
+  display: inline-block;
+}
+.image-preview-thumb {
+  width: 80px;
+  height: 80px;
+  object-fit: cover;
+  border-radius: 10px;
+  border: 2px solid #E5E7EB;
+  display: block;
+}
+.image-preview-remove {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  width: 20px;
+  height: 20px;
+  background: #314158;
+  color: #fff;
+  border: none;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  padding: 0;
+}
+.image-preview-remove:hover { background: #EF4444; }
+
+/* Active image button */
+.input-icon-btn--active svg { stroke: #FC5A15; }
 .chat-input-inner {
   display: flex;
   align-items: center;

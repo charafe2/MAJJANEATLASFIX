@@ -8,6 +8,7 @@ use App\Models\Message;
 use App\Models\Notification;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 
 class MessageController extends Controller
 {
@@ -32,6 +33,14 @@ class MessageController extends Controller
             ->where('is_read', false)
             ->update(['is_read' => true]);
 
+        // Transform image_url to full URL
+        $messages->getCollection()->transform(function ($msg) {
+            if ($msg->image_url) {
+                $msg->image_url = Storage::url($msg->image_url);
+            }
+            return $msg;
+        });
+
         return response()->json($messages);
     }
 
@@ -50,15 +59,29 @@ class MessageController extends Controller
         }
 
         $data = $request->validate([
-            'content'      => 'required|string|max:5000',
-            'message_type' => 'nullable|in:text,image,file',
+            'content' => 'nullable|string|max:5000',
+            'image'   => 'nullable|image|mimes:jpeg,png,gif,webp|max:5120',
         ]);
+
+        // Must have content or image
+        if (empty($data['content']) && !$request->hasFile('image')) {
+            return response()->json(['error' => 'Content or image is required.'], 422);
+        }
+
+        $imagePath   = null;
+        $messageType = 'text';
+
+        if ($request->hasFile('image')) {
+            $imagePath   = $request->file('image')->store('message-images', 'public');
+            $messageType = 'image';
+        }
 
         $message = Message::create([
             'conversation_id' => $conversation->id,
             'sender_id'       => $user->id,
-            'content'         => $data['content'],
-            'message_type'    => $data['message_type'] ?? 'text',
+            'content'         => $data['content'] ?? null,
+            'image_url'       => $imagePath,
+            'message_type'    => $messageType,
             'is_read'         => false,
         ]);
 
@@ -73,10 +96,15 @@ class MessageController extends Controller
             'user_id' => $recipientUserId,
             'type'    => 'message',
             'title'   => 'Nouveau message',
-            'message' => $user->full_name . ' vous a envoyé un message.',
+            'message' => $user->full_name . ($messageType === 'image' ? ' vous a envoyé une image.' : ' vous a envoyé un message.'),
         ]);
 
         $message->load('sender:id,full_name,avatar_url');
+
+        // Return full image URL
+        if ($message->image_url) {
+            $message->image_url = Storage::url($message->image_url);
+        }
 
         return response()->json(['data' => $message], 201);
     }

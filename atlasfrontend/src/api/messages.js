@@ -46,6 +46,15 @@ export const getMessages = (conversationId) =>
 export const sendMessageApi = (conversationId, content) =>
   api.post(`/conversations/${conversationId}/messages`, { content })
 
+export const sendImageApi = (conversationId, imageFile, content = '') => {
+  const form = new FormData()
+  form.append('image', imageFile)
+  if (content) form.append('content', content)
+  return api.post(`/conversations/${conversationId}/messages`, form, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  })
+}
+
 export const markAsRead = (conversationId) =>
   api.post(`/conversations/${conversationId}/read`)
 

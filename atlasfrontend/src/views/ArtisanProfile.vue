@@ -177,7 +177,7 @@
                       <small v-if="svc.type" style="display:block;font-size:12px;color:#62748E;">{{ svc.type }}</small>
                     </div>
                   </div>
-                  <button class="boost-edit-btn">
+                  <button class="boost-edit-btn" @click="openBoostFlow(svc)">
                     <svg viewBox="0 0 20 20" fill="none">
                       <path d="M15 7l-6 6M15 13V7h-6" stroke="#62748E" stroke-width="1.667" stroke-linecap="round" stroke-linejoin="round"/>
                     </svg>
@@ -903,11 +903,20 @@
     </transition>
 
   </div>
-</template>
+
+      <!-- BoostModal: package picker + payment for paid boosts -->
+      <BoostModal
+        :show="boostModalVisible"
+        :service-category-id="boostTargetService ? boostTargetService.service_category_id : null"
+        @close="boostModalVisible = false"
+        @boosted="onBoosted"
+      />
+    </template>
 
 <script>
 import { ref, computed, onMounted } from 'vue'
 import axios from 'axios'
+import BoostModal from '../components/modals/BoostModal.vue'
 
 const api = axios.create({
   baseURL: import.meta.env.VITE_API_URL ?? '/api',
@@ -932,6 +941,7 @@ api.interceptors.response.use(
 
 export default {
   name: 'ArtisanProfile',
+  components: { BoostModal },
 
   setup() {
     const loading   = ref(true)
@@ -1187,22 +1197,54 @@ export default {
         .catch(() => notify('Impossible de copier le lien.', 'error'))
     }
 
-    // ── Boost activation ─────────────────────────────────────────
-    const activatingBoost = ref(false)
+    // Boost flow
+    const activatingBoost    = ref(false)
+    const boostModalVisible  = ref(false)
+    const boostTargetService = ref(null)
 
+    // Called when artisan clicks the arrow button on a service
+    async function openBoostFlow(svc) {
+      if (activatingBoost.value) return
+      if ((artisan.value.boost_credits ?? 0) > 0) {
+        // Use a free credit immediately for this service
+        activatingBoost.value = true
+        try {
+          const res = await api.post('/artisan/boost/activate', {
+            service_category_id: svc.service_category_id ?? null,
+          })
+          notify(res.data.message ?? 'Boost activé !', 'success')
+          await fetchProfile()
+        } catch (e) {
+          notify(e.response?.data?.error ?? 'Une erreur est survenue.', 'error')
+        } finally {
+          activatingBoost.value = false
+        }
+      } else {
+        // No free credits: open paid boost modal
+        boostTargetService.value = svc
+        boostModalVisible.value  = true
+      }
+    }
+
+    // Called from referral section "Utiliser un boost" button (no specific service)
     async function activateBoost() {
       if (activatingBoost.value) return
       activatingBoost.value = true
       try {
         const res = await api.post('/artisan/boost/activate')
         notify(res.data.message ?? 'Boost activé !', 'success')
-        // Refresh profile to update boost_credits count
         await fetchProfile()
       } catch (e) {
         notify(e.response?.data?.error ?? 'Une erreur est survenue.', 'error')
       } finally {
         activatingBoost.value = false
       }
+    }
+
+    function onBoosted() {
+      notify('Boost activé ! Votre service est maintenant mis en avant.', 'success')
+      boostModalVisible.value = false
+      fetchProfile()
     }
 
     onMounted(fetchProfile)
@@ -1212,7 +1254,8 @@ export default {
       emailNotifs, smsNotifs, language, twoFa,
       avatarInitials, filledStars, emptyStars, responseTimeDisplay,
       referralLink, showReferralActive, showLinkModal, activatingBoost,
-      fetchProfile, goBack, copyReferralLink, activateBoost, handleDeleteAccount,
+      boostModalVisible, boostTargetService,
+      fetchProfile, goBack, copyReferralLink, activateBoost, openBoostFlow, onBoosted, handleDeleteAccount,
       showAddServiceModal, newService, descCharCount, submittingService,
       openAddServiceModal, closeAddServiceModal,
       onDescInput, onDiplomeChange, onPhotosChange, onPhotosDrop, submitNewService,

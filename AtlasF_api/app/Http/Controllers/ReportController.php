@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Conversation;
 use App\Models\Report;
 use App\Models\ServiceRequest;
 use Illuminate\Http\JsonResponse;
@@ -53,6 +54,45 @@ class ReportController extends Controller
             'reason'             => 'other',
             'description'        => $data['message'],
             'photos'             => $photoPaths ?: null,
+            'status'             => 'pending',
+        ]);
+
+        return response()->json(['message' => 'Votre signalement a été envoyé. Nous allons examiner votre demande.']);
+    }
+
+    /**
+     * Report the other participant of a conversation.
+     *
+     * POST /conversations/{conversation}/report
+     */
+    public function reportFromConversation(Request $request, Conversation $conversation): JsonResponse
+    {
+        $user = $request->user();
+
+        // Verify user is a participant and find who is being reported
+        if ($user->account_type === 'client') {
+            if ($user->client?->id !== $conversation->client_id) {
+                return response()->json(['error' => 'Unauthorized.'], 403);
+            }
+            $reportedUserId = $conversation->artisan->user_id;
+        } else {
+            if ($user->artisan?->id !== $conversation->artisan_id) {
+                return response()->json(['error' => 'Unauthorized.'], 403);
+            }
+            $reportedUserId = $conversation->client->user_id;
+        }
+
+        $data = $request->validate([
+            'reason'      => 'required|in:fraud,inappropriate,spam,no_show,other',
+            'description' => 'required|string|max:2000',
+        ]);
+
+        Report::create([
+            'reporter_id'        => $user->id,
+            'reported_id'        => $reportedUserId,
+            'service_request_id' => $conversation->service_request_id,
+            'reason'             => $data['reason'],
+            'description'        => $data['description'],
             'status'             => 'pending',
         ]);
 

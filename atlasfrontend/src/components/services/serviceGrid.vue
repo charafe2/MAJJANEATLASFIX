@@ -29,8 +29,11 @@
           class="service-card"
           :style="{ animationDelay: `${(rowIdx * 4 + cIdx) * 0.06}s` }"
         >
-          <!-- Colour band -->
-          <div class="card-image" :style="{ background: card.bg }">
+          <!-- Image -->
+          <div
+            class="card-image"
+            :style="{ backgroundImage: `url('${card.image}')` }"
+          >
             <div class="img-overlay" />
             <div class="img-icon-badge">
               <component :is="card.icon" />
@@ -116,7 +119,7 @@ const ROWS = [
   [
     {
       title: 'Plomberie',
-      bg: 'linear-gradient(135deg,#b8d4e8,#3a8ab0)',
+      image: 'https://images.unsplash.com/photo-1607472586893-edb57bdc0e39?w=600&q=80',
       services: ['Réparation de fuite', 'Installation sanitaire', 'Réparation de toilette', 'Débouchage'],
       icon: makeIcon([
         { d: 'M12 2v10', ...R },
@@ -127,7 +130,7 @@ const ROWS = [
     },
     {
       title: 'Électricité',
-      bg: 'linear-gradient(135deg,#fde8b8,#c89800)',
+      image: 'https://images.unsplash.com/photo-1621905251918-48416bd8575a?w=600&q=80',
       services: ['Installation de luminaires', 'Réparation prises & interrupteurs', 'Installation ventilateur de plafond'],
       icon: makeIcon([
         { d: 'M13 2L4.5 13.5H11L10 22l8.5-12H13z', ...RJ },
@@ -135,7 +138,7 @@ const ROWS = [
     },
     {
       title: 'Peinture',
-      bg: 'linear-gradient(135deg,#e8d4f5,#8040b0)',
+      image: 'https://images.unsplash.com/photo-1562259929-b4e1fd3aef09?w=600&q=80',
       services: ['Travaux de peinture intérieure'],
       icon: makeIcon([
         { d: 'M4 20l4-4L18 6a2 2 0 0 0-2.83-2.83L5 13.17 4 20z', ...RJ },
@@ -144,7 +147,7 @@ const ROWS = [
     },
     {
       title: 'Réparations générales',
-      bg: 'linear-gradient(135deg,#d4e8d4,#307840)',
+      image: 'https://images.unsplash.com/photo-1581578731548-c64695cc6952?w=600&q=80',
       services: ['Montage TV, étagères, tringles', 'Réparation portes & serrures', 'Petites menuiseries', 'Joints & silicone'],
       icon: makeIcon([
         { d: 'M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z', ...RJ, ...NF },
@@ -156,7 +159,7 @@ const ROWS = [
   [
     {
       title: 'Déménagement',
-      bg: 'linear-gradient(135deg,#e8e0d4,#906020)',
+      image: 'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=600&q=80',
       services: ['Déménagement local', 'Emballage & déballage', 'Transport de meubles'],
       icon: makeIcon([
         { d: 'M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z', ...RJ, ...NF },
@@ -165,7 +168,7 @@ const ROWS = [
     },
     {
       title: 'Électroménager',
-      bg: 'linear-gradient(135deg,#d4e4f5,#205098)',
+      image: 'https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?w=600&q=80',
       services: ['Réparation lave-linge / sèche-linge', 'Réparation réfrigérateur', 'Réparation four / cuisinière'],
       icon: makeIcon([
         { d: 'M5 3h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z', ...W, ...NF },
@@ -174,7 +177,7 @@ const ROWS = [
     },
     {
       title: 'Nettoyage',
-      bg: 'linear-gradient(135deg,#d4f5e8,#10804a)',
+      image: 'https://images.unsplash.com/photo-1628177142898-93e36e4e3a50?w=600&q=80',
       services: ['Nettoyage standard', 'Nettoyage en profondeur', 'Nettoyage après déménagement'],
       icon: makeIcon([
         { d: 'M3 6h18M3 12h18M3 18h18', ...R },
@@ -183,7 +186,7 @@ const ROWS = [
     },
     {
       title: 'Chauffage, Ventilation et Climatisation',
-      bg: 'linear-gradient(135deg,#ffe4d4,#c04010)',
+      image: 'https://images.unsplash.com/photo-1581244277943-fe4a9c777189?w=600&q=80',
       services: ['Entretien climatisation', 'Réparation climatisation', 'Entretien chauffage'],
       icon: makeIcon([
         { d: 'M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83', ...R },
@@ -196,7 +199,7 @@ const ROWS = [
   [
     {
       title: 'Mécanicien Mobile',
-      bg: 'linear-gradient(135deg,#e4e4e4,#505050)',
+      image: 'https://images.unsplash.com/photo-1599256872237-5dae43b37e58?w=600&q=80',
       services: ['Diagnostic de base', 'Remplacement plaquettes de frein', 'Remplacement batterie', 'Vérification alternateur'],
       icon: makeIcon([
         { d: 'M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z', ...RJ, ...NF },
@@ -204,7 +207,7 @@ const ROWS = [
     },
     {
       title: 'Vidange Mobile',
-      bg: 'linear-gradient(135deg,#f5e8d4,#904010)',
+      image: 'https://images.unsplash.com/photo-1487754180451-c456f719a1fc?w=600&q=80',
       services: ['Vidange standard', 'Vidange huile synthétique'],
       icon: makeIcon([
         { d: 'M12 22a7 7 0 0 0 7-7c0-2-1-3.9-3-5.5S12.5 5 12 2.5C11.5 5 10 7.4 8 9c-2 1.6-3 3.5-3 5a7 7 0 0 0 7 7z', ...RJ, ...NF },
@@ -212,7 +215,7 @@ const ROWS = [
     },
     {
       title: 'Assistance Routière',
-      bg: 'linear-gradient(135deg,#d4e8f5,#104878)',
+      image: 'https://images.unsplash.com/photo-1449965408869-eaa3f722e40d?w=600&q=80',
       services: ['Démarrage batterie', 'Changement de pneu', 'Ouverture de porte (lockout)'],
       icon: makeIcon([
         { d: 'M5 17H3a2 2 0 0 1-2-2V9a2 2 0 0 1 2-2h11l5 5v5h-2', ...RJ, ...NF },
@@ -222,7 +225,7 @@ const ROWS = [
     },
     {
       title: "Organisation d'événements",
-      bg: 'linear-gradient(135deg,#fde8f5,#902070)',
+      image: 'https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=600&q=80',
       services: ['Planification complète', 'Coordination le jour'],
       icon: makeIcon([
         { d: 'M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2z', ...RJ, ...NF },
@@ -234,7 +237,7 @@ const ROWS = [
   [
     {
       title: 'Photographie',
-      bg: 'linear-gradient(135deg,#e8d4d4,#702020)',
+      image: 'https://images.unsplash.com/photo-1542038374944-65417f4e5fb7?w=600&q=80',
       services: ["Photographie d'événements", 'Portraits', 'Photographie de produits'],
       icon: makeIcon([
         { d: 'M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z', ...RJ, ...NF },
@@ -243,7 +246,7 @@ const ROWS = [
     },
     {
       title: 'Vidéographie',
-      bg: 'linear-gradient(135deg,#d4d4e8,#303080)',
+      image: 'https://images.unsplash.com/photo-1492691527719-9d1e07e534b4?w=600&q=80',
       services: ["Vidéos d'événements", 'Vidéos promotionnelles'],
       icon: makeIcon([
         { d: 'M23 7l-7 5 7 5V7z', ...RJ, ...NF },
@@ -252,7 +255,7 @@ const ROWS = [
     },
     {
       title: 'Musique & Animation',
-      bg: 'linear-gradient(135deg,#f5e8d4,#803010)',
+      image: 'https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=600&q=80',
       services: ['DJ', 'Groupes de musique', 'Musiciens solo'],
       icon: makeIcon([
         { d: 'M9 18V5l12-2v13', ...RJ },
@@ -262,7 +265,7 @@ const ROWS = [
     },
     {
       title: 'Beauté & Style',
-      bg: 'linear-gradient(135deg,#fde8f0,#902050)',
+      image: 'https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?w=600&q=80',
       services: ['Maquillage', 'Coiffure', 'Forfaits mariage'],
       icon: makeIcon([
         { d: 'M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z', ...RJ, ...NF },
@@ -274,7 +277,7 @@ const ROWS = [
   [
     {
       title: 'Services de Restauration',
-      bg: 'linear-gradient(135deg,#f5f0d4,#806000)',
+      image: 'https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=600&q=80',
       services: ['Aide au service', 'Serveurs'],
       icon: makeIcon([
         { d: 'M18 8h1a4 4 0 0 1 0 8h-1M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8zM6 1v3M10 1v3M14 1v3', ...RJ, ...NF },
@@ -282,7 +285,7 @@ const ROWS = [
     },
     {
       title: "Décoration d'Événements",
-      bg: 'linear-gradient(135deg,#e8f5d4,#308000)',
+      image: 'https://images.unsplash.com/photo-1530103862676-de8c9debad1d?w=600&q=80',
       services: ['Décoration de salle', 'Ballons & arches', 'Centres de table'],
       icon: makeIcon([
         { d: 'M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z', ...RJ, ...NF },
@@ -290,7 +293,7 @@ const ROWS = [
     },
     {
       title: 'Location de Matériel',
-      bg: 'linear-gradient(135deg,#e8e4d4,#605030)',
+      image: 'https://images.unsplash.com/photo-1549294413-26f195200c16?w=600&q=80',
       services: ['Chaises & tables', 'Vaisselle', 'Tentes & chapiteaux'],
       icon: makeIcon([
         { d: 'M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z', ...RJ, ...NF },
@@ -298,7 +301,7 @@ const ROWS = [
     },
     {
       title: 'Réparation Ordinateurs',
-      bg: 'linear-gradient(135deg,#d4e4f5,#103060)',
+      image: 'https://images.unsplash.com/photo-1593642632559-0c6d3fc62b89?w=600&q=80',
       services: ['Réparation ordinateur portable', 'Suppression de virus', 'Récupération de données'],
       icon: makeIcon([
         { d: 'M2 17h20M4 5h16a1 1 0 0 1 1 1v11H3V6a1 1 0 0 1 1-1z', ...RJ, ...NF },
@@ -311,7 +314,7 @@ const ROWS = [
   [
     {
       title: 'Réseau & WiFi',
-      bg: 'linear-gradient(135deg,#d4f5f5,#006060)',
+      image: 'https://images.unsplash.com/photo-1558494949-ef010cbdcc31?w=600&q=80',
       services: ['Installation routeur', 'Optimisation WiFi', 'Installation réseau maison'],
       icon: makeIcon([
         { d: 'M5 12.55a11 11 0 0 1 14.08 0',  ...R },
@@ -322,7 +325,7 @@ const ROWS = [
     },
     {
       title: 'Maison Connectée',
-      bg: 'linear-gradient(135deg,#f5f0d4,#606000)',
+      image: 'https://images.unsplash.com/photo-1558002038-1055e5a1c6ff?w=600&q=80',
       services: ['Installation caméras', 'Serrures intelligentes', 'Éclairage intelligent'],
       icon: makeIcon([
         { d: 'M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z', ...RJ, ...NF },
@@ -331,7 +334,7 @@ const ROWS = [
     },
     {
       title: 'Support Technique',
-      bg: 'linear-gradient(135deg,#e8e8f5,#303060)',
+      image: 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=600&q=80',
       services: ["Configuration d'appareils", 'Assistance logicielle', 'Support email & comptes'],
       icon: makeIcon([
         { d: 'M12 2a10 10 0 1 0 0 20A10 10 0 0 0 12 2z', ...W, ...NF },
@@ -341,7 +344,7 @@ const ROWS = [
     },
     {
       title: 'Réparation Téléphones & Tablettes',
-      bg: 'linear-gradient(135deg,#f5d4e8,#600030)',
+      image: 'https://images.unsplash.com/photo-1580910051074-3eb694886505?w=600&q=80',
       services: ["Remplacement d'écran", 'Remplacement batterie', 'Réparation port de charge'],
       icon: makeIcon([
         { d: 'M17 2H7a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2z', ...W, ...NF },
@@ -354,7 +357,7 @@ const ROWS = [
   [
     {
       title: 'Lavage auto à domicile',
-      bg: 'linear-gradient(135deg,#d4e8f5,#103860)',
+      image: 'https://images.unsplash.com/photo-1520340356584-f9917d1eea6f?w=600&q=80',
       services: ['Nettoyage extérieur', 'Nettoyage intérieur', 'Lavage complet (à domicile)'],
       icon: makeIcon([
         { d: 'M3 17l2-7h14l2 7H3z', ...RJ, ...NF },
@@ -365,7 +368,7 @@ const ROWS = [
     },
     {
       title: 'Car Detailing',
-      bg: 'linear-gradient(135deg,#f5e8d4,#603010)',
+      image: 'https://images.unsplash.com/photo-1502161254066-6c74afbf07aa?w=600&q=80',
       services: ['Detailing intérieur', 'Detailing extérieur', 'Detailing complet (à domicile)'],
       icon: makeIcon([
         { d: 'M12 2a10 10 0 1 0 0 20A10 10 0 0 0 12 2z', ...W, ...NF },
@@ -375,7 +378,7 @@ const ROWS = [
     },
     {
       title: 'Diagnostic OBD mobile',
-      bg: 'linear-gradient(135deg,#e8e4d4,#404010)',
+      image: 'https://images.unsplash.com/photo-1635073908681-b5a3c630a54c?w=600&q=80',
       services: ['Diagnostic électronique', 'Lecture des codes défaut', 'Rapport de diagnostic (à domicile)'],
       icon: makeIcon([
         { d: 'M9 3H5a2 2 0 0 0-2 2v4m6-6h10a2 2 0 0 1 2 2v4M9 3v18m0 0h10a2 2 0 0 0 2-2V9M9 21H5a2 2 0 0 1-2-2V9m0 0h18', ...R },
@@ -383,7 +386,7 @@ const ROWS = [
     },
     {
       title: 'Jardinage & Extérieur',
-      bg: 'linear-gradient(135deg,#d4f0d4,#104810)',
+      image: 'https://images.unsplash.com/photo-1416879595882-3373a0480b5b?w=600&q=80',
       services: ['Tonte de gazon', 'Taille de haies', 'Entretien jardin'],
       icon: makeIcon([
         { d: 'M12 22V12', ...R },
@@ -502,11 +505,14 @@ export default defineComponent({
   box-shadow: 0 16px 40px rgba(252, 90, 21, .14);
 }
 
-/* ─── Colour band ─────────────────────── */
+/* ─── Image band ──────────────────────── */
 .card-image {
   position: relative;
   height: 192px;
   flex-shrink: 0;
+  background-size: cover;
+  background-position: center;
+  background-color: #d1d5db;
 }
 
 .img-overlay {

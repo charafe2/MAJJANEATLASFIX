@@ -54,7 +54,10 @@
           :style="{ animationDelay: `${(index % 4) * 0.1}s` }"
         >
           <!-- Image with overlay -->
-          <div class="service-image">
+          <div
+            class="service-image"
+            :style="{ backgroundImage: `url('${service.image}')` }"
+          >
             <div class="image-overlay"></div>
             <div class="service-icon-badge">
               <component :is="service.iconComponent" />
@@ -160,6 +163,7 @@ export default defineComponent({
         {
           title: 'Plomberie',
           slug: 'plomberie',
+          image: 'https://images.unsplash.com/photo-1607472586893-edb57bdc0e39?w=600&q=80',
           items: ['Réparation de fuite', 'Installation sanitaire', 'Réparation de toilette', 'Débouchage'],
           iconComponent: defineComponent({
             render: () => h('svg', { width: 24, height: 24, viewBox: '0 0 24 24', fill: 'none' }, [
@@ -170,6 +174,7 @@ export default defineComponent({
         {
           title: 'Électricité',
           slug: 'electricite',
+          image: 'https://images.unsplash.com/photo-1621905251918-48416bd8575a?w=600&q=80',
           items: ['Installation de luminaires', 'Réparation prises & interrupteurs', 'Installation ventilateur de plafond'],
           iconComponent: defineComponent({
             render: () => h('svg', { width: 24, height: 24, viewBox: '0 0 24 24', fill: 'none' }, [
@@ -180,6 +185,7 @@ export default defineComponent({
         {
           title: 'Peinture',
           slug: 'peinture',
+          image: 'https://images.unsplash.com/photo-1562259929-b4e1fd3aef09?w=600&q=80',
           items: ['Travaux de peinture intérieure'],
           iconComponent: defineComponent({
             render: () => h('svg', { width: 24, height: 24, viewBox: '0 0 24 24', fill: 'none' }, [
@@ -191,6 +197,7 @@ export default defineComponent({
         {
           title: 'Réparations générales',
           slug: 'reparations-generales',
+          image: 'https://images.unsplash.com/photo-1581578731548-c64695cc6952?w=600&q=80',
           items: ['Montage TV, étagères, tringles', 'Réparation portes & serrures', 'Petites menuiseries', 'Joints & silicone'],
           iconComponent: defineComponent({
             render: () => h('svg', { width: 24, height: 24, viewBox: '0 0 24 24', fill: 'none' }, [
@@ -201,6 +208,7 @@ export default defineComponent({
         {
           title: 'Déménagement',
           slug: 'demenagement',
+          image: 'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=600&q=80',
           items: ['Déménagement local', 'Emballage & déballage', 'Transport de meubles'],
           iconComponent: defineComponent({
             render: () => h('svg', { width: 24, height: 24, viewBox: '0 0 24 24', fill: 'none' }, [
@@ -212,6 +220,7 @@ export default defineComponent({
         {
           title: 'Électroménager',
           slug: 'electromenager',
+          image: 'https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?w=600&q=80',
           items: ['Réparation lave-linge / sèche-linge', 'Réparation réfrigérateur', 'Réparation four / cuisinière'],
           iconComponent: defineComponent({
             render: () => h('svg', { width: 24, height: 24, viewBox: '0 0 24 24', fill: 'none' }, [
@@ -223,6 +232,7 @@ export default defineComponent({
         {
           title: 'Nettoyage',
           slug: 'nettoyage',
+          image: 'https://images.unsplash.com/photo-1628177142898-93e36e4e3a50?w=600&q=80',
           items: ['Nettoyage standard', 'Nettoyage en profondeur', 'Nettoyage après déménagement'],
           iconComponent: defineComponent({
             render: () => h('svg', { width: 24, height: 24, viewBox: '0 0 24 24', fill: 'none' }, [
@@ -234,6 +244,7 @@ export default defineComponent({
         {
           title: 'Chauffage, Ventilation et Climatisation',
           slug: 'chauffage-ventilation-climatisation',
+          image: 'https://images.unsplash.com/photo-1581244277943-fe4a9c777189?w=600&q=80',
           items: ['Entretien climatisation', 'Réparation climatisation', 'Entretien chauffage'],
           iconComponent: defineComponent({
             render: () => h('svg', { width: 24, height: 24, viewBox: '0 0 24 24', fill: 'none' }, [
@@ -513,7 +524,9 @@ export default defineComponent({
   position: relative;
   width: 100%;
   height: 192px;
-  background: linear-gradient(135deg, #ddd 0%, #aaa 100%);
+  background-size: cover;
+  background-position: center;
+  background-color: #d1d5db;
 }
 
 .image-overlay {
