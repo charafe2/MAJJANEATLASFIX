@@ -19,6 +19,8 @@ return new class extends Migration
                 'message',
                 'system',
                 'cancellation',
+                'boost',
+                'new_direct_request',
             ]);
             $table->string('title', 150);
             $table->text('message');

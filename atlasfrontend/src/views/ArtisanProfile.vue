@@ -1213,11 +1213,11 @@ export default {
             service_category_id: svc.service_category_id ?? null,
           })
           notify(res.data.message ?? 'Boost activé !', 'success')
-          await fetchProfile()
         } catch (e) {
           notify(e.response?.data?.error ?? 'Une erreur est survenue.', 'error')
         } finally {
           activatingBoost.value = false
+          await fetchProfile()
         }
       } else {
         // No free credits: open paid boost modal

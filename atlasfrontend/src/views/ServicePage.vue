@@ -217,23 +217,21 @@
             <p class="about-text">{{ artisan.bio }}</p>
           </div>
 
-          <!-- Experience badge if available -->
-          <div v-if="artisan.experience_years" class="card-badge">
-            <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-              <circle cx="7" cy="7" r="6" stroke="#FC5A15" stroke-width="1.17"/>
-              <path d="M7 4v3l2 2" stroke="#FC5A15" stroke-width="1.17" stroke-linecap="round"/>
-            </svg>
-            <span>{{ artisan.experience_years }} ans d'expérience</span>
+          <!-- Last review -->
+          <div class="card-last-review">
+            <div class="review-header">Dernier avis {{ artisan.last_review_name || 'Client' }} : {{ artisan.last_review_score || '5' }}/5</div>
+            <div class="review-date">{{ artisan.last_review_date || 'Récemment' }}</div>
+            <div class="review-comment">{{ artisan.last_review_text || 'Excellent service' }}</div>
           </div>
 
           <!-- Actions -->
           <div class="card-actions">
-            <button class="btn-profile" @click="viewProfile(artisan.id)">Voir Profil</button>
+            <button class="btn-profile" @click="viewProfile(artisan.id)">View Profile</button>
             <button class="btn-contact" @click="contactArtisan(artisan.id)">
               <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-                <path d="M12 2H2a1 1 0 0 0-1 1v7a1 1 0 0 0 1 1h3l2 2 2-2h3a1 1 0 0 0 1-1V3a1 1 0 0 0-1-1z" stroke="white" stroke-width="1.17" stroke-linejoin="round"/>
+                <path d="M2.33 1.17h2.33l1.17 2.92-1.46 1.46a9.33 9.33 0 0 0 4.08 4.08l1.46-1.46 2.92 1.17v2.33A1.17 1.17 0 0 1 11.67 12.83 10.5 10.5 0 0 1 1.17 2.33 1.17 1.17 0 0 1 2.33 1.17z" stroke="white" stroke-width="1.17" stroke-linecap="round" stroke-linejoin="round"/>
               </svg>
-              <span>Contacter</span>
+              <span>Connecter</span>
             </button>
           </div>
         </div>
@@ -842,18 +840,21 @@ watch(() => route.params.slug, async () => {
   max-width: calc(100% - 48px);
   margin: 0 auto;
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 28px 24px;
+  grid-template-columns: repeat(3, 400px);
+  gap: 30px 24px;
+  justify-content: center;
 }
 
 .artisan-card {
   background: white;
-  box-shadow: 0 6px 14px -1px rgba(0,0,0,0.07), 0 1px 8px 3px rgba(0,0,0,0.06);
+  box-shadow: 0px 6px 14.3px -1px rgba(0, 0, 0, 0.07), 0px 1px 8.6px 3px rgba(0, 0, 0, 0.08);
   border-radius: 14px;
-  padding: 20px;
+  padding: 20px 0 20px 20px;
   display: flex;
   flex-direction: column;
-  gap: 18px;
+  gap: 20px;
+  width: 400px;
+  min-height: 430px;
   transition: transform 0.2s, box-shadow 0.2s;
 }
 
@@ -862,25 +863,29 @@ watch(() => route.params.slug, async () => {
   box-shadow: 0 12px 24px -4px rgba(0,0,0,0.12);
 }
 
-.card-header { display: flex; gap: 14px; }
+.card-header {
+  display: flex;
+  gap: 16px;
+  width: 360px;
+}
 
 .avatar-wrapper {
   position: relative;
-  width: 80px;
-  height: 80px;
+  width: 96px;
+  height: 96px;
   flex-shrink: 0;
 }
 
 .avatar-image {
-  width: 80px;
-  height: 80px;
+  width: 96px;
+  height: 96px;
   border-radius: 50%;
   object-fit: cover;
 }
 
 .avatar-initials {
-  width: 80px;
-  height: 80px;
+  width: 96px;
+  height: 96px;
   border-radius: 50%;
   background: linear-gradient(135deg, #FC5A15, #E54D0F);
   color: white;
@@ -888,14 +893,14 @@ watch(() => route.params.slug, async () => {
   align-items: center;
   justify-content: center;
   font-family: 'Inter', sans-serif;
-  font-size: 22px;
+  font-size: 26px;
   font-weight: 500;
 }
 
 .avatar-border {
   position: absolute;
   inset: 0;
-  border: 2px solid #FC5A15;
+  border: 1.5px solid #FC5A15;
   border-radius: 50%;
 }
 
@@ -910,12 +915,19 @@ watch(() => route.params.slug, async () => {
 
 .artisan-name {
   font-family: 'Inter', sans-serif;
-  font-size: 15px;
-  font-weight: 500;
+  font-size: 16px;
+  font-weight: 400;
+  line-height: 24px;
+  letter-spacing: -0.3125px;
   color: #314158;
 }
 
-.artisan-specialty { font-family: 'Inter', sans-serif; font-size: 12px; color: #FC5A15; }
+.artisan-specialty {
+  font-family: 'Inter', sans-serif;
+  font-size: 12px;
+  line-height: 18px;
+  color: #45556C;
+}
 
 .artisan-location {
   display: flex;
@@ -923,31 +935,41 @@ watch(() => route.params.slug, async () => {
   gap: 4px;
   font-family: 'Inter', sans-serif;
   font-size: 12px;
+  line-height: 18px;
   color: #62748E;
 }
 
 .artisan-rating {
   display: flex;
   align-items: center;
-  gap: 5px;
+  gap: 6px;
   font-family: 'Inter', sans-serif;
-  font-size: 11px;
+  font-size: 10px;
+  line-height: 15px;
+  letter-spacing: 0.117188px;
   color: #314158;
 }
 
-.card-about { display: flex; flex-direction: column; gap: 5px; }
+.card-about {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  width: 360px;
+}
 
 .about-title {
   font-family: 'Inter', sans-serif;
-  font-size: 15px;
+  font-size: 16px;
   font-weight: 500;
+  line-height: 24px;
+  letter-spacing: -0.3125px;
   color: #314158;
 }
 
 .about-text {
   font-family: 'Inter', sans-serif;
   font-size: 12px;
-  line-height: 18px;
+  line-height: 19px;
   color: #45556C;
   margin: 0;
   display: -webkit-box;
@@ -956,26 +978,58 @@ watch(() => route.params.slug, async () => {
   overflow: hidden;
 }
 
-.card-badge {
+/* Last review section */
+.card-last-review {
   display: flex;
-  align-items: center;
-  gap: 6px;
+  flex-direction: column;
+  gap: 2px;
+  width: 360px;
+}
+
+.review-header {
   font-family: 'Inter', sans-serif;
-  font-size: 12px;
+  font-size: 16px;
+  font-weight: 400;
+  line-height: 24px;
+  letter-spacing: -0.3125px;
+  color: #314158;
+}
+
+.review-date {
+  font-family: 'Inter', sans-serif;
+  font-size: 16px;
+  font-weight: 400;
+  line-height: 24px;
+  letter-spacing: -0.3125px;
   color: #62748E;
 }
 
-.card-actions { display: flex; gap: 8px; }
+.review-comment {
+  font-family: 'Inter', sans-serif;
+  font-size: 16px;
+  font-weight: 400;
+  line-height: 24px;
+  letter-spacing: -0.3125px;
+  color: #02BB05;
+}
+
+.card-actions {
+  display: flex;
+  gap: 4px;
+  width: 360px;
+}
 
 .btn-profile {
   flex: 1;
-  height: 38px;
+  height: 37px;
   background: #EFEFEF;
   border: none;
   border-radius: 999px;
   font-family: 'Inter', sans-serif;
-  font-size: 13px;
-  color: #314158;
+  font-size: 11.353px;
+  line-height: 17px;
+  letter-spacing: 0.0430394px;
+  color: #000000;
   cursor: pointer;
   transition: opacity 0.2s;
 }
@@ -984,12 +1038,14 @@ watch(() => route.params.slug, async () => {
 
 .btn-contact {
   flex: 1;
-  height: 38px;
+  height: 37px;
   background: #FC5A15;
   border: none;
   border-radius: 999px;
   font-family: 'Inter', sans-serif;
-  font-size: 13px;
+  font-size: 11.353px;
+  line-height: 17px;
+  letter-spacing: 0.0430394px;
   color: white;
   cursor: pointer;
   display: flex;
@@ -1046,8 +1102,16 @@ watch(() => route.params.slug, async () => {
    RESPONSIVE
    ══════════════════════════════════════════════════════════════ */
 
-@media (max-width: 1200px) {
-  .artisans-container { grid-template-columns: repeat(2, 1fr); }
+@media (max-width: 1296px) {
+  .artisans-container {
+    grid-template-columns: repeat(2, 400px);
+  }
+}
+
+@media (max-width: 880px) {
+  .artisans-container {
+    grid-template-columns: 400px;
+  }
 }
 
 @media (max-width: 1100px) {
@@ -1058,7 +1122,12 @@ watch(() => route.params.slug, async () => {
 }
 
 @media (max-width: 700px) {
-  .artisans-container { grid-template-columns: 1fr; }
+  .artisans-container {
+    grid-template-columns: 1fr;
+    width: calc(100% - 48px);
+  }
+  .artisan-card { width: 100%; }
+  .card-header, .card-about, .card-last-review, .card-actions { width: 100%; }
   .search-container { flex-direction: column; }
   .filter-dropdown { width: 100%; }
   .hero-title { font-size: 36px; line-height: 1.3; }

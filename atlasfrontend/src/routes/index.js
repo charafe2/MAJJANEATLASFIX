@@ -80,6 +80,12 @@ const routes = [
     props: { role: 'artisan' },
   },
 
+  // ── Static info pages ─────────────────────────────────────────────────
+  {
+    path: '/litiges',
+    component: () => import('../views/LitigesPage.vue'),
+  },
+
   // ── Messaging (accessible to both clients and artisans) ──────────────
   {
     path: '/messages',

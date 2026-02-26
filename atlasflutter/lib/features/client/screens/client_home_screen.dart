@@ -741,7 +741,9 @@ class _BottomNavBar extends StatelessWidget {
     if (index == activeIndex) return;
     switch (index) {
       case 0: context.go('/client/dashboard');            break;
+      case 1: context.go('/client/mes-demandes');         break;
       case 2: context.push('/client/service-categories'); break;
+      case 3: context.go('/client/messages');             break;
       case 4: context.go('/client/profile');              break;
     }
   }

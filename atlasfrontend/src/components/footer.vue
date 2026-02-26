@@ -31,11 +31,11 @@
 
       <!-- Col 3: Legal links -->
       <div class="footer-col">
-        <a href="#" class="footer-link">Politique de Confidentialité</a>
+        <a @click="navigate('/Litiges')" class="footer-link">Politique de Confidentialité</a>
         <a href="#" class="footer-link">Conditions Générales d'Utilisation</a>
         <a href="#" class="footer-link">Page Conseils</a>
         <a href="#" class="footer-link">Paiements &amp; Abonnements</a>
-        <a href="#" class="footer-link">Résolution des litiges</a>
+        <a href="/Litiges">Résolution des litiges</a>
       </div>
 
       <!-- Col 4: More links -->
@@ -179,6 +179,13 @@
   transition: color 0.18s;
   cursor: pointer;
   width: fit-content;
+  
+}
+a{
+  text-decoration: none;
+    color: #C4C9D4;
+  font-size: 12.5px;
+
 }
 .footer-link:hover { color: #FC5A15; }
 

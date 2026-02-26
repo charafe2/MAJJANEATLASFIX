@@ -608,6 +608,17 @@ class AuthController extends Controller
         $serviceCategory = null;
         if ($artisan?->service_category_id) {
             $serviceCategory = \App\Models\ServiceCategory::find($artisan->service_category_id);
+
+            // Self-heal: artisans who registered before the fix have service_category_id set
+            // but no row in artisan_services — create one so the profile page shows their service.
+            if ($artisan && !$artisan->services()->where('service_category_id', $artisan->service_category_id)->exists()) {
+                ArtisanService::create([
+                    'artisan_id'          => $artisan->id,
+                    'service_category_id' => $artisan->service_category_id,
+                    'service_type'        => null,
+                    'description'         => $artisan->bio ?? '',
+                ]);
+            }
         }
 
         return response()->json([
@@ -876,13 +887,24 @@ class AuthController extends Controller
                 ]
             );
 
+            // Create ArtisanService record so the signup service appears in the profile
+            if ($serviceCategoryId && $artisan->wasRecentlyCreated) {
+                $artisanService = ArtisanService::create([
+                    'artisan_id'          => $artisan->id,
+                    'service_category_id' => $serviceCategoryId,
+                    'service_type'        => $serviceType,
+                    'description'         => $bio ?? '',
+                ]);
+            }
+
             // Save portfolio photos to artisan_portfolios table
             if (!empty($photoPaths)) {
                 foreach ($photoPaths as $path) {
                     ArtisanPortfolio::create([
-                        'artisan_id' => $artisan->id,
-                        'image_url'  => $path,
-                        'is_visible' => true,
+                        'artisan_id'          => $artisan->id,
+                        'service_category_id' => $serviceCategoryId,
+                        'image_url'           => $path,
+                        'is_visible'          => true,
                     ]);
                 }
             }
@@ -958,7 +980,7 @@ class AuthController extends Controller
         $boost = \App\Models\ArtisanBoost::create([
             'artisan_id'      => $artisan->id,
             'boost_credit_id' => $credit->id,
-            'boost_type'      => 'referral',
+            'boost_type'      => 'credit',
             'start_date'      => now(),
             'end_date'        => now()->addHours($credit->boost_duration_hours),
             'is_active'       => true,
@@ -1041,7 +1063,7 @@ class AuthController extends Controller
                 $pending['city']          ?? null,
                 $pending['address']       ?? null,
                 $pending['service']       ?? null,
-                null,
+                $pending['service_type']  ?? null,
                 $pending['bio']           ?? null,
                 $pending['diploma_path']  ?? null,
                 $pending['photo_paths']   ?? [],
@@ -1062,7 +1084,26 @@ class AuthController extends Controller
             if (!empty($pending['bio']))     $profileUpdate['bio']     = $pending['bio'];
             if (!empty($pending['service'])) {
                 $categoryId = $this->resolveServiceCategoryId($pending['service']);
-                if ($categoryId) $profileUpdate['service_category_id'] = $categoryId;
+                if ($categoryId) {
+                    $profileUpdate['service_category_id'] = $categoryId;
+
+                    // Ensure the signup service appears in the profile (artisan_services table)
+                    $serviceTypeFromPending = $pending['service_type'] ?? null;
+                    $existingService = ArtisanService::where('artisan_id', $artisan->id)
+                        ->where('service_category_id', $categoryId)
+                        ->first();
+                    if (!$existingService) {
+                        ArtisanService::create([
+                            'artisan_id'          => $artisan->id,
+                            'service_category_id' => $categoryId,
+                            'service_type'        => $serviceTypeFromPending,
+                            'description'         => $pending['bio'] ?? '',
+                        ]);
+                    } elseif ($existingService->service_type === null && $serviceTypeFromPending) {
+                        // Backfill service_type if it was stored as null (e.g. from old code path)
+                        $existingService->update(['service_type' => $serviceTypeFromPending]);
+                    }
+                }
             }
             if (!empty($profileUpdate)) {
                 $artisan->update($profileUpdate);

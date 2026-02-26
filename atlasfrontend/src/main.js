@@ -23,6 +23,7 @@ import Paymentstats      from './views/paymentstats.vue'
 import Agenda            from './views/agenda.vue'
 import MesDemandes       from './views/client/MesDemandes.vue'
 import NouvelleDemande   from './views/client/NouvelleDemande.vue'
+import DemandeOffres     from './views/client/DemandeOffres.vue'
 import DemandesClients   from './views/artisan/DemandesClients.vue'
 import MesDemandesAcceptees from './views/artisan/MesDemandesAcceptees.vue'
 import Messages          from './views/Messages.vue'
@@ -30,7 +31,7 @@ import DemandeDetail     from './views/DemandeDetail.vue'
 import ForgotPassword    from './views/forgotpassword.vue'
 import GoogleSuccess     from './views/GoogleSuccess.vue'
 import GoogleComplete    from './views/GoogleComplete.vue'
-
+import Litige from './views/LitigesPage.vue'
 // import './style.css'
 import './assets/css/profile.css'
 
@@ -83,8 +84,9 @@ const router = createRouter({
     { path: '/messages/:id', component: Messages },
 
     // ── Service requests ─────────────────────────────────────────────────
-    { path: '/client/mes-demandes',       component: MesDemandes },
-    { path: '/client/nouvelle-demande',   component: NouvelleDemande },
+    { path: '/client/mes-demandes',          component: MesDemandes },
+    { path: '/client/mes-demandes/offres',   component: DemandeOffres },
+    { path: '/client/nouvelle-demande',      component: NouvelleDemande },
     { path: '/artisan/demandes-clients',  component: DemandesClients },
     { path: '/artisan/mes-demandes',      component: MesDemandesAcceptees },
     { path: '/client/demandes/:id',   component: DemandeDetail, props: { role: 'client' } },
@@ -93,6 +95,10 @@ const router = createRouter({
     // ── Payments & Agenda ─────────────────────────────────────────────────
     { path: '/payments',       component: Paymentstats },
     { path: '/Artisan/agenda', component: Agenda },
+
+    //Footers
+        { path: '/Litiges', component: Litige },
+
   ],
 })
 

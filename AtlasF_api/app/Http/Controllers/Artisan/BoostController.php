@@ -49,7 +49,7 @@ class BoostController extends Controller
             'artisan_id'          => $artisan->id,
             'service_category_id' => $request->input('service_category_id'),
             'boost_credit_id'     => $credit->id,
-            'boost_type'          => 'referral',
+            'boost_type'          => 'credit',
             'start_date'          => now(),
             'end_date'            => now()->addHours($credit->boost_duration_hours),
             'is_active'           => true,

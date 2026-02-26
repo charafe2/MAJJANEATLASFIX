@@ -1,0 +1,424 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap');
+
+/* ─── Page ──────────────────────────────────────────── */
+.litiges-page {
+  width: 100%;
+  font-family: 'Inter', sans-serif;
+  box-sizing: border-box;
+  background: #FFFFFF;
+  min-height: 100vh;
+}
+
+/* ─── Page Header ───────────────────────────────────── */
+.page-header {
+  background: #fff;
+  padding: 40px 16px 36px;
+  display: flex;
+  justify-content: center;
+}
+
+.page-header-inner {
+  width: 100%;
+  max-width: 1106px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.header-icon {
+  width: 64px;
+  height: 64px;
+  background: linear-gradient(135deg, #FC5A15 0%, rgba(252, 90, 21, 0.84) 100%);
+  border-radius: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.header-icon svg {
+  width: 32px;
+  height: 32px;
+}
+
+.header-text h1 {
+  font-family: 'Inter', sans-serif;
+  font-size: 36px;
+  font-weight: 400;
+  line-height: 40px;
+  letter-spacing: 0.369px;
+  color: #314158;
+  margin: 0 0 0px;
+}
+
+.header-text .subtitle {
+  font-family: 'Inter', sans-serif;
+  font-size: 16px;
+  font-weight: 400;
+  line-height: 24px;
+  letter-spacing: -0.3125px;
+  color: #62748E;
+  margin: 0;
+}
+
+/* ─── Content ───────────────────────────────────────── */
+.litiges-content {
+  width: 100%;
+  max-width: 1106px;
+  margin: 0 auto;
+  padding: 0 16px 80px;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: 25px;
+}
+
+/* ─── Info Card (Notre approche) ────────────────────── */
+.info-card {
+  background: #EFF6FF;
+  border-left: 4px solid #2B7FFF;
+  border-radius: 10px;
+  padding: 24px 24px 0px 28px;
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+  padding-bottom: 24px;
+}
+
+.info-card-icon {
+  width: 48px;
+  height: 48px;
+  background: #2B7FFF;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.info-card-icon svg {
+  width: 24px;
+  height: 24px;
+}
+
+.info-card-body {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.info-card-body h2 {
+  font-family: 'Inter', sans-serif;
+  font-size: 24px;
+  font-weight: 400;
+  line-height: 32px;
+  letter-spacing: 0.0703px;
+  color: #314158;
+  margin: 0;
+}
+
+.info-card-body p {
+  font-family: 'Inter', sans-serif;
+  font-size: 16px;
+  font-weight: 400;
+  line-height: 26px;
+  letter-spacing: -0.3125px;
+  color: #314158;
+  margin: 0;
+}
+
+/* ─── Warning Card (Délai) ──────────────────────────── */
+.warning-card {
+  background: #FFF7ED;
+  border-left: 4px solid #FC5A15;
+  border-radius: 10px;
+  padding: 24px 24px 24px 28px;
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+}
+
+.warning-card-icon {
+  width: 48px;
+  height: 48px;
+  background: #FC5A15;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.warning-card-icon svg {
+  width: 24px;
+  height: 24px;
+}
+
+.warning-card-body {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.warning-card-body h2 {
+  font-family: 'Inter', sans-serif;
+  font-size: 24px;
+  font-weight: 400;
+  line-height: 32px;
+  letter-spacing: 0.0703px;
+  color: #314158;
+  margin: 0;
+}
+
+.warning-card-body p {
+  font-family: 'Inter', sans-serif;
+  font-size: 16px;
+  font-weight: 400;
+  line-height: 26px;
+  letter-spacing: -0.3125px;
+  color: #314158;
+  margin: 0;
+}
+
+.warning-card-body strong {
+  font-weight: 700;
+}
+
+/* ─── Section Header (standalone, no card wrapper) ─── */
+.section-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
+.section-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.section-icon.green  { background: #00C950; }
+.section-icon.red    { background: #FB2C36; }
+.section-icon.purple { background: #AD46FF; }
+
+.section-icon svg {
+  width: 24px;
+  height: 24px;
+}
+
+.section-header h2 {
+  font-family: 'Inter', sans-serif;
+  font-size: 24px;
+  font-weight: 400;
+  line-height: 32px;
+  letter-spacing: 0.0703px;
+  color: #314158;
+  margin: 0;
+}
+
+/* ─── List Card (Quand ouvrir / Quand non accepté) ─── */
+.list-card {
+  box-sizing: border-box;
+  background: #FFFFFF;
+  border: 1px solid #E5E7EB;
+  border-radius: 10px;
+  padding: 25px 25px 24px;
+}
+
+.list-intro {
+  font-family: 'Inter', sans-serif;
+  font-size: 16px;
+  font-weight: 400;
+  line-height: 24px;
+  letter-spacing: -0.3125px;
+  color: #314158;
+  margin: 0 0 16px;
+}
+
+/* ─── Bullet list ───────────────────────────────────── */
+.bullet-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.bullet-list li {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  font-family: 'Inter', sans-serif;
+  font-size: 16px;
+  font-weight: 400;
+  line-height: 24px;
+  letter-spacing: -0.3125px;
+  color: #314158;
+}
+
+.bullet-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.bullet-dot.orange { background: #FC5A15; }
+.bullet-dot.red    { background: #FB2C36; }
+
+/* ─── Process Section ───────────────────────────────── */
+.process-steps {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+/* Each step card: left-colored border, right corners rounded */
+.step-card {
+  box-sizing: border-box;
+  background: #FFFFFF;
+  border-radius: 0px 10px 10px 0px;
+  padding: 24px 24px 0px 28px;
+  padding-bottom: 24px;
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+}
+
+.step-card.purple { border-left: 4px solid #AD46FF; }
+.step-card.blue   { border-left: 4px solid #2B7FFF; }
+.step-card.green  { border-left: 4px solid #00C950; }
+
+.step-number {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  color: #fff;
+  font-family: 'Inter', sans-serif;
+  font-weight: 700;
+  font-size: 18px;
+  line-height: 28px;
+  letter-spacing: -0.44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.step-number.purple { background: #AD46FF; }
+.step-number.blue   { background: #2B7FFF; }
+.step-number.green  { background: #00C950; }
+
+.step-body {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  flex: 1;
+}
+
+.step-body h3 {
+  font-family: 'Inter', sans-serif;
+  font-size: 20px;
+  font-weight: 400;
+  line-height: 28px;
+  letter-spacing: -0.449px;
+  color: #314158;
+  margin: 0;
+}
+
+.step-body .step-intro {
+  font-family: 'Inter', sans-serif;
+  font-size: 16px;
+  font-weight: 400;
+  line-height: 24px;
+  letter-spacing: -0.3125px;
+  color: #314158;
+  margin: 0;
+}
+
+/* Icon list items inside steps */
+.icon-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.icon-list li {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-family: 'Inter', sans-serif;
+  font-size: 16px;
+  font-weight: 400;
+  line-height: 24px;
+  letter-spacing: -0.3125px;
+  color: #314158;
+}
+
+.icon-list li svg {
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+}
+
+/* Yellow note box */
+.note-box {
+  box-sizing: border-box;
+  background: #FEFCE8;
+  border: 1px solid #FFF085;
+  border-radius: 10px;
+  padding: 17px;
+  font-family: 'Inter', sans-serif;
+  font-size: 16px;
+  font-weight: 500;
+  line-height: 24px;
+  letter-spacing: -0.3125px;
+  color: #314158;
+}
+
+/* ─── Responsive ────────────────────────────────────── */
+@media (max-width: 768px) {
+  .page-header-inner {
+    gap: 12px;
+  }
+
+  .header-text h1 {
+    font-size: 24px;
+    line-height: 30px;
+  }
+
+  .header-icon {
+    width: 48px;
+    height: 48px;
+  }
+
+  .header-icon svg {
+    width: 24px;
+    height: 24px;
+  }
+}
+
+@media (max-width: 480px) {
+  .page-header-inner {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .info-card,
+  .warning-card {
+    flex-direction: column;
+  }
+
+  .step-card {
+    flex-direction: column;
+  }
+}
