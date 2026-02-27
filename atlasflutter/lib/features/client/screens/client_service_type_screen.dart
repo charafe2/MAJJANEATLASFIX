@@ -1,221 +1,61 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/constants/app_colors.dart';
-
-// ── Service types per category ────────────────────────────────────────────────
-
-const _kServiceTypes = <String, List<String>>{
-  'Réparations générales': [
-    'Montage TV',
-    'Appareils',
-    'Meubles / Réparation plats & terrasse',
-    'Portes & fenêtres',
-    'Arbres & clôture',
-  ],
-  'Plomberie': [
-    'Fuite d\'eau',
-    'Installation sanitaire',
-    'Débouchage canalisation',
-    'Chauffe-eau & ballon',
-    'Robinetterie',
-  ],
-  'Électricité': [
-    'Tableau électrique',
-    'Prises & interrupteurs',
-    'Éclairage',
-    'Câblage & installation',
-    'Dépannage urgence',
-  ],
-  'Peinture': [
-    'Peinture intérieure',
-    'Peinture extérieure',
-    'Revêtement mural',
-    'Enduit & crépi',
-    'Décoration murale',
-  ],
-  'Technologie': [
-    'Installation réseau',
-    'Configuration PC',
-    'Sécurité & caméras',
-    'Domotique',
-    'Antenne & TV',
-  ],
-  'Nettoyage': [
-    'Nettoyage appartement',
-    'Nettoyage bureau',
-    'Nettoyage après travaux',
-    'Désinfection',
-    'Vitres & surfaces',
-  ],
-  'Déménagement': [
-    'Déménagement local',
-    'Déménagement longue distance',
-    'Emballage & conditionnement',
-    'Transport de meubles',
-    'Stockage temporaire',
-  ],
-  'Chauffeur & Installation': [
-    'Chauffeur privé',
-    'Livraison express',
-    'Transport médical',
-    'Courses & commissions',
-    'Accompagnement',
-  ],
-  'Mécanique totale': [
-    'Révision & entretien',
-    'Réparation moteur',
-    'Changement de pneus',
-    'Climatisation auto',
-    'Électronique auto',
-  ],
-  'Vitrerie': [
-    'Vitrage simple',
-    'Double vitrage',
-    'Miroirs',
-    'Remplacement vitre',
-    'Baie vitrée',
-  ],
-  'Assurance de Toiture': [
-    'Réparation toiture',
-    'Étanchéité',
-    'Gouttières',
-    'Isolation toiture',
-    'Charpente',
-  ],
-  'Fitness & Sport': [
-    'Coach sportif',
-    'Yoga & pilates',
-    'Musculation',
-    'Arts martiaux',
-    'Natation',
-  ],
-  'Photo': [
-    'Mariage',
-    'Portrait professionnel',
-    'Événement',
-    'Produits & publicité',
-    'Photo d\'intérieur',
-  ],
-  'Vidéo': [
-    'Clip vidéo',
-    'Film d\'entreprise',
-    'Mariage & événement',
-    'Drone & aérien',
-    'Montage vidéo',
-  ],
-  'Mesure & Livraison': [
-    'Métreur',
-    'Livraison rapide',
-    'Livraison programmée',
-    'Transport spécialisé',
-    'Coursier moto',
-  ],
-  'Beauté & Style': [
-    'Coiffure à domicile',
-    'Maquillage',
-    'Soins esthétiques',
-    'Manucure & pédicure',
-    'Massage bien-être',
-  ],
-  'Service de Restauration': [
-    'Traiteur événementiel',
-    'Chef à domicile',
-    'Livraison repas',
-    'Pâtisserie & gâteaux',
-    'Service de bar',
-  ],
-  'Organisation d\'évènements': [
-    'Mariage',
-    'Anniversaire',
-    'Conférence & séminaire',
-    'Soirée d\'entreprise',
-    'Décoration & scénographie',
-  ],
-  'Location de Matériel': [
-    'Outillage',
-    'Échafaudage',
-    'Matériel audiovisuel',
-    'Mobilier événementiel',
-    'Matériel de chantier',
-  ],
-  'Réparations Ordinateur': [
-    'Réparation écran',
-    'Changement batterie',
-    'Virus & logiciels',
-    'Récupération données',
-    'Mise à niveau',
-  ],
-  'Impression': [
-    'Impression numérique',
-    'Sérigraphie',
-    'Cartes de visite',
-    'Banderoles & affiches',
-    'Impression textile',
-  ],
-  'Construction Manuel': [
-    'Maçonnerie',
-    'Carrelage & faïence',
-    'Faux plafond',
-    'Parquet & stratifié',
-    'Isolation thermique',
-  ],
-  'Support Technique': [
-    'Assistance à distance',
-    'Installation logiciels',
-    'Sauvegarde & sécurité',
-    'Formation informatique',
-    'Maintenance préventive',
-  ],
-  'Appareils & Énergie': [
-    'Réparation électroménager',
-    'Installation climatiseur',
-    'Panneau solaire',
-    'Chaudière & chauffage',
-    'Réfrigération',
-  ],
-};
-
-// ── Screen ────────────────────────────────────────────────────────────────────
+import '../../../../data/repositories/service_request_repository.dart';
 
 class ClientServiceTypeScreen extends StatefulWidget {
+  final int    categoryId;
   final String categoryName;
-  const ClientServiceTypeScreen({super.key, required this.categoryName});
+
+  const ClientServiceTypeScreen({
+    super.key,
+    required this.categoryId,
+    required this.categoryName,
+  });
 
   @override
-  State<ClientServiceTypeScreen> createState() =>
-      _ClientServiceTypeScreenState();
+  State<ClientServiceTypeScreen> createState() => _ClientServiceTypeScreenState();
 }
 
 class _ClientServiceTypeScreenState extends State<ClientServiceTypeScreen> {
-  final Set<String> _selected = {};
+  final _repo = ServiceRequestRepository();
 
-  List<String> get _types {
-    // Try exact match first, then partial
-    final key = _kServiceTypes.keys.firstWhere(
-      (k) => k.toLowerCase() == widget.categoryName.toLowerCase(),
-      orElse: () => _kServiceTypes.keys.firstWhere(
-        (k) => widget.categoryName
-            .toLowerCase()
-            .contains(k.toLowerCase().split(' ').first),
-        orElse: () => _kServiceTypes.keys.first,
-      ),
-    );
-    return _kServiceTypes[key] ?? [];
+  List<ServiceType> _types   = [];
+  bool              _loading = true;
+  String?           _error;
+  ServiceType?      _selected;
+
+  @override
+  void initState() {
+    super.initState();
+    _load();
+  }
+
+  Future<void> _load() async {
+    setState(() { _loading = true; _error = null; });
+    try {
+      final types = await _repo.getServiceTypes(widget.categoryId);
+      if (mounted) setState(() { _types = types; _loading = false; });
+    } catch (e) {
+      if (mounted) setState(() {
+        _error   = ServiceRequestRepository.errorMessage(e);
+        _loading = false;
+      });
+    }
   }
 
   void _onContinue() {
-    if (_selected.isEmpty) return;
-    // Navigate to the new request/booking flow with selected services
+    if (_selected == null) return;
     context.push('/client/nouvelle-demande', extra: {
-      'category': widget.categoryName,
-      'services': _selected.toList(),
+      'categoryId':    widget.categoryId,
+      'category':      widget.categoryName,
+      'serviceTypeId': _selected!.id,
+      'serviceType':   _selected!.name,
     });
   }
 
   @override
   Widget build(BuildContext context) {
-    final types = _types;
-
     return Scaffold(
       backgroundColor: Colors.white,
       body: Stack(
@@ -236,42 +76,16 @@ class _ClientServiceTypeScreenState extends State<ClientServiceTypeScreen> {
 
           Column(
             children: [
-              // ── Header ─────────────────────────────────────────────
               _buildHeader(context),
-
-              // ── Service list ────────────────────────────────────────
-              Expanded(
-                child: ListView.separated(
-                  padding: const EdgeInsets.fromLTRB(20, 20, 20, 120),
-                  itemCount: types.length,
-                  separatorBuilder: (_, __) => const SizedBox(height: 10),
-                  itemBuilder: (_, i) {
-                    final type = types[i];
-                    final checked = _selected.contains(type);
-                    return _ServiceTypeRow(
-                      label: type,
-                      checked: checked,
-                      onTap: () => setState(() {
-                        if (checked) {
-                          _selected.remove(type);
-                        } else {
-                          _selected.add(type);
-                        }
-                      }),
-                    );
-                  },
-                ),
-              ),
+              Expanded(child: _buildBody()),
             ],
           ),
 
-          // ── Bottom action buttons ───────────────────────────────────
-          Positioned(
-            bottom: 0,
-            left: 0,
-            right: 0,
-            child: _buildBottomBar(context),
-          ),
+          if (!_loading && _error == null)
+            Positioned(
+              bottom: 0, left: 0, right: 0,
+              child: _buildBottomBar(context),
+            ),
         ],
       ),
     );
@@ -282,7 +96,7 @@ class _ClientServiceTypeScreenState extends State<ClientServiceTypeScreen> {
       decoration: const BoxDecoration(
         color: AppColors.primary,
         borderRadius: BorderRadius.only(
-          bottomLeft: Radius.circular(20),
+          bottomLeft:  Radius.circular(20),
           bottomRight: Radius.circular(20),
         ),
       ),
@@ -293,7 +107,6 @@ class _ClientServiceTypeScreenState extends State<ClientServiceTypeScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Back
               GestureDetector(
                 onTap: () => context.pop(),
                 child: const Row(
@@ -304,33 +117,131 @@ class _ClientServiceTypeScreenState extends State<ClientServiceTypeScreen> {
                     SizedBox(width: 6),
                     Text('Retour',
                         style: TextStyle(
-                          fontFamily: 'Inter',
-                          fontSize: 14,
-                          color: Colors.white70,
-                        )),
+                          fontFamily: 'Inter', fontSize: 14,
+                          color: Colors.white70)),
                   ],
                 ),
               ),
               const SizedBox(height: 12),
-
               Text(widget.categoryName,
                   style: const TextStyle(
-                    fontFamily: 'Poppins',
-                    fontWeight: FontWeight.w700,
-                    fontSize: 22,
-                    color: Colors.white,
-                  )),
+                    fontFamily: 'Poppins', fontWeight: FontWeight.w700,
+                    fontSize: 22, color: Colors.white)),
               const SizedBox(height: 4),
-              const Text('Sélectionner un ou plusieurs services',
+              const Text('Sélectionner un type de service',
                   style: TextStyle(
-                    fontFamily: 'Public Sans',
-                    fontSize: 12,
-                    color: Colors.white70,
-                  )),
+                    fontFamily: 'Public Sans', fontSize: 12,
+                    color: Colors.white70)),
             ],
           ),
         ),
       ),
+    );
+  }
+
+  Widget _buildBody() {
+    if (_loading) {
+      return const Center(child: CircularProgressIndicator(color: AppColors.primary));
+    }
+    if (_error != null) {
+      return Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(Icons.wifi_off_rounded, size: 48, color: Color(0xFFD1D5DC)),
+            const SizedBox(height: 12),
+            Text(_error!,
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                fontFamily: 'Public Sans', fontSize: 14,
+                color: Color(0xFF62748E))),
+            const SizedBox(height: 16),
+            ElevatedButton(
+              onPressed: _load,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primary,
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12))),
+              child: const Text('Réessayer',
+                style: TextStyle(color: Colors.white,
+                    fontFamily: 'Public Sans')),
+            ),
+          ],
+        ),
+      );
+    }
+    if (_types.isEmpty) {
+      return const Center(
+        child: Text('Aucun service disponible pour cette catégorie.',
+          style: TextStyle(
+            fontFamily: 'Public Sans', fontSize: 14,
+            color: Color(0xFF62748E))),
+      );
+    }
+    return ListView.separated(
+      padding: const EdgeInsets.fromLTRB(20, 20, 20, 120),
+      itemCount: _types.length,
+      separatorBuilder: (_, __) => const SizedBox(height: 10),
+      itemBuilder: (_, i) {
+        final type    = _types[i];
+        final checked = _selected?.id == type.id;
+        return GestureDetector(
+          onTap: () => setState(() => _selected = checked ? null : type),
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 150),
+            padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
+            decoration: BoxDecoration(
+              color: checked
+                  ? AppColors.primary.withValues(alpha: 0.06)
+                  : Colors.white,
+              border: Border.all(
+                color: checked ? AppColors.primary : const Color(0xFFE5E7EB),
+                width: checked ? 1.5 : 1,
+              ),
+              borderRadius: BorderRadius.circular(12),
+              boxShadow: [
+                BoxShadow(
+                  color: checked
+                      ? AppColors.primary.withValues(alpha: 0.08)
+                      : const Color(0x0A000000),
+                  blurRadius: checked ? 8 : 4,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
+            child: Row(children: [
+              Expanded(
+                child: Text(type.name,
+                  style: TextStyle(
+                    fontFamily: 'Public Sans',
+                    fontSize: 14,
+                    fontWeight: checked ? FontWeight.w600 : FontWeight.w400,
+                    color: checked
+                        ? AppColors.primary
+                        : const Color(0xFF314158),
+                  )),
+              ),
+              AnimatedContainer(
+                duration: const Duration(milliseconds: 150),
+                width: 22, height: 22,
+                decoration: BoxDecoration(
+                  color: checked ? AppColors.primary : Colors.white,
+                  border: Border.all(
+                    color: checked
+                        ? AppColors.primary : const Color(0xFFD1D5DC),
+                    width: 1.5,
+                  ),
+                  shape: BoxShape.circle,
+                ),
+                child: checked
+                    ? const Icon(Icons.check_rounded,
+                        color: Colors.white, size: 13)
+                    : null,
+              ),
+            ]),
+          ),
+        );
+      },
     );
   }
 
@@ -340,15 +251,10 @@ class _ClientServiceTypeScreenState extends State<ClientServiceTypeScreen> {
       decoration: const BoxDecoration(
         color: Colors.white,
         boxShadow: [
-          BoxShadow(
-            color: Color(0x1A000000),
-            blurRadius: 12,
-            offset: Offset(0, -4),
-          ),
+          BoxShadow(color: Color(0x1A000000), blurRadius: 12, offset: Offset(0, -4)),
         ],
       ),
       child: Row(children: [
-        // Précédent
         Expanded(
           child: SizedBox(
             height: 52,
@@ -357,123 +263,36 @@ class _ClientServiceTypeScreenState extends State<ClientServiceTypeScreen> {
               style: OutlinedButton.styleFrom(
                 side: const BorderSide(color: AppColors.primary),
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
+                    borderRadius: BorderRadius.circular(12)),
               ),
               child: const Text('Précédent',
-                  style: TextStyle(
-                    fontFamily: 'Poppins',
-                    fontWeight: FontWeight.w600,
-                    fontSize: 15,
-                    color: AppColors.primary,
-                  )),
+                style: TextStyle(
+                  fontFamily: 'Poppins', fontWeight: FontWeight.w600,
+                  fontSize: 15, color: AppColors.primary)),
             ),
           ),
         ),
         const SizedBox(width: 12),
-        // Continuer
         Expanded(
           child: SizedBox(
             height: 52,
             child: ElevatedButton(
-              onPressed: _selected.isEmpty ? null : _onContinue,
+              onPressed: _selected == null ? null : _onContinue,
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.primary,
                 disabledBackgroundColor: const Color(0xFFD1D5DC),
                 elevation: 0,
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
+                    borderRadius: BorderRadius.circular(12)),
               ),
               child: const Text('Continuer',
-                  style: TextStyle(
-                    fontFamily: 'Poppins',
-                    fontWeight: FontWeight.w600,
-                    fontSize: 15,
-                    color: Colors.white,
-                  )),
+                style: TextStyle(
+                  fontFamily: 'Poppins', fontWeight: FontWeight.w600,
+                  fontSize: 15, color: Colors.white)),
             ),
           ),
         ),
       ]),
     );
   }
-}
-
-// ── Service type row ──────────────────────────────────────────────────────────
-
-class _ServiceTypeRow extends StatelessWidget {
-  final String label;
-  final bool checked;
-  final VoidCallback onTap;
-  const _ServiceTypeRow({
-    required this.label,
-    required this.checked,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) => GestureDetector(
-        onTap: onTap,
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 150),
-          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
-          decoration: BoxDecoration(
-            color: checked
-                ? AppColors.primary.withValues(alpha: 0.06)
-                : Colors.white,
-            border: Border.all(
-              color: checked ? AppColors.primary : const Color(0xFFE5E7EB),
-              width: checked ? 1.5 : 1,
-            ),
-            borderRadius: BorderRadius.circular(12),
-            boxShadow: checked
-                ? [
-                    BoxShadow(
-                      color: AppColors.primary.withValues(alpha: 0.08),
-                      blurRadius: 8,
-                      offset: const Offset(0, 2),
-                    ),
-                  ]
-                : const [
-                    BoxShadow(
-                      color: Color(0x0A000000),
-                      blurRadius: 4,
-                      offset: Offset(0, 1),
-                    ),
-                  ],
-          ),
-          child: Row(children: [
-            Expanded(
-              child: Text(label,
-                  style: TextStyle(
-                    fontFamily: 'Public Sans',
-                    fontSize: 14,
-                    fontWeight:
-                        checked ? FontWeight.w600 : FontWeight.w400,
-                    color: checked
-                        ? AppColors.primary
-                        : const Color(0xFF314158),
-                  )),
-            ),
-            AnimatedContainer(
-              duration: const Duration(milliseconds: 150),
-              width: 22,
-              height: 22,
-              decoration: BoxDecoration(
-                color: checked ? AppColors.primary : Colors.white,
-                border: Border.all(
-                  color: checked ? AppColors.primary : const Color(0xFFD1D5DC),
-                  width: 1.5,
-                ),
-                borderRadius: BorderRadius.circular(6),
-              ),
-              child: checked
-                  ? const Icon(Icons.check_rounded,
-                      color: Colors.white, size: 14)
-                  : null,
-            ),
-          ]),
-        ),
-      );
 }

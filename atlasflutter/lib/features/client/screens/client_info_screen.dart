@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/constants/app_colors.dart';
+import '../../../../data/repositories/profile_repository.dart';
 
 class ClientInfoScreen extends StatefulWidget {
   const ClientInfoScreen({super.key});
@@ -11,22 +12,28 @@ class ClientInfoScreen extends StatefulWidget {
 
 class _ClientInfoScreenState extends State<ClientInfoScreen>
     with SingleTickerProviderStateMixin {
+  final _repo = ProfileRepository();
   late final TabController _tabs;
 
+  // ── Loading / error state ──────────────────────────────────────
+  bool    _loading = true;
+  bool    _saving  = false;
+  String? _error;
+
   // ── Informations personnelles controllers ──────────────────────
-  final _nom        = TextEditingController(text: 'Fullname');
-  final _email      = TextEditingController(text: 'email@gmail.com');
-  final _phone      = TextEditingController(text: '06 xx xx xx xx');
-  final _birthdate  = TextEditingController(text: 'JJ/MM/AAAA');
-  final _ville      = TextEditingController(text: 'Rabat');
-  final _adresse    = TextEditingController(text: 'Lorem ipsum dolor sit amet, consectetur');
-  final _codePostal = TextEditingController(text: '12000');
+  final _nom        = TextEditingController();
+  final _email      = TextEditingController();
+  final _phone      = TextEditingController();
+  final _birthdate  = TextEditingController();
+  final _ville      = TextEditingController();
+  final _adresse    = TextEditingController();
+  final _codePostal = TextEditingController();
   bool _editing = false;
 
   // ── Préférences state ──────────────────────────────────────────
-  bool _emailNotif = true;
-  bool _smsNotif   = false;
-  String _lang     = 'Français';
+  bool   _emailNotif = true;
+  bool   _smsNotif   = false;
+  String _lang       = 'Français';
 
   // ── Sécurité state ────────────────────────────────────────────
   bool _twoFa = false;
@@ -35,6 +42,7 @@ class _ClientInfoScreenState extends State<ClientInfoScreen>
   void initState() {
     super.initState();
     _tabs = TabController(length: 3, vsync: this);
+    _loadProfile();
   }
 
   @override
@@ -46,13 +54,72 @@ class _ClientInfoScreenState extends State<ClientInfoScreen>
     super.dispose();
   }
 
+  Future<void> _loadProfile() async {
+    setState(() { _loading = true; _error = null; });
+    try {
+      final p = await _repo.getProfile();
+      if (mounted) {
+        setState(() {
+          _nom.text        = p.name;
+          _email.text      = p.email;
+          _phone.text      = p.phone;
+          _birthdate.text  = p.birthdate ?? '';
+          _ville.text      = p.city      ?? '';
+          _adresse.text    = p.address   ?? '';
+          _codePostal.text = p.postalCode ?? '';
+          _loading = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _error   = ProfileRepository.errorMessage(e);
+          _loading = false;
+        });
+      }
+    }
+  }
+
+  Future<void> _saveProfile() async {
+    setState(() => _saving = true);
+    try {
+      await _repo.updateProfile(
+        name:       _nom.text.trim(),
+        phone:      _phone.text.trim(),
+        birthdate:  _birthdate.text.trim().isEmpty ? null : _birthdate.text.trim(),
+        city:       _ville.text.trim().isEmpty     ? null : _ville.text.trim(),
+        address:    _adresse.text.trim().isEmpty   ? null : _adresse.text.trim(),
+        postalCode: _codePostal.text.trim().isEmpty ? null : _codePostal.text.trim(),
+      );
+      if (mounted) {
+        setState(() { _editing = false; _saving = false; });
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+          content: Text('Informations mises à jour.',
+              style: TextStyle(fontFamily: 'Public Sans')),
+          backgroundColor: Color(0xFF16A34A),
+          behavior: SnackBarBehavior.floating,
+        ));
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => _saving = false);
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text(ProfileRepository.errorMessage(e),
+              style: const TextStyle(fontFamily: 'Public Sans')),
+          backgroundColor: const Color(0xFFEF4444),
+          behavior: SnackBarBehavior.floating,
+        ));
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
       body: Stack(
         children: [
-          // Gradient background (same as profile screen)
+          // Gradient background
           Positioned.fill(
             child: Container(
               decoration: const BoxDecoration(
@@ -66,16 +133,15 @@ class _ClientInfoScreenState extends State<ClientInfoScreen>
             ),
           ),
 
-          // ── White panel sliding up ──────────────────────────────
           Column(
             children: [
-              // Tiny orange header strip (visible behind the white card)
+              // Tiny orange header strip
               Container(
                 height: MediaQuery.of(context).padding.top + 24,
                 color: AppColors.primary,
               ),
 
-              // White card with rounded top corners
+              // White card
               Expanded(
                 child: Container(
                   decoration: const BoxDecoration(
@@ -92,47 +158,56 @@ class _ClientInfoScreenState extends State<ClientInfoScreen>
                       ),
                     ],
                   ),
-                  child: Column(
-                    children: [
-                      // ── Tab bar ─────────────────────────────────
-                      _TabBar(controller: _tabs),
-
-                      // ── Tab views ───────────────────────────────
-                      Expanded(
-                        child: TabBarView(
-                          controller: _tabs,
-                          children: [
-                            _InfoTab(
-                              nom: _nom, email: _email, phone: _phone,
-                              birthdate: _birthdate, ville: _ville,
-                              adresse: _adresse, codePostal: _codePostal,
-                              editing: _editing,
-                              onToggleEdit: () => setState(() => _editing = !_editing),
+                  child: _loading
+                      ? const Center(
+                          child: CircularProgressIndicator(color: AppColors.primary))
+                      : _error != null
+                          ? _buildError()
+                          : Column(
+                              children: [
+                                _TabBar(controller: _tabs),
+                                Expanded(
+                                  child: TabBarView(
+                                    controller: _tabs,
+                                    children: [
+                                      _InfoTab(
+                                        nom: _nom, email: _email, phone: _phone,
+                                        birthdate: _birthdate, ville: _ville,
+                                        adresse: _adresse, codePostal: _codePostal,
+                                        editing: _editing,
+                                        saving:  _saving,
+                                        onToggleEdit: () {
+                                          if (_editing) {
+                                            _saveProfile();
+                                          } else {
+                                            setState(() => _editing = true);
+                                          }
+                                        },
+                                      ),
+                                      _PrefsTab(
+                                        emailNotif: _emailNotif,
+                                        smsNotif:   _smsNotif,
+                                        lang:       _lang,
+                                        onEmailChanged: (v) => setState(() => _emailNotif = v),
+                                        onSmsChanged:   (v) => setState(() => _smsNotif   = v),
+                                        onLangChanged:  (v) => setState(() => _lang       = v!),
+                                      ),
+                                      _SecTab(
+                                        twoFa: _twoFa,
+                                        onTwoFaChanged: (v) => setState(() => _twoFa = v),
+                                        onDeleteAccount: () => _confirmDelete(context),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
                             ),
-                            _PrefsTab(
-                              emailNotif: _emailNotif,
-                              smsNotif:   _smsNotif,
-                              lang:       _lang,
-                              onEmailChanged: (v) => setState(() => _emailNotif = v),
-                              onSmsChanged:   (v) => setState(() => _smsNotif   = v),
-                              onLangChanged:  (v) => setState(() => _lang       = v!),
-                            ),
-                            _SecTab(
-                              twoFa: _twoFa,
-                              onTwoFaChanged: (v) => setState(() => _twoFa = v),
-                              onDeleteAccount: () => _confirmDelete(context),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
                 ),
               ),
             ],
           ),
 
-          // ── Back button ─────────────────────────────────────────
+          // Back button
           Positioned(
             top: MediaQuery.of(context).padding.top + 4,
             left: 12,
@@ -147,6 +222,36 @@ class _ClientInfoScreenState extends State<ClientInfoScreen>
     );
   }
 
+  Widget _buildError() {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(32),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.wifi_off_rounded, size: 48, color: Colors.grey.shade300),
+            const SizedBox(height: 12),
+            Text(_error!, textAlign: TextAlign.center,
+                style: const TextStyle(fontFamily: 'Public Sans', fontSize: 14,
+                    color: Color(0xFF62748E))),
+            const SizedBox(height: 20),
+            ElevatedButton.icon(
+              onPressed: _loadProfile,
+              icon: const Icon(Icons.refresh_rounded),
+              label: const Text('Réessayer'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primary,
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12)),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   void _confirmDelete(BuildContext context) {
     showDialog(
       context: context,
@@ -154,10 +259,13 @@ class _ClientInfoScreenState extends State<ClientInfoScreen>
         title: const Text('Supprimer le compte'),
         content: const Text('Cette action est irréversible. Confirmez-vous ?'),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Annuler')),
+          TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Annuler')),
           TextButton(
             onPressed: () { Navigator.pop(context); context.go('/login'); },
-            child: const Text('Supprimer', style: TextStyle(color: Colors.red)),
+            child: const Text('Supprimer',
+                style: TextStyle(color: Colors.red)),
           ),
         ],
       ),
@@ -165,7 +273,8 @@ class _ClientInfoScreenState extends State<ClientInfoScreen>
   }
 }
 
-// ── Custom tab bar matching Figma design ──────────────────────────────────────
+// ── Custom tab bar ────────────────────────────────────────────────────────────
+
 class _TabBar extends StatelessWidget {
   final TabController controller;
   const _TabBar({required this.controller});
@@ -173,33 +282,27 @@ class _TabBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Container(
     height: 39,
-    decoration: BoxDecoration(
+    decoration: const BoxDecoration(
       color: Colors.white,
-      border: Border(bottom: BorderSide(color: const Color(0xFFE5E7EB), width: 0.8)),
-      borderRadius: const BorderRadius.only(
+      border: Border(bottom: BorderSide(color: Color(0xFFE5E7EB), width: 0.8)),
+      borderRadius: BorderRadius.only(
         topLeft:  Radius.circular(32.35),
         topRight: Radius.circular(32.35),
       ),
     ),
     child: TabBar(
       controller: controller,
-      labelColor:      AppColors.primary,
+      labelColor:           AppColors.primary,
       unselectedLabelColor: const Color(0xFF62748E),
-      indicatorColor:  AppColors.primary,
-      indicatorWeight: 1.6,
-      indicatorSize:   TabBarIndicatorSize.tab,
+      indicatorColor:       AppColors.primary,
+      indicatorWeight:      1.6,
+      indicatorSize:        TabBarIndicatorSize.tab,
       labelStyle: const TextStyle(
-        fontFamily: 'Open Sans',
-        fontSize:   12,
-        fontWeight: FontWeight.w400,
-        letterSpacing: -0.25,
-      ),
+        fontFamily: 'Open Sans', fontSize: 12, fontWeight: FontWeight.w400,
+        letterSpacing: -0.25),
       unselectedLabelStyle: const TextStyle(
-        fontFamily: 'Open Sans',
-        fontSize:   12,
-        fontWeight: FontWeight.w400,
-        letterSpacing: -0.25,
-      ),
+        fontFamily: 'Open Sans', fontSize: 12, fontWeight: FontWeight.w400,
+        letterSpacing: -0.25),
       tabs: const [
         Tab(text: 'Informations personnelles'),
         Tab(text: 'Préférences'),
@@ -210,16 +313,18 @@ class _TabBar extends StatelessWidget {
 }
 
 // ── Informations personnelles tab ─────────────────────────────────────────────
+
 class _InfoTab extends StatelessWidget {
   final TextEditingController nom, email, phone, birthdate, ville, adresse, codePostal;
   final bool         editing;
+  final bool         saving;
   final VoidCallback onToggleEdit;
 
   const _InfoTab({
     required this.nom,       required this.email,    required this.phone,
     required this.birthdate, required this.ville,    required this.adresse,
     required this.codePostal,
-    required this.editing,   required this.onToggleEdit,
+    required this.editing,   required this.saving,   required this.onToggleEdit,
   });
 
   @override
@@ -228,38 +333,45 @@ class _InfoTab extends StatelessWidget {
     child: Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Title + Modifier button
+        // Title + Modifier / Enregistrer button
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             const Text('Informations personnelles',
               style: TextStyle(
-                fontFamily: 'Open Sans',
-                fontWeight: FontWeight.w700,
-                fontSize: 16,
-                letterSpacing: -0.31,
-                color: Color(0xFF191C24),
+                fontFamily: 'Open Sans', fontWeight: FontWeight.w700,
+                fontSize: 16, letterSpacing: -0.31, color: Color(0xFF191C24),
               )),
             GestureDetector(
-              onTap: onToggleEdit,
+              onTap: saving ? null : onToggleEdit,
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 7),
                 decoration: BoxDecoration(
-                  color: AppColors.primary,
+                  color: saving
+                      ? const Color(0xFFD1D5DC)
+                      : AppColors.primary,
                   borderRadius: BorderRadius.circular(28.4),
                 ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    const Icon(Icons.edit_outlined, color: Colors.white, size: 13),
+                    if (saving)
+                      const SizedBox(
+                        width: 13, height: 13,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 1.5, color: Colors.white),
+                      )
+                    else
+                      Icon(
+                        editing ? Icons.check_outlined : Icons.edit_outlined,
+                        color: Colors.white, size: 13),
                     const SizedBox(width: 6),
                     Text(
-                      editing ? 'Enregistrer' : 'Modifier',
+                      saving ? 'Enregistrement…'
+                          : editing ? 'Enregistrer' : 'Modifier',
                       style: const TextStyle(
-                        fontFamily: 'Open Sans',
-                        fontSize: 12,
-                        color: Colors.white,
-                        letterSpacing: -0.2,
+                        fontFamily: 'Open Sans', fontSize: 12,
+                        color: Colors.white, letterSpacing: -0.2,
                       ),
                     ),
                   ],
@@ -271,25 +383,26 @@ class _InfoTab extends StatelessWidget {
         const SizedBox(height: 28),
 
         // Form fields
-        _LabeledInput(label: 'Nom complet',        ctrl: nom,        icon: Icons.person_outline_rounded, readOnly: !editing),
+        _LabeledInput(label: 'Nom complet',       ctrl: nom,        icon: Icons.person_outline_rounded,      readOnly: !editing),
         const SizedBox(height: 26),
-        _LabeledInput(label: 'Adresse email',      ctrl: email,      icon: Icons.mail_outline_rounded,   readOnly: !editing, keyboard: TextInputType.emailAddress),
+        _LabeledInput(label: 'Adresse email',     ctrl: email,      icon: Icons.mail_outline_rounded,        readOnly: true,    keyboard: TextInputType.emailAddress),
         const SizedBox(height: 26),
-        _LabeledInput(label: 'Téléphone',          ctrl: phone,      icon: Icons.phone_outlined,          readOnly: !editing, keyboard: TextInputType.phone),
+        _LabeledInput(label: 'Téléphone',         ctrl: phone,      icon: Icons.phone_outlined,              readOnly: !editing, keyboard: TextInputType.phone),
         const SizedBox(height: 26),
-        _LabeledInput(label: 'Date de naissance',  ctrl: birthdate,  icon: Icons.calendar_month_outlined, readOnly: !editing),
+        _LabeledInput(label: 'Date de naissance', ctrl: birthdate,  icon: Icons.calendar_month_outlined,     readOnly: !editing),
         const SizedBox(height: 26),
-        _LabeledInput(label: 'Ville',              ctrl: ville,      icon: Icons.location_on_outlined,    readOnly: !editing),
+        _LabeledInput(label: 'Ville',             ctrl: ville,      icon: Icons.location_on_outlined,        readOnly: !editing),
         const SizedBox(height: 26),
-        _LabeledInput(label: 'Adresse',            ctrl: adresse,    icon: Icons.home_outlined,           readOnly: !editing),
+        _LabeledInput(label: 'Adresse',           ctrl: adresse,    icon: Icons.home_outlined,               readOnly: !editing),
         const SizedBox(height: 26),
-        _LabeledInput(label: 'Code postal',        ctrl: codePostal, icon: Icons.markunread_mailbox_outlined, readOnly: !editing, keyboard: TextInputType.number),
+        _LabeledInput(label: 'Code postal',       ctrl: codePostal, icon: Icons.markunread_mailbox_outlined, readOnly: !editing, keyboard: TextInputType.number),
       ],
     ),
   );
 }
 
-// ── Labeled input field (Figma style with floating orange label tag) ──────────
+// ── Labeled input field ───────────────────────────────────────────────────────
+
 class _LabeledInput extends StatelessWidget {
   final String                label;
   final TextEditingController ctrl;
@@ -309,12 +422,11 @@ class _LabeledInput extends StatelessWidget {
   Widget build(BuildContext context) => Stack(
     clipBehavior: Clip.none,
     children: [
-      // Input container
       Container(
         height: 48,
         padding: const EdgeInsets.symmetric(horizontal: 16),
         decoration: BoxDecoration(
-          color:        readOnly
+          color: readOnly
               ? const Color(0x1AF5F8F9)
               : const Color(0x1AFC5A15),
           borderRadius: BorderRadius.circular(30),
@@ -330,10 +442,8 @@ class _LabeledInput extends StatelessWidget {
                 readOnly:     readOnly,
                 keyboardType: keyboard,
                 style: const TextStyle(
-                  fontFamily: 'Open Sans',
-                  fontSize:   14,
-                  color:      Colors.black,
-                  letterSpacing: -0.36,
+                  fontFamily: 'Open Sans', fontSize: 14,
+                  color: Colors.black, letterSpacing: -0.36,
                 ),
                 decoration: const InputDecoration(
                   border:         InputBorder.none,
@@ -345,30 +455,20 @@ class _LabeledInput extends StatelessWidget {
           ],
         ),
       ),
-      // Floating orange label tag
+      // Floating label tag
       Positioned(
-        top: -8,
-        left: 15,
+        top: -8, left: 15,
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 4),
           decoration: BoxDecoration(
-            color: readOnly ? const Color(0xFF1F1431).withOpacity(0) : AppColors.primary,
+            color: readOnly ? Colors.black : AppColors.primary,
             borderRadius: BorderRadius.circular(10),
           ),
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 4),
-            decoration: BoxDecoration(
-              color: readOnly ? Colors.black : AppColors.primary,
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: Text(
-              label,
-              style: const TextStyle(
-                fontFamily: 'Open Sans',
-                fontSize:   10,
-                color:      Colors.white,
-                height:     1.4,
-              ),
+          child: Text(
+            label,
+            style: const TextStyle(
+              fontFamily: 'Open Sans', fontSize: 10,
+              color: Colors.white, height: 1.4,
             ),
           ),
         ),
@@ -378,6 +478,7 @@ class _LabeledInput extends StatelessWidget {
 }
 
 // ── Préférences tab ──────────────────────────────────────────────────────────
+
 class _PrefsTab extends StatelessWidget {
   final bool   emailNotif;
   final bool   smsNotif;
@@ -399,41 +500,31 @@ class _PrefsTab extends StatelessWidget {
       children: [
         const Text('Préférences',
           style: TextStyle(
-            fontFamily: 'Public Sans',
-            fontWeight: FontWeight.w700,
-            fontSize: 16,
-            letterSpacing: -0.31,
-            color: Color(0xFF191C24),
+            fontFamily: 'Public Sans', fontWeight: FontWeight.w700,
+            fontSize: 16, letterSpacing: -0.31, color: Color(0xFF191C24),
           )),
         const SizedBox(height: 24),
 
-        // Email notifications toggle
         _PrefToggleRow(
-          icon:    Icons.mail_outline_rounded,
-          label:   'Notifications par email',
-          desc:    'Recevoir des notifications sur les nouvelles demandes',
-          value:   emailNotif,
+          icon: Icons.mail_outline_rounded,
+          label: 'Notifications par email',
+          desc: 'Recevoir des notifications sur les nouvelles demandes',
+          value: emailNotif,
           onChanged: onEmailChanged,
         ),
         const SizedBox(height: 26),
 
-        // SMS notifications toggle
         _PrefToggleRow(
-          icon:    Icons.phone_outlined,
-          label:   'Notifications par SMS',
-          desc:    'Recevoir des SMS pour les mises à jour importantes',
-          value:   smsNotif,
+          icon: Icons.phone_outlined,
+          label: 'Notifications par SMS',
+          desc: 'Recevoir des SMS pour les mises à jour importantes',
+          value: smsNotif,
           onChanged: onSmsChanged,
         ),
         const SizedBox(height: 26),
 
-        // Language dropdown
         const Text('Langue',
-          style: TextStyle(
-            fontFamily: 'Public Sans',
-            fontSize: 14,
-            color: Color(0xFF62748E),
-          )),
+          style: TextStyle(fontFamily: 'Public Sans', fontSize: 14, color: Color(0xFF62748E))),
         const SizedBox(height: 8),
         Container(
           height: 48,
@@ -448,15 +539,11 @@ class _PrefsTab extends StatelessWidget {
               value: lang,
               isExpanded: true,
               icon: const Icon(Icons.keyboard_arrow_down_rounded, color: AppColors.primary),
-              style: const TextStyle(
-                fontFamily: 'Public Sans',
-                fontSize: 14,
-                color: Colors.black,
-              ),
+              style: const TextStyle(fontFamily: 'Public Sans', fontSize: 14, color: Colors.black),
               items: const [
-                DropdownMenuItem(value: 'Français',  child: Text('Français')),
-                DropdownMenuItem(value: 'English',   child: Text('English')),
-                DropdownMenuItem(value: 'العربية',   child: Text('العربية')),
+                DropdownMenuItem(value: 'Français', child: Text('Français')),
+                DropdownMenuItem(value: 'English',  child: Text('English')),
+                DropdownMenuItem(value: 'العربية',  child: Text('العربية')),
               ],
               onChanged: onLangChanged,
             ),
@@ -468,10 +555,10 @@ class _PrefsTab extends StatelessWidget {
 }
 
 class _PrefToggleRow extends StatelessWidget {
-  final IconData           icon;
-  final String             label;
-  final String             desc;
-  final bool               value;
+  final IconData            icon;
+  final String              label;
+  final String              desc;
+  final bool                value;
   final void Function(bool) onChanged;
 
   const _PrefToggleRow({
@@ -483,13 +570,12 @@ class _PrefToggleRow extends StatelessWidget {
   Widget build(BuildContext context) => Column(
     crossAxisAlignment: CrossAxisAlignment.start,
     children: [
-      // Input row with toggle as trailing
       Container(
         height: 48,
         padding: const EdgeInsets.symmetric(horizontal: 16),
         decoration: BoxDecoration(
           color: value
-              ? AppColors.primary.withOpacity(0.1)
+              ? AppColors.primary.withValues(alpha: 0.1)
               : const Color(0x1AF5F8F9),
           borderRadius: BorderRadius.circular(30),
           border: Border.all(color: AppColors.primary),
@@ -500,20 +586,14 @@ class _PrefToggleRow extends StatelessWidget {
             const SizedBox(width: 8),
             Expanded(
               child: Text(label,
-                style: const TextStyle(
-                  fontFamily: 'Public Sans',
-                  fontSize: 14,
-                  color: Colors.black,
-                )),
+                style: const TextStyle(fontFamily: 'Public Sans', fontSize: 14, color: Colors.black)),
             ),
-            // Tick / check mark indicator
             Container(
-              width: 20,
-              height: 20,
+              width: 20, height: 20,
               decoration: BoxDecoration(
                 color: value ? AppColors.primary : Colors.transparent,
                 border: Border.all(
-                  color: value ? AppColors.primary : const Color(0xFFFFC3A9)),
+                    color: value ? AppColors.primary : const Color(0xFFFFC3A9)),
                 borderRadius: BorderRadius.circular(5),
               ),
               child: value
@@ -528,10 +608,8 @@ class _PrefToggleRow extends StatelessWidget {
         padding: const EdgeInsets.only(left: 8),
         child: Text(desc,
           style: const TextStyle(
-            fontFamily: 'Inter',
-            fontSize: 12,
-            color: Color(0xFF62748E),
-            letterSpacing: -0.15,
+            fontFamily: 'Inter', fontSize: 12,
+            color: Color(0xFF62748E), letterSpacing: -0.15,
           )),
       ),
     ],
@@ -539,6 +617,7 @@ class _PrefToggleRow extends StatelessWidget {
 }
 
 // ── Sécurité tab ──────────────────────────────────────────────────────────────
+
 class _SecTab extends StatelessWidget {
   final bool   twoFa;
   final void Function(bool) onTwoFaChanged;
@@ -558,69 +637,51 @@ class _SecTab extends StatelessWidget {
       children: [
         const Text('Sécurité',
           style: TextStyle(
-            fontFamily: 'Public Sans',
-            fontWeight: FontWeight.w700,
-            fontSize: 16,
-            letterSpacing: -0.31,
-            color: Color(0xFF191C24),
+            fontFamily: 'Public Sans', fontWeight: FontWeight.w700,
+            fontSize: 16, letterSpacing: -0.31, color: Color(0xFF191C24),
           )),
         const SizedBox(height: 24),
 
-        // Change password
         _SecRow(
-          icon:  Icons.lock_outline_rounded,
+          icon: Icons.lock_outline_rounded,
           label: 'Modifier le mot de passe',
-          desc:  'Changez votre mot de passe régulièrement',
+          desc: 'Changez votre mot de passe régulièrement',
           action: Container(
             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
             decoration: BoxDecoration(
-              color: AppColors.primary,
-              borderRadius: BorderRadius.circular(24.5),
-            ),
+              color: AppColors.primary, borderRadius: BorderRadius.circular(24.5)),
             child: const Text('Modifier',
-              style: TextStyle(
-                fontFamily: 'Public Sans',
-                fontWeight: FontWeight.w700,
-                fontSize: 12,
-                color: Colors.white,
-              )),
+              style: TextStyle(fontFamily: 'Public Sans',
+                  fontWeight: FontWeight.w700, fontSize: 12, color: Colors.white)),
           ),
         ),
         const SizedBox(height: 26),
 
-        // 2FA toggle
         _SecRow(
-          icon:  Icons.security_outlined,
+          icon: Icons.security_outlined,
           label: 'Authentification à deux facteurs',
-          desc:  'Sécurisez votre compte avec la 2FA',
+          desc: 'Sécurisez votre compte avec la 2FA',
           action: Switch(
-            value:          twoFa,
-            onChanged:      onTwoFaChanged,
-            activeColor:    AppColors.primary,
+            value:              twoFa,
+            onChanged:          onTwoFaChanged,
+            activeThumbColor:   AppColors.primary,
             inactiveThumbColor: Colors.white,
             inactiveTrackColor: const Color(0xFFD1D5DC),
           ),
         ),
         const SizedBox(height: 26),
 
-        // Payment methods
         _SecRow(
-          icon:  Icons.credit_card_outlined,
+          icon: Icons.credit_card_outlined,
           label: 'Moyens de paiement',
-          desc:  'Gérez vos cartes bancaires',
+          desc: 'Gérez vos cartes bancaires',
           action: Container(
             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
             decoration: BoxDecoration(
-              color: AppColors.primary,
-              borderRadius: BorderRadius.circular(24.5),
-            ),
+              color: AppColors.primary, borderRadius: BorderRadius.circular(24.5)),
             child: const Text('Gérer',
-              style: TextStyle(
-                fontFamily: 'Public Sans',
-                fontWeight: FontWeight.w700,
-                fontSize: 12,
-                color: Colors.white,
-              )),
+              style: TextStyle(fontFamily: 'Public Sans',
+                  fontWeight: FontWeight.w700, fontSize: 12, color: Colors.white)),
           ),
         ),
         const SizedBox(height: 32),
@@ -641,18 +702,13 @@ class _SecTab extends StatelessWidget {
                   children: [
                     Text('Supprimer mon compte',
                       style: TextStyle(
-                        fontFamily: 'Public Sans',
-                        fontWeight: FontWeight.w600,
-                        fontSize: 14,
-                        color: Color(0xFFDC2626),
+                        fontFamily: 'Public Sans', fontWeight: FontWeight.w600,
+                        fontSize: 14, color: Color(0xFFDC2626),
                       )),
                     SizedBox(height: 2),
                     Text('Cette action est irréversible',
-                      style: TextStyle(
-                        fontFamily: 'Inter',
-                        fontSize: 12,
-                        color: Color(0xFFEF4444),
-                      )),
+                      style: TextStyle(fontFamily: 'Inter', fontSize: 12,
+                          color: Color(0xFFEF4444))),
                   ],
                 ),
               ),
@@ -665,12 +721,8 @@ class _SecTab extends StatelessWidget {
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: const Text('Supprimer',
-                    style: TextStyle(
-                      fontFamily: 'Public Sans',
-                      fontWeight: FontWeight.w600,
-                      fontSize: 12,
-                      color: Colors.white,
-                    )),
+                    style: TextStyle(fontFamily: 'Public Sans',
+                        fontWeight: FontWeight.w600, fontSize: 12, color: Colors.white)),
                 ),
               ),
             ],
@@ -688,8 +740,8 @@ class _SecRow extends StatelessWidget {
   final Widget   action;
 
   const _SecRow({
-    required this.icon,  required this.label,
-    required this.desc,  required this.action,
+    required this.icon,   required this.label,
+    required this.desc,   required this.action,
   });
 
   @override
@@ -711,10 +763,8 @@ class _SecRow extends StatelessWidget {
             Expanded(
               child: Text(label,
                 style: const TextStyle(
-                  fontFamily: 'Public Sans',
-                  fontSize: 14,
-                  color: Colors.black,
-                  letterSpacing: -0.36,
+                  fontFamily: 'Public Sans', fontSize: 14,
+                  color: Colors.black, letterSpacing: -0.36,
                 )),
             ),
             action,
@@ -726,10 +776,8 @@ class _SecRow extends StatelessWidget {
         padding: const EdgeInsets.only(left: 8),
         child: Text(desc,
           style: const TextStyle(
-            fontFamily: 'Inter',
-            fontSize: 12,
-            color: Color(0xFF62748E),
-            letterSpacing: -0.15,
+            fontFamily: 'Inter', fontSize: 12,
+            color: Color(0xFF62748E), letterSpacing: -0.15,
           )),
       ),
     ],

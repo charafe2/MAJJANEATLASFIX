@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import './core/netwrok/api_client.dart';
+import './core/auth_state.dart';
 import './core/routing/app_router.dart';
 
 void main() async {
@@ -11,6 +12,7 @@ void main() async {
     statusBarIconBrightness:  Brightness.dark,
   ));
   ApiClient.init();
+  await AuthState.instance.init();
   runApp(const AtlasFixApp());
 }
 
@@ -30,7 +32,6 @@ class AtlasFixApp extends StatelessWidget {
           seedColor:  const Color(0xFFFC5A15),
           brightness: Brightness.light,
         ),
-        // Remove default input borders — our widgets handle their own styling
         inputDecorationTheme: const InputDecorationTheme(
           border:             InputBorder.none,
           enabledBorder:      InputBorder.none,
@@ -38,13 +39,11 @@ class AtlasFixApp extends StatelessWidget {
           errorBorder:        InputBorder.none,
           focusedErrorBorder: InputBorder.none,
         ),
-        // Remove AppBar shadow
         appBarTheme: const AppBarTheme(
           backgroundColor: Colors.transparent,
           elevation:       0,
           centerTitle:     true,
         ),
-        // Checkbox
         checkboxTheme: CheckboxThemeData(
           fillColor: WidgetStateProperty.resolveWith(
             (s) => s.contains(WidgetState.selected)

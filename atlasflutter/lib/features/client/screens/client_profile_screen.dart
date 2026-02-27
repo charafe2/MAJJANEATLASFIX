@@ -1,9 +1,43 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/constants/app_colors.dart';
+import '../../../../core/auth_state.dart';
+import '../../../../data/repositories/profile_repository.dart';
 
-class ClientProfileScreen extends StatelessWidget {
+class ClientProfileScreen extends StatefulWidget {
   const ClientProfileScreen({super.key});
+
+  @override
+  State<ClientProfileScreen> createState() => _ClientProfileScreenState();
+}
+
+class _ClientProfileScreenState extends State<ClientProfileScreen> {
+  final _repo = ProfileRepository();
+
+  bool         _loading = true;
+  String?      _error;
+  UserProfile? _profile;
+
+  @override
+  void initState() {
+    super.initState();
+    _load();
+  }
+
+  Future<void> _load() async {
+    setState(() { _loading = true; _error = null; });
+    try {
+      final p = await _repo.getProfile();
+      if (mounted) setState(() { _profile = p; _loading = false; });
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _error   = ProfileRepository.errorMessage(e);
+          _loading = false;
+        });
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -28,82 +62,117 @@ class ClientProfileScreen extends StatelessWidget {
           // ── Main column ─────────────────────────────────────────
           Column(
             children: [
-              // Orange header banner
               _Header(),
 
-              // Scrollable body (avatar overlap handled in Stack below)
               Expanded(
-                child: SingleChildScrollView(
-                  padding: const EdgeInsets.fromLTRB(40, 0, 40, 120),
-                  child: Column(
-                    children: [
-                      // Space for avatar that hangs below header
-                      const SizedBox(height: 76),
+                child: _loading
+                    ? const Center(
+                        child: CircularProgressIndicator(color: AppColors.primary))
+                    : _error != null
+                        ? _buildError()
+                        : SingleChildScrollView(
+                            padding: const EdgeInsets.fromLTRB(40, 0, 40, 120),
+                            child: Column(
+                              children: [
+                                const SizedBox(height: 76),
 
-                      // Name
-                      const Text(
-                        'Marie Dupont',
-                        style: TextStyle(
-                          fontFamily: 'Inter',
-                          fontWeight: FontWeight.w600,
-                          fontSize: 20.5,
-                          letterSpacing: 0.06,
-                          color: Colors.black,
-                        ),
-                      ),
-                      const SizedBox(height: 18),
+                                // Name
+                                Text(
+                                  _profile!.name.isNotEmpty
+                                      ? _profile!.name
+                                      : 'Mon profil',
+                                  style: const TextStyle(
+                                    fontFamily: 'Inter',
+                                    fontWeight: FontWeight.w600,
+                                    fontSize: 20.5,
+                                    letterSpacing: 0.06,
+                                    color: Colors.black,
+                                  ),
+                                ),
+                                const SizedBox(height: 18),
 
-                      // Stats row (12 Demandes / 8 Projets terminés)
-                      _StatsRow(),
-                      const SizedBox(height: 30),
+                                // Stats row
+                                _StatsRow(
+                                  demandes:  _profile!.demandesCount,
+                                  completed: _profile!.completedCount,
+                                ),
+                                const SizedBox(height: 30),
 
-                      // Menu: Mes Informations
-                      _MenuBtn(
-                        icon: Icons.person_outline_rounded,
-                        label: 'Mes Informations',
-                        onTap: () => context.push('/client/info'),
-                      ),
-                      const SizedBox(height: 18),
+                                // Menu: Mes Informations
+                                _MenuBtn(
+                                  icon:  Icons.person_outline_rounded,
+                                  label: 'Mes Informations',
+                                  onTap: () => context.push('/client/info'),
+                                ),
+                                const SizedBox(height: 18),
 
-                      // Menu: Mes paiements
-                      _MenuBtn(
-                        icon: Icons.account_balance_wallet_outlined,
-                        label: 'Mes paiements',
-                        onTap: () {},
-                      ),
-                      const SizedBox(height: 120),
+                                // Menu: Mes paiements
+                                _MenuBtn(
+                                  icon:  Icons.account_balance_wallet_outlined,
+                                  label: 'Mes paiements',
+                                  onTap: () {},
+                                ),
+                                const SizedBox(height: 120),
 
-                      // Logout button
-                      _LogoutBtn(),
-                    ],
-                  ),
-                ),
+                                // Logout button
+                                _LogoutBtn(),
+                              ],
+                            ),
+                          ),
               ),
             ],
           ),
 
-          // ── Floating avatar (overlaps header / body boundary) ───
-          const Positioned(
-            top: 150,
-            left: 0,
-            right: 0,
-            child: _Avatar(),
+          // ── Floating avatar ──────────────────────────────────────
+          Positioned(
+            top: 150, left: 0, right: 0,
+            child: _Avatar(avatarUrl: _profile?.avatarUrl),
           ),
 
-          // ── Bottom navigation bar ───────────────────────────────
-          Positioned(
-            bottom: 28,
-            left: 0,
-            right: 0,
+          // ── Bottom navigation bar ────────────────────────────────
+          const Positioned(
+            bottom: 28, left: 0, right: 0,
             child: Center(child: _BottomNavBar(activeIndex: 4)),
           ),
         ],
       ),
     );
   }
+
+  Widget _buildError() {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(32),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.wifi_off_rounded, size: 48, color: Colors.grey.shade300),
+            const SizedBox(height: 12),
+            Text(_error!,
+              textAlign: TextAlign.center,
+              style: const TextStyle(fontFamily: 'Public Sans', fontSize: 14,
+                  color: Color(0xFF62748E))),
+            const SizedBox(height: 20),
+            ElevatedButton.icon(
+              onPressed: _load,
+              icon: const Icon(Icons.refresh_rounded),
+              label: const Text('Réessayer'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primary,
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12)),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 }
 
-// ── Orange header ──────────────────────────────────────────────────────────────
+// ── Orange header ─────────────────────────────────────────────────────────────
+
 class _Header extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
@@ -112,7 +181,7 @@ class _Header extends StatelessWidget {
       decoration: const BoxDecoration(
         color: AppColors.primary,
         borderRadius: BorderRadius.only(
-          bottomLeft: Radius.circular(20),
+          bottomLeft:  Radius.circular(20),
           bottomRight: Radius.circular(20),
         ),
       ),
@@ -123,12 +192,11 @@ class _Header extends StatelessWidget {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              // AtlasFix logo in white
               _WhiteLogo(),
-              Row(
+              const Row(
                 children: [
                   _HeaderIconBtn(Icons.calendar_today_outlined),
-                  const SizedBox(width: 15),
+                  SizedBox(width: 15),
                   _HeaderIconBtn(Icons.notifications_none_rounded),
                 ],
               ),
@@ -140,7 +208,6 @@ class _Header extends StatelessWidget {
   }
 }
 
-// White version of AtlasFix logo for the orange header
 class _WhiteLogo extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Row(
@@ -149,92 +216,77 @@ class _WhiteLogo extends StatelessWidget {
     children: [
       const Text('Atlas',
         style: TextStyle(
-          fontFamily: 'Poppins',
-          fontSize: 22,
-          fontWeight: FontWeight.w700,
-          color: Colors.white,
+          fontFamily: 'Poppins', fontSize: 22,
+          fontWeight: FontWeight.w700, color: Colors.white,
         )),
       const SizedBox(width: 4),
       Container(
         padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
         decoration: BoxDecoration(
-          color: Colors.white.withOpacity(0.25),
+          color: Colors.white.withValues(alpha: 0.25),
           borderRadius: BorderRadius.circular(6),
           border: Border.all(color: Colors.white, width: 1),
         ),
         child: const Text('Fix',
           style: TextStyle(
-            fontFamily: 'Poppins',
-            fontSize: 16,
-            fontWeight: FontWeight.w700,
-            color: Colors.white,
+            fontFamily: 'Poppins', fontSize: 16,
+            fontWeight: FontWeight.w700, color: Colors.white,
           )),
       ),
     ],
   );
 }
 
-// White circle icon button for header
 class _HeaderIconBtn extends StatelessWidget {
   final IconData icon;
   const _HeaderIconBtn(this.icon);
   @override
   Widget build(BuildContext context) => Container(
-    width: 40,
-    height: 40,
-    decoration: const BoxDecoration(
-      color: Colors.white,
-      shape: BoxShape.circle,
-    ),
+    width: 40, height: 40,
+    decoration: const BoxDecoration(color: Colors.white, shape: BoxShape.circle),
     child: Icon(icon, color: const Color(0xFF393C40), size: 20),
   );
 }
 
-// ── Avatar with edit pencil ───────────────────────────────────────────────────
+// ── Avatar ─────────────────────────────────────────────────────────────────────
+
 class _Avatar extends StatelessWidget {
-  const _Avatar();
+  final String? avatarUrl;
+  const _Avatar({this.avatarUrl});
+
   @override
   Widget build(BuildContext context) => Center(
     child: SizedBox(
-      width: 128,
-      height: 128,
+      width: 128, height: 128,
       child: Stack(
         children: [
           Container(
-            width: 128,
-            height: 128,
+            width: 128, height: 128,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              color: AppColors.primary.withOpacity(0.15),
+              color: AppColors.primary.withValues(alpha: 0.15),
               border: Border.all(color: Colors.white, width: 4),
               boxShadow: const [
-                BoxShadow(
-                  color: Color(0x1A000000),
-                  blurRadius: 15,
-                  offset: Offset(0, 10),
-                ),
-                BoxShadow(
-                  color: Color(0x0A000000),
-                  blurRadius: 6,
-                  offset: Offset(0, 4),
-                ),
+                BoxShadow(color: Color(0x1A000000), blurRadius: 15, offset: Offset(0, 10)),
+                BoxShadow(color: Color(0x0A000000), blurRadius: 6,  offset: Offset(0, 4)),
               ],
             ),
             child: ClipOval(
-              child: Icon(Icons.person, size: 64, color: AppColors.primary),
+              child: avatarUrl != null && avatarUrl!.isNotEmpty
+                  ? Image.network(
+                      avatarUrl!,
+                      fit: BoxFit.cover,
+                      errorBuilder: (_, __, ___) =>
+                          Icon(Icons.person, size: 64, color: AppColors.primary),
+                    )
+                  : Icon(Icons.person, size: 64, color: AppColors.primary),
             ),
           ),
-          // Edit pencil
           Positioned(
-            bottom: 0,
-            right: 44,
+            bottom: 0, right: 44,
             child: Container(
-              width: 31,
-              height: 31,
-              decoration: const BoxDecoration(
-                color: Colors.white,
-                shape: BoxShape.circle,
-              ),
+              width: 31, height: 31,
+              decoration: const BoxDecoration(color: Colors.white, shape: BoxShape.circle),
               child: const Icon(Icons.edit, size: 14, color: AppColors.primary),
             ),
           ),
@@ -244,23 +296,33 @@ class _Avatar extends StatelessWidget {
   );
 }
 
-// ── Stats row ────────────────────────────────────────────────────────────────
+// ── Stats row ──────────────────────────────────────────────────────────────────
+
 class _StatsRow extends StatelessWidget {
+  final int demandes;
+  final int completed;
+  const _StatsRow({required this.demandes, required this.completed});
+
   @override
   Widget build(BuildContext context) => Container(
     decoration: BoxDecoration(
       boxShadow: [
-        BoxShadow(
-          color: Colors.black.withOpacity(0.15),
-          blurRadius: 9,
-        ),
+        BoxShadow(color: Colors.black.withValues(alpha: 0.15), blurRadius: 9),
       ],
     ),
     child: Row(
       children: [
-        Expanded(child: _StatCard(icon: Icons.assignment_outlined, count: '12', label: 'Demandes')),
+        Expanded(child: _StatCard(
+          icon:  Icons.assignment_outlined,
+          count: '$demandes',
+          label: 'Demandes',
+        )),
         const SizedBox(width: 10),
-        Expanded(child: _StatCard(icon: Icons.check_circle_outline_rounded, count: '8', label: 'Projets terminés')),
+        Expanded(child: _StatCard(
+          icon:  Icons.check_circle_outline_rounded,
+          count: '$completed',
+          label: 'Projets terminés',
+        )),
       ],
     ),
   );
@@ -271,18 +333,16 @@ class _StatCard extends StatelessWidget {
   final String   count;
   final String   label;
   const _StatCard({required this.icon, required this.count, required this.label});
+
   @override
   Widget build(BuildContext context) => Container(
     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
     decoration: BoxDecoration(
-      color: Colors.white,
-      borderRadius: BorderRadius.circular(6),
-    ),
+      color: Colors.white, borderRadius: BorderRadius.circular(6)),
     child: Row(
       children: [
         Container(
-          width: 26,
-          height: 26,
+          width: 26, height: 26,
           decoration: BoxDecoration(
             color: AppColors.primary,
             borderRadius: BorderRadius.circular(5.4),
@@ -291,22 +351,19 @@ class _StatCard extends StatelessWidget {
         ),
         const SizedBox(width: 8),
         Expanded(
-          child: Text(
-            '$count $label',
+          child: Text('$count $label',
             style: const TextStyle(
-              fontFamily: 'Inter',
-              fontSize: 14,
-              color: Colors.black,
-              letterSpacing: -0.12,
-            ),
-          ),
+              fontFamily: 'Inter', fontSize: 14,
+              color: Colors.black, letterSpacing: -0.12,
+            )),
         ),
       ],
     ),
   );
 }
 
-// ── Dark pill menu button ─────────────────────────────────────────────────────
+// ── Menu button ───────────────────────────────────────────────────────────────
+
 class _MenuBtn extends StatelessWidget {
   final IconData     icon;
   final String       label;
@@ -326,26 +383,17 @@ class _MenuBtn extends StatelessWidget {
       ),
       child: Row(
         children: [
-          Container(
-            width: 27,
-            height: 27,
-            decoration: BoxDecoration(
-              color: Colors.transparent,
-              borderRadius: BorderRadius.circular(4),
-            ),
+          SizedBox(
+            width: 27, height: 27,
             child: Icon(icon, color: Colors.white, size: 22),
           ),
           const SizedBox(width: 12),
           Expanded(
-            child: Text(
-              label,
+            child: Text(label,
               style: const TextStyle(
-                fontFamily: 'Inter',
-                fontSize: 14.2,
-                color: Colors.white,
-                letterSpacing: -0.15,
-              ),
-            ),
+                fontFamily: 'Inter', fontSize: 14.2,
+                color: Colors.white, letterSpacing: -0.15,
+              )),
           ),
           const Icon(Icons.arrow_forward_ios_rounded, color: Colors.white, size: 18),
         ],
@@ -355,11 +403,11 @@ class _MenuBtn extends StatelessWidget {
 }
 
 // ── Logout button ─────────────────────────────────────────────────────────────
+
 class _LogoutBtn extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Container(
-    width: 270,
-    height: 56,
+    width: 270, height: 56,
     padding: const EdgeInsets.all(8),
     decoration: BoxDecoration(
       color: Colors.white,
@@ -367,7 +415,10 @@ class _LogoutBtn extends StatelessWidget {
       border: Border.all(color: const Color(0xFFFFC9C9), width: 0.9),
     ),
     child: ElevatedButton.icon(
-      onPressed: () => context.go('/login'),
+      onPressed: () async {
+        await AuthState.instance.logout();
+        // GoRouter's refreshListenable picks up the change and redirects to /login
+      },
       style: ElevatedButton.styleFrom(
         backgroundColor: const Color(0xFFE7000B),
         elevation: 0,
@@ -377,10 +428,8 @@ class _LogoutBtn extends StatelessWidget {
       label: const Text(
         'Se déconnecter',
         style: TextStyle(
-          fontFamily: 'Open Sans',
-          fontWeight: FontWeight.w700,
-          fontSize: 12,
-          color: Colors.white,
+          fontFamily: 'Open Sans', fontWeight: FontWeight.w700,
+          fontSize: 12, color: Colors.white,
         ),
       ),
     ),
@@ -388,6 +437,7 @@ class _LogoutBtn extends StatelessWidget {
 }
 
 // ── Bottom navigation bar ─────────────────────────────────────────────────────
+
 class _BottomNavBar extends StatelessWidget {
   final int activeIndex;
   const _BottomNavBar({required this.activeIndex});
@@ -403,8 +453,7 @@ class _BottomNavBar extends StatelessWidget {
     ];
 
     return Container(
-      width: 342,
-      height: 60,
+      width: 342, height: 60,
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
       decoration: BoxDecoration(
         color: const Color(0xFF303030),
@@ -415,28 +464,32 @@ class _BottomNavBar extends StatelessWidget {
         children: List.generate(items.length, (i) {
           final active = i == activeIndex;
           if (i == 2) {
-            // Center "+" button
-            return Container(
-              width: 44,
-              height: 44,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                border: Border.all(color: Colors.white, width: 1),
+            return GestureDetector(
+              onTap: () => context.push('/client/service-categories'),
+              child: Container(
+                width: 44, height: 44,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  border: Border.all(color: Colors.white, width: 1),
+                ),
+                child: const Icon(Icons.add, color: Colors.white, size: 22),
               ),
-              child: Icon(Icons.add, color: Colors.white, size: 22),
             );
           }
-          return Container(
-            width: 44,
-            height: 44,
-            decoration: BoxDecoration(
-              color: active ? Colors.white : Colors.transparent,
-              shape: BoxShape.circle,
-            ),
-            child: Icon(
-              items[i],
-              color: active ? AppColors.primary : Colors.white,
-              size: 22,
+          return GestureDetector(
+            onTap: () {
+              if (i == 0) context.go('/client/dashboard');
+              if (i == 1) context.go('/client/mes-demandes');
+              if (i == 3) context.go('/client/messages');
+            },
+            child: Container(
+              width: 44, height: 44,
+              decoration: BoxDecoration(
+                color: active ? Colors.white : Colors.transparent,
+                shape: BoxShape.circle,
+              ),
+              child: Icon(items[i],
+                color: active ? AppColors.primary : Colors.white, size: 22),
             ),
           );
         }),

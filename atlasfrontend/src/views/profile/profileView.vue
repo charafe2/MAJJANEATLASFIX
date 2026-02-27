@@ -134,9 +134,9 @@
 
         </template>
 
-        <!-- ══════════════════════════════════════════════════════════════════
+        <!-- 
              ARTISAN VIEW  (artisan visiting a client profile — read-only)
-        ══════════════════════════════════════════════════════════════════ -->
+    -->
         <template v-else>
 
           <button class="back-btn" @click="goBack">

@@ -1,41 +1,38 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/constants/app_colors.dart';
+import '../../../../data/repositories/service_request_repository.dart';
 
-// ── Category data ─────────────────────────────────────────────────────────────
+// ── Icon mapping ──────────────────────────────────────────────────────────────
 
-class _ServiceCategory {
-  final String label;
-  final IconData icon;
-  const _ServiceCategory(this.label, this.icon);
+IconData _catIcon(String name) {
+  final n = name.toLowerCase();
+  if (n.contains('plomb'))                           return Icons.water_drop_outlined;
+  if (n.contains('élec') || n.contains('elec'))     return Icons.bolt_outlined;
+  if (n.contains('peinture'))                        return Icons.format_paint_outlined;
+  if (n.contains('menuiser'))                        return Icons.carpenter_outlined;
+  if (n.contains('nettoy'))                          return Icons.cleaning_services_outlined;
+  if (n.contains('jardin'))                          return Icons.grass_outlined;
+  if (n.contains('déménag'))                         return Icons.local_shipping_outlined;
+  if (n.contains('chauffeur'))                       return Icons.directions_car_outlined;
+  if (n.contains('mécanique'))                       return Icons.settings_outlined;
+  if (n.contains('vitrerie'))                        return Icons.window_outlined;
+  if (n.contains('toiture'))                         return Icons.roofing_outlined;
+  if (n.contains('fitness') || n.contains('sport')) return Icons.fitness_center_outlined;
+  if (n.contains('photo'))                           return Icons.photo_camera_outlined;
+  if (n.contains('vidéo') || n.contains('video'))   return Icons.videocam_outlined;
+  if (n.contains('beauté') || n.contains('coiff'))  return Icons.content_cut_outlined;
+  if (n.contains('restaur'))                         return Icons.restaurant_outlined;
+  if (n.contains('évènem') || n.contains('event'))  return Icons.event_outlined;
+  if (n.contains('location') || n.contains('matér'))return Icons.hardware_outlined;
+  if (n.contains('ordinateur') || n.contains('laptop')) return Icons.laptop_outlined;
+  if (n.contains('impression'))                      return Icons.print_outlined;
+  if (n.contains('construct'))                       return Icons.construction_outlined;
+  if (n.contains('support') || n.contains('tech'))  return Icons.headset_mic_outlined;
+  if (n.contains('énergie') || n.contains('appare'))return Icons.electrical_services_outlined;
+  if (n.contains('technologie'))                     return Icons.computer_outlined;
+  return Icons.build_outlined;
 }
-
-const _kAllCategories = [
-  _ServiceCategory('Réparations\ngénérales',        Icons.build_outlined),
-  _ServiceCategory('Plomberie',                      Icons.water_drop_outlined),
-  _ServiceCategory('Électricité',                    Icons.bolt_outlined),
-  _ServiceCategory('Peinture',                       Icons.format_paint_outlined),
-  _ServiceCategory('Technologie',                    Icons.computer_outlined),
-  _ServiceCategory('Nettoyage',                      Icons.cleaning_services_outlined),
-  _ServiceCategory('Déménagement',                   Icons.local_shipping_outlined),
-  _ServiceCategory('Chauffeur &\nInstallation',      Icons.directions_car_outlined),
-  _ServiceCategory('Mécanique\ntotale',              Icons.settings_outlined),
-  _ServiceCategory('Vitrerie',                       Icons.window_outlined),
-  _ServiceCategory('Assurance de\nToiture',          Icons.roofing_outlined),
-  _ServiceCategory('Fitness &\nSport',               Icons.fitness_center_outlined),
-  _ServiceCategory('Photo',                          Icons.photo_camera_outlined),
-  _ServiceCategory('Vidéo',                          Icons.videocam_outlined),
-  _ServiceCategory('Mesure &\nLivraison',            Icons.straighten_outlined),
-  _ServiceCategory('Beauté &\nStyle',                Icons.content_cut_outlined),
-  _ServiceCategory('Service de\nRestauration',       Icons.restaurant_outlined),
-  _ServiceCategory('Organisation\nd\'évènements',    Icons.event_outlined),
-  _ServiceCategory('Location de\nMatériel',          Icons.hardware_outlined),
-  _ServiceCategory('Réparations\nOrdinateur',        Icons.laptop_outlined),
-  _ServiceCategory('Impression',                     Icons.print_outlined),
-  _ServiceCategory('Construction\nManuel',           Icons.construction_outlined),
-  _ServiceCategory('Support\nTechnique',             Icons.headset_mic_outlined),
-  _ServiceCategory('Appareils &\nÉnergie',           Icons.electrical_services_outlined),
-];
 
 // ── Screen ────────────────────────────────────────────────────────────────────
 
@@ -49,13 +46,19 @@ class ClientServiceCategoryScreen extends StatefulWidget {
 
 class _ClientServiceCategoryScreenState
     extends State<ClientServiceCategoryScreen> {
+  final _repo       = ServiceRequestRepository();
   final _searchCtrl = TextEditingController();
-  List<_ServiceCategory> _filtered = List.of(_kAllCategories);
+
+  bool _isLoading = true;
+  String? _error;
+  List<ServiceCategory> _all      = [];
+  List<ServiceCategory> _filtered = [];
 
   @override
   void initState() {
     super.initState();
     _searchCtrl.addListener(_onSearch);
+    _load();
   }
 
   @override
@@ -65,21 +68,41 @@ class _ClientServiceCategoryScreenState
     super.dispose();
   }
 
+  Future<void> _load() async {
+    setState(() { _isLoading = true; _error = null; });
+    try {
+      final cats = await _repo.getCategories();
+      if (mounted) {
+        setState(() {
+          _all      = cats;
+          _filtered = cats;
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _error     = ServiceRequestRepository.errorMessage(e);
+          _isLoading = false;
+        });
+      }
+    }
+  }
+
   void _onSearch() {
     final q = _searchCtrl.text.toLowerCase();
     setState(() {
       _filtered = q.isEmpty
-          ? List.of(_kAllCategories)
-          : _kAllCategories
-              .where((c) => c.label.toLowerCase().contains(q))
-              .toList();
+          ? _all
+          : _all.where((c) => c.name.toLowerCase().contains(q)).toList();
     });
   }
 
-  void _onCategoryTap(_ServiceCategory cat) {
-    // Strip newlines for query param
-    final name = cat.label.replaceAll('\n', ' ');
-    context.push('/client/service-types', extra: {'category': name});
+  void _onCategoryTap(ServiceCategory cat) {
+    context.push('/client/service-types', extra: {
+      'categoryId': cat.id,
+      'category':   cat.name,
+    });
   }
 
   @override
@@ -108,32 +131,7 @@ class _ClientServiceCategoryScreenState
               _buildHeader(context),
 
               // ── Grid ───────────────────────────────────────────────
-              Expanded(
-                child: _filtered.isEmpty
-                    ? const Center(
-                        child: Text('Aucune catégorie trouvée',
-                            style: TextStyle(
-                              fontFamily: 'Public Sans',
-                              fontSize: 14,
-                              color: AppColors.grey,
-                            )),
-                      )
-                    : GridView.builder(
-                        padding: const EdgeInsets.fromLTRB(20, 20, 20, 110),
-                        gridDelegate:
-                            const SliverGridDelegateWithFixedCrossAxisCount(
-                          crossAxisCount: 4,
-                          mainAxisSpacing: 16,
-                          crossAxisSpacing: 12,
-                          childAspectRatio: 0.78,
-                        ),
-                        itemCount: _filtered.length,
-                        itemBuilder: (_, i) => _CategoryTile(
-                          cat: _filtered[i],
-                          onTap: () => _onCategoryTap(_filtered[i]),
-                        ),
-                      ),
-              ),
+              Expanded(child: _buildBody()),
             ],
           ),
 
@@ -145,6 +143,63 @@ class _ClientServiceCategoryScreenState
             child: Center(child: _BottomNavBar()),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildBody() {
+    if (_isLoading) {
+      return const Center(
+          child: CircularProgressIndicator(color: AppColors.primary));
+    }
+    if (_error != null) {
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.all(32),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(Icons.wifi_off_rounded, size: 48, color: Colors.grey.shade300),
+              const SizedBox(height: 12),
+              Text(_error!, textAlign: TextAlign.center,
+                style: const TextStyle(fontFamily: 'Public Sans', fontSize: 14,
+                    color: Color(0xFF62748E))),
+              const SizedBox(height: 20),
+              ElevatedButton.icon(
+                onPressed: _load,
+                icon: const Icon(Icons.refresh_rounded),
+                label: const Text('Réessayer'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.primary,
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12)),
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+    if (_filtered.isEmpty) {
+      return const Center(
+        child: Text('Aucune catégorie trouvée',
+          style: TextStyle(fontFamily: 'Public Sans', fontSize: 14,
+              color: AppColors.grey)),
+      );
+    }
+    return GridView.builder(
+      padding: const EdgeInsets.fromLTRB(20, 20, 20, 110),
+      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 4,
+        mainAxisSpacing: 16,
+        crossAxisSpacing: 12,
+        childAspectRatio: 0.78,
+      ),
+      itemCount: _filtered.length,
+      itemBuilder: (_, i) => _CategoryTile(
+        cat: _filtered[i],
+        onTap: () => _onCategoryTap(_filtered[i]),
       ),
     );
   }
@@ -247,7 +302,7 @@ class _ClientServiceCategoryScreenState
 // ── Category tile ─────────────────────────────────────────────────────────────
 
 class _CategoryTile extends StatelessWidget {
-  final _ServiceCategory cat;
+  final ServiceCategory cat;
   final VoidCallback onTap;
   const _CategoryTile({required this.cat, required this.onTap});
 
@@ -264,11 +319,11 @@ class _CategoryTile extends StatelessWidget {
                 color: AppColors.primary.withValues(alpha: 0.10),
                 borderRadius: BorderRadius.circular(14),
               ),
-              child: Icon(cat.icon, color: AppColors.primary, size: 26),
+              child: Icon(_catIcon(cat.name), color: AppColors.primary, size: 26),
             ),
             const SizedBox(height: 6),
             Text(
-              cat.label,
+              cat.name,
               textAlign: TextAlign.center,
               maxLines: 2,
               overflow: TextOverflow.ellipsis,

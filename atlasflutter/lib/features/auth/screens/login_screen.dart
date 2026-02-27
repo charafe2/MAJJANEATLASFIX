@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/storage/secure_storage.dart';
+import '../../../../core/auth_state.dart';
 import '../../../data/repositories/auth_repository.dart';
 import '../../../core/widgets/auth_widgets.dart';
 
@@ -25,6 +26,7 @@ class _LoginScreenState extends State<LoginScreen> {
       final r = await _repo.login(email: _email.text.trim(), password: _password.text);
       await SecureStorage.saveToken(r.token);
       await SecureStorage.saveUser(r.user.toJson());
+      AuthState.instance.setLoggedIn(true, role: r.user.accountType);
       if (!mounted) return;
       context.go(r.user.accountType == 'client' ? '/client/dashboard' : '/artisan/dashboard');
     } on DioException catch (e) {

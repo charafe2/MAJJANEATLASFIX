@@ -10,6 +10,9 @@ import Navbar from './components/navbar.vue';
 
 </template>
 <style scoped>
+*{
+  margin: 0;
+}
 .logo {
   height: 6em;
   padding: 1.5em;

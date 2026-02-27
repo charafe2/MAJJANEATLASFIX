@@ -1,33 +1,35 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/constants/app_colors.dart';
+import '../../../../data/repositories/service_request_repository.dart';
+import '../../../../data/repositories/artisan_repository.dart';
 
-// ── Static placeholder data ───────────────────────────────────────────────────
-const _kCategories = [
-  _Category('Réparations\ngénérales', Icons.build_outlined),
-  _Category('Plomberie',              Icons.water_drop_outlined),
-  _Category('Électricité',            Icons.bolt_outlined),
-  _Category('Peinture',               Icons.format_paint_outlined),
-  _Category('Menuiserie',             Icons.carpenter_outlined),
-  _Category('Jardinage',              Icons.grass_outlined),
-];
-
-const _kArtisans = [
-  _Artisan('Ahmed Bennani',  'Plomberie & Sanitaire', 'Casablanca', 4.9, 127, Icons.water_drop_outlined),
-  _Artisan('Omar Berrada',   'Dépannage Urgence',      'Marrakech',  4.5, 127, Icons.bolt_outlined),
-  _Artisan('Samir Tahiri',   'Peinture intérieure\net extérieure', 'Tanger', 4.9, 127, Icons.format_paint_outlined),
-  _Artisan('Driss Mansouri', 'Travaux de menuiserie', 'Casablanca', 4.9, 127, Icons.carpenter_outlined),
-];
-
+// ── FAQ (static) ──────────────────────────────────────────────────────────────
 const _kFaq = [
-  'Lorem ipsum dolor sit amet, cons',
-  'Lorem ipsum dolor sit amet, cons',
-  'Lorem ipsum dolor sit amet, cons',
-  'Lorem ipsum dolor sit amet, cons',
+  'Comment fonctionne AtlasFix ?',
+  'Comment puis-je contacter un artisan ?',
+  'Mes paiements sont-ils sécurisés ?',
+  'Puis-je annuler une demande ?',
 ];
-
 const _kFaqAnswer =
-    'Korem ipsum dolor sit amet, consectetur adipis cing elit. Nunc vulputate libero et velit interdum, ac aliquet odio mattis. Class aptent taciti sociosqu.';
+    'AtlasFix met en relation clients et artisans qualifiés. Publiez votre demande, recevez des offres et choisissez l\'artisan qui vous convient. Votre paiement est sécurisé et libéré uniquement après validation des travaux.';
+
+// ── Icon mapping ──────────────────────────────────────────────────────────────
+IconData _catIcon(String name) {
+  final n = name.toLowerCase();
+  if (n.contains('plomb'))                           return Icons.water_drop_outlined;
+  if (n.contains('élec') || n.contains('elec'))     return Icons.bolt_outlined;
+  if (n.contains('peinture'))                        return Icons.format_paint_outlined;
+  if (n.contains('menuiser'))                        return Icons.carpenter_outlined;
+  if (n.contains('nettoy'))                          return Icons.cleaning_services_outlined;
+  if (n.contains('jardin'))                          return Icons.grass_outlined;
+  if (n.contains('déménag'))                         return Icons.local_shipping_outlined;
+  if (n.contains('beauté') || n.contains('coiff'))  return Icons.content_cut_outlined;
+  if (n.contains('restaur'))                         return Icons.restaurant_outlined;
+  if (n.contains('construct'))                       return Icons.construction_outlined;
+  if (n.contains('climatis') || n.contains('clim')) return Icons.ac_unit_outlined;
+  return Icons.build_outlined;
+}
 
 // ─────────────────────────────────────────────────────────────────────────────
 class ClientHomeScreen extends StatefulWidget {
@@ -37,7 +39,40 @@ class ClientHomeScreen extends StatefulWidget {
 }
 
 class _ClientHomeScreenState extends State<ClientHomeScreen> {
-  int _expandedFaq = 1; // second FAQ open by default (as in design)
+  final _catRepo     = ServiceRequestRepository();
+  final _artisanRepo = ArtisanRepository();
+
+  int _expandedFaq = 1;
+
+  List<ServiceCategory> _categories = [];
+  List<PublicArtisan>   _artisans   = [];
+  bool _catsLoading    = true;
+  bool _artisansLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadCategories();
+    _loadArtisans();
+  }
+
+  Future<void> _loadCategories() async {
+    try {
+      final data = await _catRepo.getCategories();
+      if (mounted) setState(() { _categories = data; _catsLoading = false; });
+    } catch (_) {
+      if (mounted) setState(() => _catsLoading = false);
+    }
+  }
+
+  Future<void> _loadArtisans() async {
+    try {
+      final data = await _artisanRepo.getArtisans();
+      if (mounted) setState(() { _artisans = data; _artisansLoading = false; });
+    } catch (_) {
+      if (mounted) setState(() => _artisansLoading = false);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -59,21 +94,22 @@ class _ClientHomeScreenState extends State<ClientHomeScreen> {
             ),
           ),
 
-          // Main scrollable content
           CustomScrollView(
             slivers: [
-              // ── Orange header with search ─────────────────────────
               SliverToBoxAdapter(child: _HomeHeader()),
 
-              // ── Service categories ────────────────────────────────
+              // ── Categories strip ──────────────────────────────────
               SliverToBoxAdapter(
                 child: Padding(
                   padding: const EdgeInsets.fromLTRB(0, 16, 0, 0),
-                  child: _ServiceCategories(),
+                  child: _catsLoading
+                      ? const SizedBox(height: 80,
+                          child: Center(child: CircularProgressIndicator(
+                            color: AppColors.primary, strokeWidth: 2)))
+                      : _ServiceCategories(categories: _categories),
                 ),
               ),
 
-              // ── "Lorem ipsum" section label (section heading) ─────
               const SliverToBoxAdapter(child: SizedBox(height: 20)),
 
               // ── Promo banner ──────────────────────────────────────
@@ -84,13 +120,9 @@ class _ClientHomeScreenState extends State<ClientHomeScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       const Text('Annonce d\'Aujourd\'hui',
-                        style: TextStyle(
-                          fontFamily: 'Public Sans',
-                          fontWeight: FontWeight.w700,
-                          fontSize: 18,
-                          letterSpacing: -0.31,
-                          color: Color(0xFF191C24),
-                        )),
+                        style: TextStyle(fontFamily: 'Public Sans',
+                          fontWeight: FontWeight.w700, fontSize: 18,
+                          letterSpacing: -0.31, color: Color(0xFF191C24))),
                       const SizedBox(height: 18),
                       _PromoCard(),
                     ],
@@ -100,30 +132,23 @@ class _ClientHomeScreenState extends State<ClientHomeScreen> {
 
               const SliverToBoxAdapter(child: SizedBox(height: 28)),
 
-              // ── "Nos artisans les mieux notés" ────────────────────
-              SliverToBoxAdapter(
+              // ── Top artisans ──────────────────────────────────────
+              const SliverToBoxAdapter(
                 child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 30),
+                  padding: EdgeInsets.symmetric(horizontal: 30),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      const Text('Nos artisans les mieux notés',
-                        style: TextStyle(
-                          fontFamily: 'Public Sans',
-                          fontWeight: FontWeight.w700,
-                          fontSize: 18,
-                          letterSpacing: -0.31,
-                          color: Color(0xFF191C24),
-                        )),
-                      Container(
-                        width: 24,
-                        height: 24,
-                        decoration: const BoxDecoration(
-                          color: AppColors.primary,
-                          shape: BoxShape.circle,
-                        ),
-                        child: const Icon(Icons.arrow_forward_ios_rounded,
-                          color: Colors.white, size: 12),
+                      Text('Nos artisans les mieux notés',
+                        style: TextStyle(fontFamily: 'Public Sans',
+                          fontWeight: FontWeight.w700, fontSize: 18,
+                          letterSpacing: -0.31, color: Color(0xFF191C24))),
+                      DecoratedBox(
+                        decoration: BoxDecoration(
+                          color: AppColors.primary, shape: BoxShape.circle),
+                        child: SizedBox(width: 24, height: 24,
+                          child: Icon(Icons.arrow_forward_ios_rounded,
+                            color: Colors.white, size: 12)),
                       ),
                     ],
                   ),
@@ -132,23 +157,32 @@ class _ClientHomeScreenState extends State<ClientHomeScreen> {
 
               const SliverToBoxAdapter(child: SizedBox(height: 14)),
 
-              // Horizontal artisan cards
               SliverToBoxAdapter(
                 child: SizedBox(
                   height: 343,
-                  child: ListView.separated(
-                    scrollDirection: Axis.horizontal,
-                    padding: const EdgeInsets.only(left: 30, right: 8),
-                    itemCount: _kArtisans.length,
-                    separatorBuilder: (_, __) => const SizedBox(width: 18),
-                    itemBuilder: (_, i) => _ArtisanCard(artisan: _kArtisans[i]),
-                  ),
+                  child: _artisansLoading
+                      ? const Center(child: CircularProgressIndicator(
+                          color: AppColors.primary, strokeWidth: 2))
+                      : _artisans.isEmpty
+                          ? const Center(
+                              child: Text('Aucun artisan disponible.',
+                                style: TextStyle(fontFamily: 'Public Sans',
+                                    fontSize: 13, color: Color(0xFF9CA3AF))))
+                          : ListView.separated(
+                              scrollDirection: Axis.horizontal,
+                              padding: const EdgeInsets.only(left: 30, right: 8),
+                              itemCount: _artisans.length,
+                              separatorBuilder: (_, __) =>
+                                  const SizedBox(width: 18),
+                              itemBuilder: (_, i) =>
+                                  _ArtisanCard(artisan: _artisans[i]),
+                            ),
                 ),
               ),
 
               const SliverToBoxAdapter(child: SizedBox(height: 28)),
 
-              // ── FAQ section ───────────────────────────────────────
+              // ── FAQ ───────────────────────────────────────────────
               SliverToBoxAdapter(
                 child: Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 30),
@@ -156,36 +190,29 @@ class _ClientHomeScreenState extends State<ClientHomeScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       const Text('Questions fréquentes',
-                        style: TextStyle(
-                          fontFamily: 'Public Sans',
-                          fontWeight: FontWeight.w700,
-                          fontSize: 18,
-                          letterSpacing: -0.27,
-                          color: Color(0xFF191C24),
-                        )),
+                        style: TextStyle(fontFamily: 'Public Sans',
+                          fontWeight: FontWeight.w700, fontSize: 18,
+                          letterSpacing: -0.27, color: Color(0xFF191C24))),
                       const SizedBox(height: 16),
                       ...List.generate(_kFaq.length, (i) => _FaqItem(
                         question: _kFaq[i],
                         answer:   _kFaqAnswer,
                         isOpen:   _expandedFaq == i,
                         onTap:    () => setState(() =>
-                          _expandedFaq = _expandedFaq == i ? -1 : i),
+                            _expandedFaq = _expandedFaq == i ? -1 : i),
                       )),
                     ],
                   ),
                 ),
               ),
 
-              // Bottom padding for nav bar
               const SliverToBoxAdapter(child: SizedBox(height: 110)),
             ],
           ),
 
-          // ── Bottom navigation bar ─────────────────────────────────
-          Positioned(
-            bottom: 28,
-            left: 0,
-            right: 0,
+          // ── Bottom nav ────────────────────────────────────────────
+          const Positioned(
+            bottom: 28, left: 0, right: 0,
             child: Center(child: _BottomNavBar(activeIndex: 0)),
           ),
         ],
@@ -202,7 +229,7 @@ class _HomeHeader extends StatelessWidget {
       decoration: const BoxDecoration(
         color: AppColors.primary,
         borderRadius: BorderRadius.only(
-          bottomLeft:  Radius.circular(20),
+          bottomLeft: Radius.circular(20),
           bottomRight: Radius.circular(20),
         ),
       ),
@@ -212,7 +239,6 @@ class _HomeHeader extends StatelessWidget {
           padding: const EdgeInsets.fromLTRB(24, 12, 24, 20),
           child: Column(
             children: [
-              // Top row: logo + icon buttons
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
@@ -223,27 +249,23 @@ class _HomeHeader extends StatelessWidget {
                       child: const _HeaderIconBtn(Icons.calendar_today_outlined),
                     ),
                     const SizedBox(width: 15),
-                    _HeaderIconBtn(Icons.notifications_none_rounded),
+                    const _HeaderIconBtn(Icons.notifications_none_rounded),
                   ]),
                 ],
               ),
               const SizedBox(height: 18),
-
-              // Search + city row
-              Row(children: [
-                // Search field
+              const Row(children: [
                 Expanded(
                   flex: 55,
                   child: _SearchPill(
-                    hint:   'Quelle service recherc…',
+                    hint: 'Quelle service recherc…',
                     darkIcon: Icons.search,
                     translucent: true,
                   ),
                 ),
-                const SizedBox(width: 8),
-                // City filter
+                SizedBox(width: 8),
                 _SearchPill(
-                  hint:   'Ville…',
+                  hint: 'Ville…',
                   darkIcon: Icons.keyboard_arrow_down_rounded,
                   translucent: false,
                   width: 112,
@@ -258,9 +280,9 @@ class _HomeHeader extends StatelessWidget {
 }
 
 class _SearchPill extends StatelessWidget {
-  final String  hint;
+  final String hint;
   final IconData darkIcon;
-  final bool    translucent;
+  final bool translucent;
   final double? width;
   const _SearchPill({
     required this.hint, required this.darkIcon,
@@ -273,30 +295,21 @@ class _SearchPill extends StatelessWidget {
       height: 48,
       padding: const EdgeInsets.fromLTRB(16, 12, 7, 12),
       decoration: BoxDecoration(
-        color: translucent
-            ? Colors.white.withOpacity(0.8)
-            : Colors.white,
+        color: translucent ? Colors.white.withValues(alpha: 0.8) : Colors.white,
         borderRadius: BorderRadius.circular(100),
       ),
       child: Row(children: [
         Expanded(
           child: Text(hint,
             overflow: TextOverflow.ellipsis,
-            style: const TextStyle(
-              fontFamily: 'Public Sans',
-              fontSize:   14,
-              color:      Color(0xFF494949),
-              letterSpacing: -0.14,
-            )),
+            style: const TextStyle(fontFamily: 'Public Sans', fontSize: 14,
+                color: Color(0xFF494949), letterSpacing: -0.14)),
         ),
         const SizedBox(width: 8),
         Container(
-          width:  36,
-          height: 36,
+          width: 36, height: 36,
           decoration: const BoxDecoration(
-            color: Color(0xFF393C40),
-            shape: BoxShape.circle,
-          ),
+            color: Color(0xFF393C40), shape: BoxShape.circle),
           child: Icon(darkIcon, color: Colors.white, size: 18),
         ),
       ]),
@@ -312,23 +325,19 @@ class _WhiteLogo extends StatelessWidget {
     mainAxisSize: MainAxisSize.min,
     children: [
       const Text('Atlas',
-        style: TextStyle(
-          fontFamily: 'Poppins', fontSize: 22,
-          fontWeight: FontWeight.w700, color: Colors.white,
-        )),
+        style: TextStyle(fontFamily: 'Poppins', fontSize: 22,
+            fontWeight: FontWeight.w700, color: Colors.white)),
       const SizedBox(width: 4),
       Container(
         padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
         decoration: BoxDecoration(
-          color: Colors.white.withOpacity(0.25),
+          color: Colors.white.withValues(alpha: 0.25),
           borderRadius: BorderRadius.circular(6),
           border: Border.all(color: Colors.white),
         ),
         child: const Text('Fix',
-          style: TextStyle(
-            fontFamily: 'Poppins', fontSize: 16,
-            fontWeight: FontWeight.w700, color: Colors.white,
-          )),
+          style: TextStyle(fontFamily: 'Poppins', fontSize: 16,
+              fontWeight: FontWeight.w700, color: Colors.white)),
       ),
     ],
   );
@@ -341,32 +350,40 @@ class _HeaderIconBtn extends StatelessWidget {
   Widget build(BuildContext context) => Container(
     width: 40, height: 40,
     decoration: const BoxDecoration(color: Colors.white, shape: BoxShape.circle),
-    child: Icon(icon, color: Color(0xFF393C40), size: 20),
+    child: Icon(icon, color: const Color(0xFF393C40), size: 20),
   );
 }
 
-// ── Service categories ────────────────────────────────────────────────────────
+// ── Service categories strip ───────────────────────────────────────────────────
 class _ServiceCategories extends StatelessWidget {
+  final List<ServiceCategory> categories;
+  const _ServiceCategories({required this.categories});
+
   @override
-  Widget build(BuildContext context) => SizedBox(
-    height: 80,
-    child: ListView.separated(
-      scrollDirection: Axis.horizontal,
-      padding: const EdgeInsets.symmetric(horizontal: 30),
-      itemCount: _kCategories.length,
-      separatorBuilder: (_, __) => const SizedBox(width: 12),
-      itemBuilder: (_, i) => _CategoryChip(cat: _kCategories[i]),
-    ),
-  );
+  Widget build(BuildContext context) {
+    if (categories.isEmpty) return const SizedBox(height: 80);
+    return SizedBox(
+      height: 80,
+      child: ListView.separated(
+        scrollDirection: Axis.horizontal,
+        padding: const EdgeInsets.symmetric(horizontal: 30),
+        itemCount: categories.length,
+        separatorBuilder: (_, __) => const SizedBox(width: 12),
+        itemBuilder: (_, i) => _CategoryChip(cat: categories[i]),
+      ),
+    );
+  }
 }
 
 class _CategoryChip extends StatelessWidget {
-  final _Category cat;
+  final ServiceCategory cat;
   const _CategoryChip({required this.cat});
   @override
   Widget build(BuildContext context) => GestureDetector(
-    onTap: () => context.push('/client/service-types',
-        extra: {'category': cat.label.replaceAll('\n', ' ')}),
+    onTap: () => context.push('/client/service-types', extra: {
+      'categoryId': cat.id,
+      'category':   cat.name,
+    }),
     child: Column(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -376,21 +393,21 @@ class _CategoryChip extends StatelessWidget {
             color: AppColors.primary.withValues(alpha: 0.12),
             shape: BoxShape.circle,
           ),
-          child: Icon(cat.icon, color: AppColors.primary, size: 22),
+          child: Icon(_catIcon(cat.name), color: AppColors.primary, size: 22),
         ),
         const SizedBox(height: 6),
-        Text(cat.label,
+        Text(cat.name,
           textAlign: TextAlign.center,
-          style: const TextStyle(
-            fontFamily: 'Public Sans', fontSize: 9,
-            color: Color(0xFF191C24),
-          )),
+          maxLines: 2,
+          overflow: TextOverflow.ellipsis,
+          style: const TextStyle(fontFamily: 'Public Sans', fontSize: 9,
+              color: Color(0xFF191C24))),
       ],
     ),
   );
 }
 
-// ── Promo / announcement card ─────────────────────────────────────────────────
+// ── Promo card ────────────────────────────────────────────────────────────────
 class _PromoCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Container(
@@ -398,8 +415,7 @@ class _PromoCard extends StatelessWidget {
     decoration: BoxDecoration(
       borderRadius: BorderRadius.circular(14.7),
       gradient: const LinearGradient(
-        begin: Alignment.topCenter,
-        end:   Alignment.bottomCenter,
+        begin: Alignment.topCenter, end: Alignment.bottomCenter,
         colors: [Color(0xFFFC5A15), Color(0xFF96360D)],
       ),
       boxShadow: const [
@@ -408,69 +424,55 @@ class _PromoCard extends StatelessWidget {
     ),
     child: Stack(
       children: [
-        // Subtle concentric circles decoration
-        Positioned(
-          right: -60, bottom: -60,
-          child: _CircleDecoration(),
-        ),
-
-        // "Populaire" badge
+        Positioned(right: -60, bottom: -60, child: _CircleDecoration()),
         Positioned(
           top: 12, left: 15,
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.6),
+              color: Colors.white.withValues(alpha: 0.6),
               border: Border.all(color: Colors.white),
               borderRadius: BorderRadius.circular(20),
             ),
             child: const Text('Populaire',
-              style: TextStyle(
-                fontFamily: 'Public Sans', fontSize: 8,
-                color: Color(0xFF2B2B2B),
-              )),
+              style: TextStyle(fontFamily: 'Public Sans', fontSize: 8,
+                  color: Color(0xFF2B2B2B))),
           ),
         ),
-
-        // Headline text
         const Positioned(
           left: 15, top: 40,
           child: SizedBox(
             width: 176,
-            child: Text('Lorem ipsum dolor sit amet, consectetur',
-              style: TextStyle(
-                fontFamily: 'Public Sans', fontWeight: FontWeight.w700,
-                fontSize: 18, color: Colors.white,
-                letterSpacing: -0.31,
-              )),
+            child: Text('Trouvez l\'artisan parfait pour vos besoins',
+              style: TextStyle(fontFamily: 'Public Sans',
+                  fontWeight: FontWeight.w700, fontSize: 18,
+                  color: Colors.white, letterSpacing: -0.31)),
           ),
         ),
-
-        // "Demander maintenant" button
         Positioned(
           left: 15, bottom: 16,
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              border: Border.all(color: AppColors.primary, width: 0.9),
-              borderRadius: BorderRadius.circular(26.8),
+          child: GestureDetector(
+            onTap: () => context.push('/client/service-categories'),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                border: Border.all(color: AppColors.primary, width: 0.9),
+                borderRadius: BorderRadius.circular(26.8),
+              ),
+              child: const Text('Demander maintenant',
+                style: TextStyle(fontFamily: 'Public Sans',
+                    fontWeight: FontWeight.w700, fontSize: 10,
+                    color: AppColors.primary)),
             ),
-            child: const Text('Demander maintenant',
-              style: TextStyle(
-                fontFamily: 'Public Sans', fontWeight: FontWeight.w700,
-                fontSize: 10, color: AppColors.primary,
-              )),
           ),
         ),
-
-        // Artisan illustration placeholder
         Positioned(
           right: 16, bottom: 0,
           child: Container(
             width: 93, height: 137,
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.15),
+              color: Colors.white.withValues(alpha: 0.15),
               borderRadius: BorderRadius.circular(8),
             ),
             child: const Icon(Icons.person, size: 60, color: Colors.white),
@@ -493,7 +495,7 @@ class _CircleDecoration extends StatelessWidget {
         decoration: BoxDecoration(
           shape: BoxShape.circle,
           border: Border.all(
-            color: Colors.white.withOpacity(0.25 - i * 0.03),
+            color: Colors.white.withValues(alpha: 0.25 - i * 0.03),
             width: 9.25,
           ),
         ),
@@ -504,7 +506,7 @@ class _CircleDecoration extends StatelessWidget {
 
 // ── Artisan card ──────────────────────────────────────────────────────────────
 class _ArtisanCard extends StatelessWidget {
-  final _Artisan artisan;
+  final PublicArtisan artisan;
   const _ArtisanCard({required this.artisan});
 
   @override
@@ -522,90 +524,80 @@ class _ArtisanCard extends StatelessWidget {
     child: Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Image placeholder
+        // Avatar / cover
         Stack(
           children: [
-            Container(
-              height: 137,
-              decoration: const BoxDecoration(
-                color: Color(0xFFE5E7EB),
-                borderRadius: BorderRadius.vertical(top: Radius.circular(12)),
-              ),
-              child: const Center(
-                child: Icon(Icons.image_outlined,
-                  size: 48, color: Color(0xFFD1D5DC)),
-              ),
+            ClipRRect(
+              borderRadius:
+                  const BorderRadius.vertical(top: Radius.circular(12)),
+              child: artisan.avatarUrl != null &&
+                      artisan.avatarUrl!.isNotEmpty
+                  ? Image.network(
+                      artisan.avatarUrl!,
+                      height: 137,
+                      width: double.infinity,
+                      fit: BoxFit.cover,
+                      errorBuilder: (_, __, ___) => _photoPlaceholder(),
+                    )
+                  : _photoPlaceholder(),
             ),
-            // Service icon badge (top-left)
             Positioned(
               top: 11, left: 11,
               child: Container(
                 width: 34, height: 34,
                 decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.9),
+                  color: Colors.white.withValues(alpha: 0.9),
                   borderRadius: BorderRadius.circular(10),
                 ),
-                child: Icon(artisan.icon, color: AppColors.primary, size: 17),
+                child: Icon(_catIcon(artisan.specialty),
+                    color: AppColors.primary, size: 17),
               ),
             ),
           ],
         ),
 
-        // Info section
+        // Info
         Padding(
           padding: const EdgeInsets.fromLTRB(16, 13, 16, 0),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Name + verified badge
               Row(children: [
                 Expanded(
                   child: Text(artisan.name,
-                    style: const TextStyle(
-                      fontFamily: 'Inter', fontSize: 16,
-                      color: Color(0xFF314158), letterSpacing: -0.31,
-                    )),
+                    style: const TextStyle(fontFamily: 'Inter', fontSize: 16,
+                        color: Color(0xFF314158), letterSpacing: -0.31)),
                 ),
-                Container(
-                  width: 16, height: 16,
-                  decoration: const BoxDecoration(
-                    color: Color(0xFF155DFC),
-                    shape: BoxShape.circle,
+                if (artisan.isVerified)
+                  Container(
+                    width: 16, height: 16,
+                    decoration: const BoxDecoration(
+                      color: Color(0xFF155DFC), shape: BoxShape.circle),
+                    child: const Icon(Icons.check, color: Colors.white, size: 9),
                   ),
-                  child: const Icon(Icons.check,
-                    color: Colors.white, size: 9),
-                ),
               ]),
               const SizedBox(height: 4),
-              // Service type
-              Text(artisan.service,
-                style: const TextStyle(
-                  fontFamily: 'Inter', fontSize: 12,
-                  color: Color(0xFF45556C),
-                )),
+              Text(artisan.specialty,
+                maxLines: 1, overflow: TextOverflow.ellipsis,
+                style: const TextStyle(fontFamily: 'Inter', fontSize: 12,
+                    color: Color(0xFF45556C))),
               const SizedBox(height: 4),
-              // City
               Row(children: [
                 const Icon(Icons.location_on_outlined,
                   size: 14, color: Color(0xFF62748E)),
                 const SizedBox(width: 4),
                 Text(artisan.city,
-                  style: const TextStyle(
-                    fontFamily: 'Inter', fontSize: 12,
-                    color: Color(0xFF62748E),
-                  )),
+                  style: const TextStyle(fontFamily: 'Inter', fontSize: 12,
+                      color: Color(0xFF62748E))),
               ]),
               const SizedBox(height: 4),
-              // Rating
               Row(children: [
                 const Icon(Icons.star_rounded,
                   size: 14, color: Color(0xFFFF8904)),
                 const SizedBox(width: 6),
-                Text('${artisan.rating}/5 (${artisan.reviews} reviews)',
-                  style: const TextStyle(
-                    fontFamily: 'Inter', fontSize: 10,
-                    color: Color(0xFF314158), letterSpacing: 0.12,
-                  )),
+                Text('${artisan.rating.toStringAsFixed(1)}/5 (${artisan.reviews} avis)',
+                  style: const TextStyle(fontFamily: 'Inter', fontSize: 10,
+                      color: Color(0xFF314158), letterSpacing: 0.12)),
               ]),
             ],
           ),
@@ -613,29 +605,27 @@ class _ArtisanCard extends StatelessWidget {
 
         const SizedBox(height: 8),
 
-        // Action buttons
         Padding(
           padding: const EdgeInsets.fromLTRB(7, 0, 7, 12),
           child: Column(children: [
-            // View Profile
             SizedBox(
               width: double.infinity, height: 34,
               child: ElevatedButton(
-                onPressed: () {},
+                onPressed: () => context.push(
+                  '/artisans/profile/${artisan.id}',
+                  extra: {'name': artisan.name, 'role': artisan.specialty},
+                ),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFFEFEFEF),
                   elevation: 0,
                   shape: const StadiumBorder(),
                 ),
-                child: const Text('View Profile',
-                  style: TextStyle(
-                    fontFamily: 'Inter', fontSize: 11.4,
-                    color: Colors.black,
-                  )),
+                child: const Text('Voir profil',
+                  style: TextStyle(fontFamily: 'Inter', fontSize: 11.4,
+                      color: Colors.black)),
               ),
             ),
             const SizedBox(height: 8),
-            // Connecter
             SizedBox(
               width: double.infinity, height: 34,
               child: ElevatedButton.icon(
@@ -648,10 +638,8 @@ class _ArtisanCard extends StatelessWidget {
                 icon: const Icon(Icons.phone_outlined,
                   color: Colors.white, size: 14),
                 label: const Text('Connecter',
-                  style: TextStyle(
-                    fontFamily: 'Inter', fontSize: 11.4,
-                    color: Colors.white,
-                  )),
+                  style: TextStyle(fontFamily: 'Inter', fontSize: 11.4,
+                      color: Colors.white)),
               ),
             ),
           ]),
@@ -659,17 +647,27 @@ class _ArtisanCard extends StatelessWidget {
       ],
     ),
   );
+
+  Widget _photoPlaceholder() => Container(
+    height: 137,
+    decoration: const BoxDecoration(
+      color: Color(0xFFE5E7EB),
+      borderRadius: BorderRadius.vertical(top: Radius.circular(12)),
+    ),
+    child: const Center(
+      child: Icon(Icons.image_outlined, size: 48, color: Color(0xFFD1D5DC))),
+  );
 }
 
 // ── FAQ accordion ─────────────────────────────────────────────────────────────
 class _FaqItem extends StatelessWidget {
-  final String    question;
-  final String    answer;
-  final bool      isOpen;
+  final String question;
+  final String answer;
+  final bool isOpen;
   final VoidCallback onTap;
   const _FaqItem({
     required this.question, required this.answer,
-    required this.isOpen,   required this.onTap,
+    required this.isOpen, required this.onTap,
   });
 
   @override
@@ -690,40 +688,32 @@ class _FaqItem extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Question row
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 16),
               child: Row(children: [
                 Expanded(
                   child: Text(question,
                     style: TextStyle(
-                      fontFamily: 'Public Sans',
-                      fontSize:   14.3,
+                      fontFamily: 'Public Sans', fontSize: 14.3,
                       letterSpacing: 0.005,
                       color: isOpen ? Colors.white : Colors.black,
                     )),
                 ),
                 Icon(
-                  isOpen
-                    ? Icons.keyboard_arrow_up_rounded
-                    : Icons.keyboard_arrow_down_rounded,
+                  isOpen ? Icons.keyboard_arrow_up_rounded
+                         : Icons.keyboard_arrow_down_rounded,
                   color: isOpen ? Colors.white : AppColors.primary,
                   size: 20,
                 ),
               ]),
             ),
-            // Answer (visible when open)
             if (isOpen)
               Padding(
                 padding: const EdgeInsets.fromLTRB(28, 0, 28, 20),
                 child: Text(answer,
-                  style: const TextStyle(
-                    fontFamily: 'Public Sans',
-                    fontSize:   12.5,
-                    fontWeight: FontWeight.w300,
-                    color:      Color(0xC9FFFFFF),
-                    height:     1.3,
-                  )),
+                  style: const TextStyle(fontFamily: 'Public Sans',
+                    fontSize: 12.5, fontWeight: FontWeight.w300,
+                    color: Color(0xC9FFFFFF), height: 1.3)),
               ),
           ],
         ),
@@ -750,7 +740,7 @@ class _BottomNavBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final icons = [
+    const icons = [
       Icons.home_outlined,
       Icons.list_alt_outlined,
       Icons.add,
@@ -791,31 +781,11 @@ class _BottomNavBar extends StatelessWidget {
                 shape: BoxShape.circle,
               ),
               child: Icon(icons[i],
-                color: active ? AppColors.primary : Colors.white,
-                size: 22,
-              ),
+                color: active ? AppColors.primary : Colors.white, size: 22),
             ),
           );
         }),
       ),
     );
   }
-}
-
-// ── Data classes ──────────────────────────────────────────────────────────────
-class _Category {
-  final String  label;
-  final IconData icon;
-  const _Category(this.label, this.icon);
-}
-
-class _Artisan {
-  final String  name;
-  final String  service;
-  final String  city;
-  final double  rating;
-  final int     reviews;
-  final IconData icon;
-  const _Artisan(this.name, this.service, this.city,
-      this.rating, this.reviews, this.icon);
 }
