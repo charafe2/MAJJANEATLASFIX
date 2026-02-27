@@ -110,11 +110,11 @@
 </template>
 
 <script setup>
-import '../assets/css/login.css'
+import '../../assets/css/auth/login.css'
 import { ref, reactive } from 'vue'
 import { useRouter } from 'vue-router'
 import axios from 'axios'
-import { login } from '../api/auth.js'
+import { login } from '../../api/auth.js'
 
 const router = useRouter()
 

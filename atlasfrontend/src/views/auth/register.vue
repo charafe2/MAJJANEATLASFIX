@@ -107,10 +107,10 @@
 
 <script setup>
 import { useRouter } from 'vue-router'
-import Navbar from '../components/navbar.vue'
-import AuthBackground from '../components/Authbackground.vue'
-import Footer from '../components/footer.vue'
-import '../assets/css/register.css'
+import Navbar from '../../components/navbar.vue'
+import AuthBackground from '../../components/auth/Authbackground.vue'
+import Footer from '../../components/footer.vue'
+import '../../assets/css/auth/register.css'
 
 const router = useRouter()
 

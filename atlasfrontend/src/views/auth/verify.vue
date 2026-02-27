@@ -65,11 +65,11 @@
 <script setup>
 import { ref, reactive, onMounted, onUnmounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
-import Navbar from '../components/navbar.vue'
-import AuthBackground from '../components/Authbackground.vue'
-// import Footer from '../components/footer.vue'
-import { verifyCode, resendCode } from '../api/auth.js'
-import '../assets/css/verify.css'
+import Navbar from '../../components/navbar.vue'
+import AuthBackground from '../../components/auth/Authbackground.vue'
+// import Footer from '../../components/footer.vue'
+import { verifyCode, resendCode } from '../../api/auth.js'
+import '../../assets/css/auth/verify.css'
 
 const router = useRouter()
 const route  = useRoute()

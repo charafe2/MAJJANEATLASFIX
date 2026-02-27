@@ -167,7 +167,7 @@ import { ref } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import axios from 'axios'
 import Navbar from '../components/navbar.vue'
-import AuthBackground from '../components/Authbackground.vue'
+import AuthBackground from '../components/auth/Authbackground.vue'
 import Footer from '../components/footer.vue'
 import '../assets/css/pricing.css'
 

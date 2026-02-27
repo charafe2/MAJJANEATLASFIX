@@ -1,5 +1,4 @@
 <script setup>
-import HelloWorld from './components/HelloWorld.vue'
 import Footers from './components/footer.vue';
 import Navbar from './components/navbar.vue';
 </script>

@@ -172,11 +172,11 @@
 <script setup>
 import { ref, reactive, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
-import Navbar from '../components/navbar.vue'
-import AuthBackground from '../components/Authbackground.vue'
-// import Footer from '../components/footer.vue'
-import { registerArtisan, validateReferral } from '../api/auth.js'
-import '../assets/css/registerartisan.css'
+import Navbar from '../../components/navbar.vue'
+import AuthBackground from '../../components/auth/Authbackground.vue'
+// import Footer from '../../components/footer.vue'
+import { registerArtisan, validateReferral } from '../../api/auth.js'
+import '../../assets/css/auth/registerartisan.css'
 
 const router      = useRouter()
 const route       = useRoute()

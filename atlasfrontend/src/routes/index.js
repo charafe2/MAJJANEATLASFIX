@@ -1,102 +1,65 @@
 import { createRouter, createWebHistory } from 'vue-router'
-import GoogleSuccess from '../views/GoogleSuccess.vue'
-import GoogleComplete from '../views/GoogleComplete.vue'
+import GoogleSuccess from '../views/auth/GoogleSuccess.vue'
+import GoogleComplete from '../views/auth/GoogleComplete.vue'
+
 const routes = [
-  // ── Public ──────────────────────────────────────────────────────────────
-  { path: '/',               component: () => import('../views/Home.vue') },
-  { path: '/login',          component: () => import('../views/login.vue') },
-  { path: '/register',       component: () => import('../views/register.vue') },
-  { path: '/register/client',  component: () => import('../views/registerClient.vue') },
-  { path: '/register/artisan', component: () => import('../views/registerArtisan.vue') },
-  { path: '/forgot-password',  component: () => import('../views/ForgotPassword.vue') },
-  { path: '/client/profile',           component: () => import('../components/profile/profileView.vue'), meta: { requiresAuth: true, accountType: 'client' } },
-  { path: '/artisan/clients/:id',      component: () => import('../components/profile/profileView.vue'), meta: { requiresAuth: true, accountType: 'artisan' } },
-  { path: '/artisans/profile/:id',     component: () => import('../views/Artisanprofilevisit.vue'), meta: { requiresAuth: true } },
-  {path:'/auth/google/success',component: GoogleSuccess,},
-{  path:'/register/google-complete',component: GoogleComplete,},
+  // ── Root ────────────────────────────────────────────────────────────────
+  { path: '/',     component: () => import('../views/Home.vue') },
+  { path: '/Home', redirect: '/' },
 
+  // ── Auth ────────────────────────────────────────────────────────────────
+  { path: '/login',                    component: () => import('../views/auth/loginvue.vue') },
+  { path: '/register',                 component: () => import('../views/auth/register.vue') },
+  { path: '/register/client',          component: () => import('../views/auth/registerClient.vue') },
+  { path: '/register/artisan',         component: () => import('../views/auth/registerArtisan.vue') },
+  { path: '/register/artisan/pricing', component: () => import('../views/Pricing.vue'), meta: { accountType: 'artisan', pricingPage: true } },
+  { path: '/register/google-complete', component: GoogleComplete },
+  { path: '/verify',                   component: () => import('../views/auth/verify.vue') },
+  { path: '/forgot-password',          component: () => import('../views/auth/forgotpassword.vue') },
 
-  // Google OAuth callback
-  { path: '/auth/callback',  component: () => import('../views/GoogleCallback.vue') },
+  // ── Google OAuth ─────────────────────────────────────────────────────
+  { path: '/auth/google/success', component: GoogleSuccess },
+  { path: '/auth/callback',       component: () => import('../views/auth/GoogleSuccess.vue') },
 
-  // ── Artisan pricing: only reachable right after registration ────────────
-  // Requires token (artisan just registered) + ?uid= query param.
-  // Without ?uid the guard redirects to the dashboard.
-  {
-    path: '/register/artisan/pricing',
-    component: () => import('../views/Pricing.vue'),
-    meta: {accountType: 'artisan', pricingPage: true },
-  },
+  // ── Dashboard redirects ───────────────────────────────────────────────
+  { path: '/dashboard',         redirect: '/client/profile' },
+  { path: '/client/dashboard',  redirect: '/client/profile' },
+  { path: '/artisan/dashboard', redirect: '/artisan/profile' },
 
-  // ── Payment Stats ────────────────────────────────────────────────────
-  {
-    path: '/payments',
-    component: () => import('../views/paymentstats.vue'),
-    meta: { requiresAuth: true },
-  },
+  // ── Public pages ─────────────────────────────────────────────────────
+  { path: '/Aboutus',        component: () => import('../components/about/heresection.vue') },
+  { path: '/services',       component: () => import('../components/services/servicesHero.vue') },
+  { path: '/services/:slug', component: () => import('../views/ServicePage.vue') },
+  { path: '/contact',        component: () => import('../views/Contact.vue') },
+  { path: '/faq',            component: () => import('../views/faq.vue') },
 
-  // ── Agenda ───────────────────────────────────────────────────────────
-  {
-    path: '/agenda',
-    component: () => import('../views/agenda.vue'),
-    meta: { requiresAuth: true },
-  },
+  // ── Profiles ─────────────────────────────────────────────────────────
+  { path: '/client/profile',       component: () => import('../views/profile/profileView.vue'), meta: { requiresAuth: true, accountType: 'client' } },
+  { path: '/artisan/profile',      component: () => import('../views/artisan/ArtisanProfile.vue'),   meta: { requiresAuth: true, accountType: 'artisan' } },
+  { path: '/artisan/clients/:id',  component: () => import('../views/profile/profileView.vue'), meta: { requiresAuth: true, accountType: 'artisan' } },
+  { path: '/artisans/profile/:id', component: () => import('../views/artisan/Artisanprofilevisit.vue'), meta: { requiresAuth: true } },
 
-  // ── Protected ────────────────────────────────────────────────────────
-  {
-    path: '/client/dashboard',
-    component: () => import('../views/client/Dashboard.vue'),
-    meta: { requiresAuth: true, accountType: 'client' },
-  },
-  {
-    path: '/artisan/dashboard',
-    component: () => import('../views/artisan/Dashboard.vue'),
-    meta: { requiresAuth: true, accountType: 'artisan' },
-  },
+  // ── Messaging ────────────────────────────────────────────────────────
+  { path: '/messages',     component: () => import('../views/Messages.vue'), meta: { requiresAuth: true } },
+  { path: '/messages/:id', component: () => import('../views/Messages.vue'), meta: { requiresAuth: true } },
 
-  // ── Service request list pages ────────────────────────────────────────
-  {
-    path: '/client/mes-demandes',
-    component: () => import('../views/client/MesDemandes.vue'),
-    meta: { requiresAuth: true, accountType: 'client' },
-  },
-  {
-    path: '/artisan/mes-demandes',
-    component: () => import('../views/artisan/MesDemandesAcceptees.vue'),
-    meta: { requiresAuth: true, accountType: 'artisan' },
-  },
+  // ── Service requests ─────────────────────────────────────────────────
+  { path: '/client/mes-demandes',        component: () => import('../views/client/MesDemandes.vue'),          meta: { requiresAuth: true, accountType: 'client' } },
+  { path: '/client/mes-demandes/offres', component: () => import('../views/client/DemandeOffres.vue'),        meta: { requiresAuth: true, accountType: 'client' } },
+  { path: '/client/nouvelle-demande',    component: () => import('../views/client/NouvelleDemande.vue'),      meta: { requiresAuth: true, accountType: 'client' } },
+  { path: '/artisan/demandes-clients',   component: () => import('../views/artisan/DemandesClients.vue'),     meta: { requiresAuth: true, accountType: 'artisan' } },
+  { path: '/artisan/mes-demandes',       component: () => import('../views/artisan/MesDemandesAcceptees.vue'),meta: { requiresAuth: true, accountType: 'artisan' } },
+  { path: '/client/demandes/:id',        component: () => import('../views/DemandeDetail.vue'),               meta: { requiresAuth: true, accountType: 'client' },  props: { role: 'client' } },
+  { path: '/artisan/demandes/:id',       component: () => import('../views/DemandeDetail.vue'),               meta: { requiresAuth: true, accountType: 'artisan' }, props: { role: 'artisan' } },
 
-  // ── Service request detail pages ─────────────────────────────────────
-  {
-    path: '/client/demandes/:id',
-    component: () => import('../views/DemandeDetail.vue'),
-    meta: { requiresAuth: true, accountType: 'client' },
-    props: { role: 'client' },
-  },
-  {
-    path: '/artisan/demandes/:id',
-    component: () => import('../views/DemandeDetail.vue'),
-    meta: { requiresAuth: true, accountType: 'artisan' },
-    props: { role: 'artisan' },
-  },
+  // ── Payments & Agenda ─────────────────────────────────────────────────
+  { path: '/payments',       component: () => import('../views/paymentstats.vue'), meta: { requiresAuth: true } },
+  { path: '/agenda',         component: () => import('../views/agenda.vue'),       meta: { requiresAuth: true } },
+  { path: '/Artisan/agenda', redirect: '/agenda' },
 
   // ── Static info pages ─────────────────────────────────────────────────
-  {
-    path: '/litiges',
-    component: () => import('../views/LitigesPage.vue'),
-  },
-
-  // ── Messaging (accessible to both clients and artisans) ──────────────
-  {
-    path: '/messages',
-    component: () => import('../views/Messages.vue'),
-    meta: { requiresAuth: true },
-  },
-  {
-    path: '/messages/:id',
-    component: () => import('../views/Messages.vue'),
-    meta: { requiresAuth: true },
-  },
+  { path: '/litiges', component: () => import('../views/LitigesPage.vue') },
+  { path: '/Litiges', redirect: '/litiges' },
 ]
 
 const router = createRouter({
@@ -137,9 +100,6 @@ router.beforeEach((to, _from, next) => {
   }
 
   next()
-  
-}
-)
+})
 
 export default router
-

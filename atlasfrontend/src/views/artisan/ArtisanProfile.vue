@@ -916,7 +916,7 @@
 <script>
 import { ref, computed, onMounted } from 'vue'
 import axios from 'axios'
-import BoostModal from '../components/modals/BoostModal.vue'
+import BoostModal from '../../components/modals/BoostModal.vue'
 
 const api = axios.create({
   baseURL: import.meta.env.VITE_API_URL ?? '/api',

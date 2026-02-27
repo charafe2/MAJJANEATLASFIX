@@ -135,7 +135,7 @@
               </tr>
             </thead>
             <tbody>
-              <tr v-for="payment in filteredPayments" :key="payment.id" class="table-row">
+              <tr v-for="payment in filteredPayments" :key="payment.id" class="table-row" @click="goToDetail(payment)">
                 <!-- Client -->
                 <td>
                   <div class="client-cell">
@@ -276,6 +276,13 @@ function formatAmount(n) {
 /** Map API status → display label */
 function statusLabel(status) {
   return status === 'completed' ? 'Complété' : 'En cours'
+}
+
+// ── Navigation ────────────────────────────────────────────────────────────
+function goToDetail(payment) {
+  const base = user.value?.account_type === 'artisan' ? '/artisan/demandes' : '/client/demandes'
+  const id = String(payment.id).replace(/^sr-/i, '')
+  router.push(`${base}/${id}`)
 }
 
 // ── Export ────────────────────────────────────────────────────────────────────
@@ -607,8 +614,12 @@ function exportPayments() {
   border-bottom: none;
 }
 
+.table-row {
+  cursor: pointer;
+}
+
 .table-row:hover {
-  background: #FAFAFA;
+  background: #FFF4EE;
 }
 
 /* ── Table Cells ─────────────────────────────────────────────────────────── */

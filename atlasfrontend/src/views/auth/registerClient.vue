@@ -124,11 +124,11 @@
 <script setup>
 import { ref, reactive } from 'vue'
 import { useRouter } from 'vue-router'
-import Navbar from '../components/navbar.vue'
-import AuthBackground from '../components/Authbackground.vue'
-// import Footer from '../components/footer.vue/index.js'
-import { registerClient } from '../api/auth.js'
-import '../assets/css/registerform.css'
+import Navbar from '../../components/navbar.vue'
+import AuthBackground from '../../components/auth/Authbackground.vue'
+// import Footer from '../../components/footer.vue'
+import { registerClient } from '../../api/auth.js'
+import '../../assets/css/auth/registerform.css'
 
 const router    = useRouter()
 const loading   = ref(false)

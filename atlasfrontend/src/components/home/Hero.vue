@@ -6,7 +6,7 @@
     <!-- Background photo + overlays -->
     <div class="hs-bg">
       <img
-        src="../assets/images/Background.svg"
+        src="../../assets/images/Background.svg"
         alt=""
         class="hs-bg-img"
       />

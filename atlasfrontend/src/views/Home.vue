@@ -16,18 +16,18 @@
 
 <script setup>
 import Navbar from '../components/navbar.vue';
-import services from "../components/servicesection.vue";
-import published from '../components/published.vue';
-import About from '../components/About.vue';
-import How from '../components/How.vue';
+import services from "../components/home/servicesection.vue";
+import published from '../components/home/published.vue';
+import About from '../components/home/About.vue';
+import How from '../components/home/How.vue';
 // No logic needed for now — can add later (v-model, search submit, etc.)
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
-import Howitworks from '../components/Howitworks.vue';
-import Temoigne from '../components/temoigne.vue';
-import Hero from '../components/Hero.vue';
-import Topartisan from '../components/topartisan.vue';
-import Appdownload from '../components/Appdownload.vue';
+import Howitworks from '../components/home/Howitworks.vue';
+import Temoigne from '../components/home/temoigne.vue';
+import Hero from '../components/home/Hero.vue';
+import Topartisan from '../components/home/topartisan.vue';
+import Appdownload from '../components/home/Appdownload.vue';
 import footer from '../components/footer.vue';
 const router = useRouter()
 const user   = ref(null)
