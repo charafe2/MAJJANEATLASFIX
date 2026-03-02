@@ -915,15 +915,52 @@ class AuthController extends Controller
     {
         if (!$serviceSlug) return null;
 
+        // 1. Numeric ID passed directly
+        if (is_numeric($serviceSlug)) {
+            return \App\Models\ServiceCategory::where('id', (int) $serviceSlug)->value('id');
+        }
+
+        // 2. Exact name match (handles when frontend sends the category name as-is)
+        $byExactName = \App\Models\ServiceCategory::where('name', $serviceSlug)->value('id');
+        if ($byExactName) return $byExactName;
+
+        // 3. Case-insensitive name match
+        $byName = \App\Models\ServiceCategory::whereRaw('LOWER(name) = ?', [strtolower($serviceSlug)])->value('id');
+        if ($byName) return $byName;
+
+        // 4. Legacy slug map fallback
         $slugMap = [
-            'plomberie'     => 'Plomberie',
-            'electricite'   => 'Électricité',
-            'menuiserie'    => 'Menuiserie',
-            'peinture'      => 'Peinture',
-            'maconnerie'    => 'Maçonnerie',
-            'climatisation' => 'Chauffage, Ventilation et Climatisation',
-            'carrelage'     => 'Carrelage',
-            'jardinage'     => 'Jardinage',
+            'plomberie'         => 'Plomberie',
+            'electricite'       => 'Électricité',
+            'menuiserie'        => 'Menuiserie',
+            'peinture'          => 'Peinture',
+            'maconnerie'        => 'Maçonnerie',
+            'climatisation'     => 'Chauffage, Ventilation et Climatisation',
+            'carrelage'         => 'Carrelage',
+            'jardinage'         => 'Jardinage',
+            'nettoyage'         => 'Nettoyage',
+            'demenagement'      => 'Déménagement',
+            'electromenager'    => 'Électroménager',
+            'reparations'       => 'Réparations générales',
+            'mecanique'         => 'Mécanicien Mobile',
+            'vidange'           => 'Vidange Mobile',
+            'assistance'        => 'Assistance Routière',
+            'evenements'        => "Organisation d'Événements",
+            'photographie'      => 'Photographie',
+            'videographie'      => 'Vidéographie',
+            'musique'           => 'Musique & Animation',
+            'beaute'            => 'Beauté & Style',
+            'restauration'      => 'Services de Restauration',
+            'decoration'        => "Décoration d'Événements",
+            'location'          => 'Location de Matériel',
+            'informatique'      => 'Réparation Ordinateurs',
+            'reseau'            => 'Réseau & WiFi',
+            'smarthome'         => 'Maison Connectée',
+            'support'           => 'Support Technique',
+            'telephone'         => 'Réparation Téléphones & Tablettes',
+            'lavage'            => 'Lavage auto à domicile',
+            'detailing'         => 'Car Detailing',
+            'diagnostic'        => 'Diagnostic OBD mobile',
         ];
 
         $categoryName = $slugMap[$serviceSlug] ?? null;

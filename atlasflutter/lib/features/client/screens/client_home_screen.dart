@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../data/repositories/service_request_repository.dart';
 import '../../../../data/repositories/artisan_repository.dart';
+import '../../../../data/repositories/conversation_repository.dart';
 
 // ── FAQ (static) ──────────────────────────────────────────────────────────────
 const _kFaq = [
@@ -505,9 +506,45 @@ class _CircleDecoration extends StatelessWidget {
 }
 
 // ── Artisan card ──────────────────────────────────────────────────────────────
-class _ArtisanCard extends StatelessWidget {
+class _ArtisanCard extends StatefulWidget {
   final PublicArtisan artisan;
   const _ArtisanCard({required this.artisan});
+
+  @override
+  State<_ArtisanCard> createState() => _ArtisanCardState();
+}
+
+class _ArtisanCardState extends State<_ArtisanCard> {
+  final _convRepo = ConversationRepository();
+  bool _connecting = false;
+
+  Future<void> _openChat() async {
+    setState(() => _connecting = true);
+    try {
+      final conv = await _convRepo.getOrCreate(artisanId: widget.artisan.id);
+      if (mounted) {
+        context.push('/client/chat/${conv.id}', extra: {
+          'name':      widget.artisan.name,
+          'role':      widget.artisan.specialty,
+          'avatar':    widget.artisan.avatarUrl,
+          'profileId': conv.otherProfileId,
+        });
+      }
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+          content: Text("Impossible d'ouvrir la conversation.",
+              style: TextStyle(fontFamily: 'Public Sans')),
+          backgroundColor: Color(0xFFEF4444),
+          behavior: SnackBarBehavior.floating,
+        ));
+      }
+    } finally {
+      if (mounted) setState(() => _connecting = false);
+    }
+  }
+
+  PublicArtisan get artisan => widget.artisan;
 
   @override
   Widget build(BuildContext context) => Container(
@@ -629,14 +666,19 @@ class _ArtisanCard extends StatelessWidget {
             SizedBox(
               width: double.infinity, height: 34,
               child: ElevatedButton.icon(
-                onPressed: () {},
+                onPressed: _connecting ? null : _openChat,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.primary,
                   elevation: 0,
                   shape: const StadiumBorder(),
                 ),
-                icon: const Icon(Icons.phone_outlined,
-                  color: Colors.white, size: 14),
+                icon: _connecting
+                    ? const SizedBox(
+                        width: 14, height: 14,
+                        child: CircularProgressIndicator(
+                            strokeWidth: 2, color: Colors.white))
+                    : const Icon(Icons.phone_outlined,
+                        color: Colors.white, size: 14),
                 label: const Text('Connecter',
                   style: TextStyle(fontFamily: 'Inter', fontSize: 11.4,
                       color: Colors.white)),
