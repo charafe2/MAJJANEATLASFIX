@@ -1,4 +1,3 @@
-import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
@@ -21,7 +20,7 @@ class _ArtisanProScreenState extends State<ArtisanProScreen> {
 
   String? _service;
   String? _city;
-  File?   _diploma;
+  XFile?  _diploma;
 
   final List<String> _services = [
     'Plomberie','Électricité','Menuiserie','Peinture',
@@ -44,7 +43,7 @@ class _ArtisanProScreenState extends State<ArtisanProScreen> {
 
   Future<void> _pickDiploma() async {
     final f = await _picker.pickImage(source: ImageSource.gallery);
-    if (f != null) setState(() => _diploma = File(f.path));
+    if (f != null) setState(() => _diploma = f);
   }
 
   bool _validate() {
@@ -67,7 +66,7 @@ class _ArtisanProScreenState extends State<ArtisanProScreen> {
       'service_type':  _serviceType.text.trim(),
       'city':          _city,
       'address':       _address.text.trim(),
-      'diploma_path':  _diploma!.path,
+      'diploma_xfile': _diploma,
     });
   }
 
@@ -152,7 +151,7 @@ class _ArtisanProScreenState extends State<ArtisanProScreen> {
               ScanRow(
                 hint:     'Scanner le diplôme',
                 icon:     Icons.badge_outlined,
-                fileName: _diploma?.path.split('/').last,
+                fileName: _diploma?.name,
                 error:    _errors['diploma'],
                 btnLabel: 'Scanner',
                 onTap:    _pickDiploma,

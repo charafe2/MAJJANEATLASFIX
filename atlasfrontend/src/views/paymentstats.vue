@@ -196,7 +196,7 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
-import { useRouter } from 'vue-router'          // ← was missing
+import { useRouter } from 'vue-router'          
 import { getPaymentStats } from '../api/payments'
 
 const router = useRouter()
@@ -239,13 +239,12 @@ async function loadPayments() {
     payments.value = data.payments ?? []
     stats.value    = data.stats    ?? stats.value
   } catch {
-    // keep empty state on error
   } finally {
     loading.value = false
   }
 }
 
-onMounted(async () => {        // ← call BOTH functions here
+onMounted(async () => {        
   loadUser()
   await loadPayments()
 })

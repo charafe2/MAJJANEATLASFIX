@@ -1,4 +1,3 @@
-import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
@@ -17,7 +16,7 @@ class ArtisanPortfolioScreen extends StatefulWidget {
 class _ArtisanPortfolioScreenState extends State<ArtisanPortfolioScreen> {
   final _picker = ImagePicker();
   final _bio    = TextEditingController();
-  final _photos = <File>[];
+  final _photos = <XFile>[];
   bool  _terms  = false;
   final _errors = <String, String>{};
 
@@ -29,7 +28,7 @@ class _ArtisanPortfolioScreenState extends State<ArtisanPortfolioScreen> {
 
   Future<void> _pickPhotos() async {
     final files = await _picker.pickMultiImage();
-    setState(() => _photos.addAll(files.map((x) => File(x.path))));
+    setState(() => _photos.addAll(files));
   }
 
   bool _validate() {
@@ -43,11 +42,10 @@ class _ArtisanPortfolioScreenState extends State<ArtisanPortfolioScreen> {
 
   void _next() {
     if (!_validate()) return;
-    // Carry photo paths as strings (File can't be serialised in the map directly)
     context.push('/register/password', extra: {
       ...widget.data,
       'bio':         _bio.text.trim(),
-      'photo_paths': _photos.map((f) => f.path).toList(),
+      'photo_xfiles': _photos,
     });
   }
 
@@ -121,10 +119,16 @@ class _ArtisanPortfolioScreenState extends State<ArtisanPortfolioScreen> {
                         itemBuilder: (_, i) => Stack(children: [
                           ClipRRect(
                             borderRadius: BorderRadius.circular(8),
-                            child: Image.file(_photos[i],
-                              fit:    BoxFit.cover,
-                              width:  double.infinity,
-                              height: double.infinity,
+                            child: FutureBuilder<List<int>>(
+                              future: _photos[i].readAsBytes(),
+                              builder: (_, snap) => snap.hasData
+                                  ? Image.memory(
+                                      snap.data as dynamic,
+                                      fit:    BoxFit.cover,
+                                      width:  double.infinity,
+                                      height: double.infinity,
+                                    )
+                                  : const SizedBox.shrink(),
                             ),
                           ),
                           Positioned(top: 2, right: 2,

@@ -21,16 +21,18 @@ import published from '../components/home/published.vue';
 import About from '../components/home/About.vue';
 import How from '../components/home/How.vue';
 // No logic needed for now — can add later (v-model, search submit, etc.)
-import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted, nextTick } from 'vue'
 import { useRouter } from 'vue-router'
 import Howitworks from '../components/home/Howitworks.vue';
 import Temoigne from '../components/home/temoigne.vue';
-import Hero from '../components/home/Hero.vue';
+import Hero from '../components/home/Hero.vue'
 import Topartisan from '../components/home/topartisan.vue';
 import Appdownload from '../components/home/Appdownload.vue';
 import footer from '../components/footer.vue';
+import { useHomeScrollAnimations } from '../composables/useHomeScrollAnimations.js'
 const router = useRouter()
 const user   = ref(null)
+const { init: initAnimations, cleanup: cleanupAnimations } = useHomeScrollAnimations()
 
 // ── Read user from localStorage ─────────────────────────────────────────────
 function loadUser() {
@@ -65,13 +67,16 @@ function onStorageChange(e) {
   if (e.key === 'user' || e.key === 'token') loadUser()
 }
 
-onMounted(() => {
+onMounted(async () => {
   loadUser()
   window.addEventListener('storage', onStorageChange)
+  await nextTick()
+  initAnimations()
 })
 
 onUnmounted(() => {
   window.removeEventListener('storage', onStorageChange)
+  cleanupAnimations()
 })
 
 </script>

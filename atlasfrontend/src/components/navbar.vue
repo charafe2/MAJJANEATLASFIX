@@ -1,5 +1,5 @@
 <template>
-  <nav class="navbar">
+  <nav class="navbar" :class="{ 'navbar--transparent': isHome }">
     <div class="wrapper">
 
       <!-- LEFT — Logo -->
@@ -171,10 +171,12 @@
 
 <script setup>
 import { ref, computed, onMounted, onUnmounted } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRouter, useRoute } from 'vue-router'
 import api from '../api/auth.js'
 
 const router       = useRouter()
+const route        = useRoute()
+const isHome       = computed(() => route.path === '/')
 const user         = ref(null)
 const dropdownOpen = ref(false)
 const menuRef      = ref(null)
@@ -316,7 +318,7 @@ onUnmounted(() => {
   left: 0;
   width: 100%;
   height: 102px;
-background-color: white;
+  background-color: white;
   display: flex;
   align-items: center;
 
@@ -327,6 +329,12 @@ background-color: white;
 
   z-index: 1000;
   backdrop-filter: blur(1px);
+  transition: background-color 0.3s ease;
+}
+
+.navbar--transparent {
+  background-color: transparent;
+  backdrop-filter: none;
 }
 
 .wrapper {

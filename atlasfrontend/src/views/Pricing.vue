@@ -158,7 +158,6 @@
         </div>
       </div>
     </AuthBackground>
-    <Footer />
   </div>
 </template>
 

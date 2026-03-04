@@ -33,11 +33,22 @@ class ServiceRequestController extends Controller
         $alreadyOffered = ArtisanOffer::where('artisan_id', $artisan->id)
             ->pluck('service_request_id');
 
-        $query = ServiceRequest::with(['client.user', 'category', 'serviceType', 'photos'])
-            ->where('status', 'open')
-            ->where('request_type', 'public')
-            ->whereNotIn('id', $alreadyOffered)
-            ->orderBy('created_at', 'desc');
+        $type = $request->query('type', 'public');
+
+        if ($type === 'direct') {
+            $query = ServiceRequest::with(['client.user', 'category', 'serviceType', 'photos'])
+                ->where('status', 'open')
+                ->where('request_type', 'direct')
+                ->where('target_artisan_id', $artisan->id)
+                ->whereNotIn('id', $alreadyOffered)
+                ->orderBy('created_at', 'desc');
+        } else {
+            $query = ServiceRequest::with(['client.user', 'category', 'serviceType', 'photos'])
+                ->where('status', 'open')
+                ->where('request_type', 'public')
+                ->whereNotIn('id', $alreadyOffered)
+                ->orderBy('created_at', 'desc');
+        }
 
         // Search: title / description / city
         if ($search = $request->query('search')) {

@@ -12,6 +12,7 @@ import Navbar from './components/navbar.vue';
 <style scoped>
 *{
   margin: 0;
+  padding: 0;
 }
 .logo {
   height: 6em;

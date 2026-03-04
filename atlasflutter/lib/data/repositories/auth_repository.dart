@@ -120,29 +120,9 @@ class AuthRepository {
     required String      city,
     required String      address,
     required String      bio,
-    required XFile       diploma,
-    required List<XFile> photos,
+    XFile?               diploma,
+    List<XFile>          photos = const [],
   }) async {
-    // MultipartFile.fromBytes() works on BOTH web and mobile.
-    // MultipartFile.fromFile() / fromPath() crash on web (dart:io not available).
-    final diplomaBytes = await diploma.readAsBytes();
-    final diplomaExt   = diploma.name.contains('.')
-        ? diploma.name.split('.').last
-        : 'jpg';
-
-    final photoEntries = await Future.wait(
-      photos.asMap().entries.map((e) async {
-        final bytes = await e.value.readAsBytes();
-        final ext   = e.value.name.contains('.')
-            ? e.value.name.split('.').last
-            : 'jpg';
-        return MapEntry(
-          'photos[${e.key}]',
-          MultipartFile.fromBytes(bytes, filename: 'photo_${e.key}.$ext'),
-        );
-      }),
-    );
-
     final fd = FormData.fromMap({
       'user_id':               userId,
       'password':              password,
@@ -152,9 +132,6 @@ class AuthRepository {
       'city':                  city,
       'address':               address,
       'bio':                   bio,
-      'diploma': MultipartFile.fromBytes(
-          diplomaBytes, filename: 'diploma.$diplomaExt'),
-      ...Map.fromEntries(photoEntries),
     });
 
     final res = await _dio.post(

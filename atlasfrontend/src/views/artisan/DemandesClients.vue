@@ -15,6 +15,25 @@
       </div>
     </div>
 
+    <!-- ── Tabs ────────────────────────────────────────────────────────── -->
+    <div class="tabs-bar">
+      <button
+        class="tab-btn"
+        :class="{ active: activeTab === 'public' }"
+        @click="switchTab('public')"
+      >
+        Demandes publiques
+      </button>
+      <button
+        class="tab-btn"
+        :class="{ active: activeTab === 'direct' }"
+        @click="switchTab('direct')"
+      >
+        Demandes directes
+        <span v-if="directBadge > 0" class="tab-badge">{{ directBadge }}</span>
+      </button>
+    </div>
+
     <!-- ── Filters ─────────────────────────────────────────────────────── -->
     <div class="filters-bar">
       <div class="search-wrap">
@@ -86,10 +105,13 @@
           </div>
 
           <!-- Category + service pill -->
-          <div class="card-badge">
-            <span class="badge-cat">{{ req.category?.name }}</span>
-            <span class="badge-arrow">→</span>
-            <span class="badge-svc">{{ req.service_type?.name }}</span>
+          <div class="card-badges">
+            <div v-if="activeTab === 'direct'" class="badge-direct">Pour vous</div>
+            <div class="card-badge">
+              <span class="badge-cat">{{ req.category?.name }}</span>
+              <span class="badge-arrow">→</span>
+              <span class="badge-svc">{{ req.service_type?.name }}</span>
+            </div>
           </div>
         </div>
 
@@ -261,6 +283,9 @@ const total       = ref(0)
 const currentPage = ref(1)
 const lastPage    = ref(1)
 
+const activeTab  = ref('public')
+const directBadge = ref(0)
+
 const searchQ        = ref('')
 const dateFilter     = ref('')
 const categoryFilter = ref('')
@@ -284,11 +309,21 @@ function debouncedLoad() {
   debounceTimer = setTimeout(() => loadRequests(), 400)
 }
 
+// ── Tab switch ───────────────────────────────────────────────────────────
+function switchTab(tab) {
+  activeTab.value  = tab
+  searchQ.value    = ''
+  dateFilter.value = ''
+  categoryFilter.value = ''
+  refusedIds.value = new Set()
+  loadRequests(1)
+}
+
 // ── Data loading ─────────────────────────────────────────────────────────
 async function loadRequests(page = 1) {
   loading.value = true
   try {
-    const params = { page }
+    const params = { page, type: activeTab.value }
     if (searchQ.value)        params.search      = searchQ.value
     if (dateFilter.value)     params.date        = dateFilter.value
     if (categoryFilter.value) params.category_id = categoryFilter.value
@@ -299,6 +334,8 @@ async function loadRequests(page = 1) {
     total.value       = d.total
     currentPage.value = d.current_page
     lastPage.value    = d.last_page
+
+    if (activeTab.value === 'direct') directBadge.value = d.total
   } catch (e) {
     showToast('Erreur lors du chargement des demandes.', 'error')
   } finally {
@@ -471,6 +508,43 @@ onMounted(() => {
   border-radius: 20px;
 }
 
+/* ── Tabs ───────────────────────────────────────────────────────────────── */
+.tabs-bar {
+  background: #fff;
+  padding: 0 24px;
+  display: flex;
+  gap: 4px;
+  border-bottom: 1px solid #E8ECF0;
+}
+.tab-btn {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 14px 20px;
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  font-size: 14px;
+  font-weight: 500;
+  color: #62748E;
+  cursor: pointer;
+  font-family: inherit;
+  transition: color 0.15s, border-color 0.15s;
+  margin-bottom: -1px;
+}
+.tab-btn:hover { color: #314158; }
+.tab-btn.active { color: #FC5A15; border-bottom-color: #FC5A15; font-weight: 600; }
+.tab-badge {
+  background: #FC5A15;
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 1px 7px;
+  border-radius: 20px;
+  line-height: 18px;
+}
+
 /* ── Filters ────────────────────────────────────────────────────────────── */
 .filters-bar {
   padding: 16px 24px;
@@ -627,6 +701,26 @@ onMounted(() => {
   font-size: 14px;
   color: #D1D5DC;
   line-height: 20px;
+}
+
+/* Category badges wrapper */
+.card-badges {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+/* "Pour vous" direct badge */
+.badge-direct {
+  padding: 4px 12px;
+  background: #FFF0E9;
+  border: 1px solid #FC5A15;
+  border-radius: 9999px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #FC5A15;
+  white-space: nowrap;
 }
 
 /* Category badge */

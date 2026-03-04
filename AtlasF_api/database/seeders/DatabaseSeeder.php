@@ -12,6 +12,7 @@ class DatabaseSeeder extends Seeder
             SubscriptionTierSeeder::class,
             ServiceCategorySeeder::class,
             ServiceTypeSeeder::class,
+            BoostPackageSeeder::class,
         ]);
     }
 }

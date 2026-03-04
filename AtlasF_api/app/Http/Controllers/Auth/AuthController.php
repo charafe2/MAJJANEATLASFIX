@@ -37,6 +37,15 @@ class AuthController extends Controller
     // --------------------------------------------------------
     public function preRegister(Request $request)
     {
+        // Purge any stale unverified stub users with the same email/phone
+        // so users can retry registration without hitting a false unique conflict.
+        User::where('is_active', false)
+            ->where(function ($q) use ($request) {
+                $q->where('email', $request->email)
+                  ->orWhere('phone', $request->phone);
+            })
+            ->forceDelete();
+
         $request->validate([
             'account_type'        => 'required|in:client,artisan',
             'full_name'           => 'required|string|max:255',

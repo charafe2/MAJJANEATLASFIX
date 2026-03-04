@@ -1,7 +1,6 @@
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:image_picker/image_picker.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/storage/secure_storage.dart';
 import '../../../data/repositories/auth_repository.dart';
@@ -38,8 +37,8 @@ class _PasswordScreenState extends State<PasswordScreen> {
     setState(() { _errors.clear(); _loading = true; });
 
     final d           = widget.data;
-    final accountType = d['account_type'] as String? ?? 'client';
-    final userId      = (d['user_id'] as num).toInt();
+    final accountType = (d['account_type'] as String?) ?? 'client';
+    final userId      = (d['user_id'] as num?)?.toInt() ?? 0;
 
     try {
       if (accountType == 'client') {
@@ -47,8 +46,8 @@ class _PasswordScreenState extends State<PasswordScreen> {
           userId:               userId,
           password:             _password.text,
           passwordConfirmation: _confirm.text,
-          city:                 d['city']    as String,
-          address:              d['address'] as String,
+          city:                 (d['city']    as String?) ?? '',
+          address:              (d['address'] as String?) ?? '',
         );
         await SecureStorage.saveToken(r.token);
         await SecureStorage.saveUser(r.user.toJson());
@@ -56,21 +55,15 @@ class _PasswordScreenState extends State<PasswordScreen> {
         context.go('/client/dashboard');
 
       } else {
-        // ── XFile — no dart:io, works on web + mobile ───────────
-        final diploma    = d['diploma_xfile'] as XFile;
-        final photoFiles = (d['photo_xfiles'] as List<dynamic>).cast<XFile>();
-
         final r = await _repo.completeArtisan(
           userId:               userId,
           password:             _password.text,
           passwordConfirmation: _confirm.text,
-          service:              d['service']      as String,
-          serviceType:          d['service_type'] as String,
-          city:                 d['city']         as String,
-          address:              d['address']      as String,
-          bio:                  d['bio']          as String,
-          diploma:              diploma,
-          photos:               photoFiles,
+          service:              (d['service']      as String?) ?? '',
+          serviceType:          (d['service_type'] as String?) ?? '',
+          city:                 (d['city']         as String?) ?? '',
+          address:              (d['address']      as String?) ?? '',
+          bio:                  (d['bio']          as String?) ?? '',
         );
         await SecureStorage.saveToken(r.token);
         await SecureStorage.saveUser(r.user.toJson());

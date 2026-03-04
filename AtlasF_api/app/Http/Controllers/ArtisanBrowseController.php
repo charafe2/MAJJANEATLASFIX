@@ -93,7 +93,7 @@ class ArtisanBrowseController extends Controller
                 ]),
                 'certifications'   => $artisan->certifications->map(fn ($c) => [
                     'id'        => $c->id,
-                    'name'      => $c->name,
+                    'name'      => $c->title,
                     'issued_at' => $c->issued_at,
                 ]),
                 'services'         => $artisan->services->map(fn ($s) => [
