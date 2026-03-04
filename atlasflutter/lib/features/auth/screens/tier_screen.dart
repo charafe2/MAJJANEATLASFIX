@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/storage/secure_storage.dart';
+import '../../../../core/auth_state.dart';
 import '../../../core/widgets/auth_widgets.dart';
 
 /// ARTISAN REGISTRATION – "Choisissez votre abonnement"
@@ -25,6 +26,7 @@ class _TierScreenState extends State<TierScreen> {
       final token = widget.data['token'] as String?;
       if (token != null) await SecureStorage.saveToken(token);
       // TODO: POST /api/auth/artisan/choose-tier when endpoint is ready
+      AuthState.instance.setLoggedIn(true, role: 'artisan');
       if (!mounted) return;
       context.go('/artisan/dashboard');
     } finally {
