@@ -35,7 +35,7 @@
         <a href="#" class="footer-link">Conditions Générales d'Utilisation</a>
         <a href="#" class="footer-link">Page Conseils</a>
         <a href="#" class="footer-link">Paiements &amp; Abonnements</a>
-        <a href="/Litiges">Résolution des litiges</a>
+        <a href="/Litiges" class="footer-link">Résolution des litiges</a>
       </div>
 
       <!-- Col 4: More links -->
@@ -160,7 +160,7 @@
 
 /* ── Columns ── */
 .footer-col {
-  grid-row: 1;
+  grid-row: 2;
   display: flex;
   flex-direction: column;
   gap: 12px;
@@ -199,7 +199,7 @@ a{
 /* ── Search bar (top-right) ── */
 .footer-search {
   grid-column: 3 / 5;
-  grid-row: 2;
+  grid-row: 1;
   display: flex;
   align-items: center;
   justify-content: flex-end;
@@ -290,8 +290,9 @@ a{
     grid-template-columns: 220px 110px 1fr;
     grid-template-rows: auto auto auto;
   }
-  .footer-col-right  { grid-column: 3; grid-row: 2; }
-  .footer-search     { grid-column: 1 / 4; grid-row: 3; justify-content: flex-start; }
+  .footer-col-right  { grid-column: 3; grid-row: 3; }
+  .footer-col        { grid-row: 3; }
+  .footer-search     { grid-column: 1 / 4; grid-row: 2; justify-content: flex-start; }
 }
 
 @media (max-width: 640px) {

@@ -1,39 +1,18 @@
 import 'package:flutter/material.dart';
 import '../../../../core/constants/app_colors.dart';
 
-// ── AtlasFix Logo ─────────────────────────────────────────────────────────────
-// Figma: "Atlas" in orange Poppins 700, "fix" in white on orange pill
+// ── AtlasFix Logo — forced orange so it shows on light backgrounds ────────────
 class AtlasFixLogo extends StatelessWidget {
   const AtlasFixLogo({super.key});
   @override
-  Widget build(BuildContext context) => Row(
-    mainAxisSize: MainAxisSize.min,
-    crossAxisAlignment: CrossAxisAlignment.center,
-    children: [
-      const Text('Atlas',
-        style: TextStyle(
-          fontFamily:  'Poppins',
-          fontSize:    32,
-          fontWeight:  FontWeight.w700,
-          color:       AppColors.primary,
-          letterSpacing: -0.5,
-        )),
-      const SizedBox(width: 4),
-      Container(
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-        decoration: BoxDecoration(
-          color:        AppColors.primary,
-          borderRadius: BorderRadius.circular(6),
-        ),
-        child: const Text('fix',
-          style: TextStyle(
-            fontFamily:  'Poppins',
-            fontSize:    22,
-            fontWeight:  FontWeight.w700,
-            color:       Colors.white,
-          )),
-      ),
-    ],
+  Widget build(BuildContext context) => ColorFiltered(
+    colorFilter: const ColorFilter.mode(AppColors.primary, BlendMode.srcIn),
+    child: Image.asset(
+      'assets/images/AtlasFix.png',
+      height: 48,
+      fit: BoxFit.contain,
+      filterQuality: FilterQuality.high,
+    ),
   );
 }
 

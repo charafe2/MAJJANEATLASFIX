@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../../../core/constants/app_colors.dart';
 
-// ── AtlasFix Logo ─────────────────────────────────────────────────────────────
-// Figma: "Atlas" in orange Poppins 700, "fix" in white on orange pill
+// ── AtlasFix Logo — "Atlas" dark bold + "Fix" white-on-orange pill ────────────
 class AtlasFixLogo extends StatelessWidget {
   const AtlasFixLogo({super.key});
   @override
@@ -10,28 +9,33 @@ class AtlasFixLogo extends StatelessWidget {
     mainAxisSize: MainAxisSize.min,
     crossAxisAlignment: CrossAxisAlignment.center,
     children: [
-      const Text('Atlas',
+      const Text(
+        'Atlas',
         style: TextStyle(
           fontFamily:  'Poppins',
           fontSize:    32,
           fontWeight:  FontWeight.w700,
-          color:       AppColors.primary,
+          color:       AppColors.dark,
           letterSpacing: -0.5,
-        )),
-      const SizedBox(width: 4),
+        ),
+      ),
+      const SizedBox(width: 6),
       Container(
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
         decoration: BoxDecoration(
           color:        AppColors.primary,
-          borderRadius: BorderRadius.circular(6),
+          borderRadius: BorderRadius.circular(8),
         ),
-        child: const Text('fix',
+        child: const Text(
+          'Fix',
           style: TextStyle(
             fontFamily:  'Poppins',
             fontSize:    22,
             fontWeight:  FontWeight.w700,
             color:       Colors.white,
-          )),
+            letterSpacing: -0.3,
+          ),
+        ),
       ),
     ],
   );
@@ -195,7 +199,7 @@ class OrangeBtn extends StatelessWidget {
       onPressed: loading ? null : onPressed,
       style: ElevatedButton.styleFrom(
         backgroundColor:         AppColors.primary,
-        disabledBackgroundColor: AppColors.primary.withOpacity(0.55),
+        disabledBackgroundColor: AppColors.primary.withValues(alpha: 0.55),
         elevation:   0,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
       ),
@@ -266,7 +270,7 @@ class WhiteBtn extends StatelessWidget {
         backgroundColor: Colors.white,
         foregroundColor: AppColors.dark,
         elevation: 3,
-        shadowColor: Colors.black.withOpacity(0.15),
+        shadowColor: Colors.black.withValues(alpha: 0.15),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
       ),
       child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
@@ -338,9 +342,9 @@ class ErrBanner extends StatelessWidget {
   Widget build(BuildContext context) => Container(
     padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
     decoration: BoxDecoration(
-      color:        AppColors.error.withOpacity(0.08),
+      color:        AppColors.error.withValues(alpha: 0.08),
       borderRadius: BorderRadius.circular(10),
-      border:       Border.all(color: AppColors.error.withOpacity(0.3)),
+      border:       Border.all(color: AppColors.error.withValues(alpha: 0.3)),
     ),
     child: Row(children: [
       const Icon(Icons.error_outline, color: AppColors.error, size: 16),

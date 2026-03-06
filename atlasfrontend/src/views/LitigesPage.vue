@@ -179,7 +179,7 @@
                     <path d="M21 21l-4.35-4.35" stroke="#62748E" stroke-width="1.667" stroke-linecap="round"/>
                   </svg>
                   L'historique des deux parties
-                </li>
+                </li> 
               </ul>
             </div>
           </div>
