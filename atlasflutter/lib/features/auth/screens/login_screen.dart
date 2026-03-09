@@ -42,16 +42,16 @@ class _LoginScreenState extends State<LoginScreen> {
       body: GradientBg(
         child: Column(
           children: [
-            // ── Scrollable top content ──────────────────────────
+            // ── Scrollable top content 
             Expanded(
               child: SingleChildScrollView(
-                padding: const EdgeInsets.fromLTRB(24, 36, 24, 0),
+                padding: const EdgeInsets.fromLTRB(24, 66, 24, 0),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Logo
-                    const AtlasFixLogo(),
-                    const SizedBox(height: 28),
+                    // Logo — centered
+                    const Center(child: AtlasFixLogo()),
+                    const SizedBox(height: 36),
 
                     // Title — Figma: Poppins 500 28px #393939
                     const Text('Bienvenue à nouveau',

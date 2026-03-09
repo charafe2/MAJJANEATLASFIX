@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/constants/app_colors.dart';
+import '../../../core/widgets/atlas_logo.dart';
 import '../../../core/auth_state.dart';
 import '../../../core/storage/secure_storage.dart';
 import '../../../data/repositories/artisan_job_repository.dart';
@@ -36,10 +37,13 @@ class _ArtisanProfileScreenState extends State<ArtisanProfileScreen> {
     final user = await SecureStorage.getUser();
     if (user != null && mounted) {
       setState(() {
-        _name      = user['full_name'] as String? ?? '';
-        _specialty = user['specialty'] as String?
-                  ?? user['service']   as String? ?? '';
-        _avatarUrl = user['avatar_url'] as String?;
+        _name      = user['name']            as String?
+                  ?? user['full_name']       as String? ?? '';
+        _specialty = user['business_name']   as String?
+                  ?? user['service_category'] as String?
+                  ?? user['specialty']       as String? ?? '';
+        _avatarUrl = user['avatar']          as String?
+                  ?? user['avatar_url']      as String?;
       });
     }
   }
@@ -186,7 +190,7 @@ class _ArtisanProfileScreenState extends State<ArtisanProfileScreen> {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              _WhiteLogo(),
+              const AtlasLogo(),
               const Row(children: [
                 _HeaderIconBtn(Icons.notifications_none_rounded),
               ]),
@@ -393,30 +397,6 @@ class _LogoutBtn extends StatelessWidget {
   );
 }
 
-// ── White logo & header icon ──────────────────────────────────────────────────
-class _WhiteLogo extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) => Row(
-    mainAxisSize: MainAxisSize.min,
-    children: [
-      const Text('Atlas',
-        style: TextStyle(fontFamily: 'Poppins', fontSize: 22,
-            fontWeight: FontWeight.w700, color: Colors.white)),
-      const SizedBox(width: 4),
-      Container(
-        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-        decoration: BoxDecoration(
-          color: Colors.white.withValues(alpha: 0.25),
-          borderRadius: BorderRadius.circular(6),
-          border: Border.all(color: Colors.white),
-        ),
-        child: const Text('Fix',
-          style: TextStyle(fontFamily: 'Poppins', fontSize: 16,
-              fontWeight: FontWeight.w700, color: Colors.white)),
-      ),
-    ],
-  );
-}
 
 class _HeaderIconBtn extends StatelessWidget {
   final IconData icon;

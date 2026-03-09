@@ -1,44 +1,13 @@
 import 'package:flutter/material.dart';
 import '../../../../core/constants/app_colors.dart';
+import 'atlas_logo.dart';
 
-// ── AtlasFix Logo — "Atlas" dark bold + "Fix" white-on-orange pill ────────────
+// ── AtlasFix Logo — image-based, primary orange on light backgrounds ──────────
 class AtlasFixLogo extends StatelessWidget {
   const AtlasFixLogo({super.key});
   @override
-  Widget build(BuildContext context) => Row(
-    mainAxisSize: MainAxisSize.min,
-    crossAxisAlignment: CrossAxisAlignment.center,
-    children: [
-      const Text(
-        'Atlas',
-        style: TextStyle(
-          fontFamily:  'Poppins',
-          fontSize:    32,
-          fontWeight:  FontWeight.w700,
-          color:       AppColors.dark,
-          letterSpacing: -0.5,
-        ),
-      ),
-      const SizedBox(width: 6),
-      Container(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-        decoration: BoxDecoration(
-          color:        AppColors.primary,
-          borderRadius: BorderRadius.circular(8),
-        ),
-        child: const Text(
-          'Fix',
-          style: TextStyle(
-            fontFamily:  'Poppins',
-            fontSize:    22,
-            fontWeight:  FontWeight.w700,
-            color:       Colors.white,
-            letterSpacing: -0.3,
-          ),
-        ),
-      ),
-    ],
-  );
+  Widget build(BuildContext context) =>
+      AtlasLogo(color: AppColors.primary, height: 51);
 }
 
 // ── Full-screen gradient background ───────────────────────────────────────────

@@ -2,6 +2,12 @@ import 'package:dio/dio.dart';
 import '../../core/netwrok/api_client.dart';
 import '../../core/constants/api_constants.dart';
 
+String? _fullUrl(String? url) {
+  if (url == null || url.isEmpty) return null;
+  if (url.startsWith('http')) return url;
+  return '${ApiConstants.storageBaseUrl}$url';
+}
+
 // ── Models ────────────────────────────────────────────────────────────────────
 
 class ArtisanStats {
@@ -187,31 +193,20 @@ class ArtisanMyProfile {
   });
 
   factory ArtisanMyProfile.fromJson(Map<String, dynamic> j) {
-    // Support both /artisan/profile and /me response shapes
-    final user    = j['user']            as Map<String, dynamic>? ?? j;
-    final profile = j['artisan_profile'] as Map<String, dynamic>?
-                 ?? j['profile']         as Map<String, dynamic>?
-                 ?? j;
-
+    // /me returns a flat structure — all fields at root level
     return ArtisanMyProfile(
-      id:                j['id']          as int?    ?? 0,
-      name:              user['full_name'] as String? ?? '',
-      specialty:         profile['business_name'] as String?
-                      ?? profile['service']       as String? ?? '',
-      city:              profile['city']  as String? ?? '',
-      avatarUrl:         user['avatar_url'] as String?,
-      bio:               profile['bio']   as String?,
-      rating:            double.tryParse(
-                           '${profile['rating_average'] ?? j['rating_average'] ?? 0}')
-                         ?? 0,
-      totalReviews:      profile['total_reviews']      as int?
-                      ?? j['total_reviews']             as int? ?? 0,
-      completedServices: profile['completed_services'] as int?
-                      ?? j['completed_services']        as int? ?? 0,
-      activeOffers:      profile['active_offers']      as int?
-                      ?? j['active_offers']             as int? ?? 0,
-      pendingOffers:     profile['pending_offers']     as int?
-                      ?? j['pending_offers']            as int? ?? 0,
+      id:                j['id']               as int?    ?? 0,
+      name:              j['name']             as String? ?? '',
+      specialty:         j['business_name']    as String?
+                      ?? j['service_category'] as String? ?? '',
+      city:              j['city']             as String? ?? '',
+      avatarUrl:         _fullUrl(j['avatar']  as String?),
+      bio:               j['bio']              as String?,
+      rating:            (j['rating_average']  as num?)?.toDouble() ?? 0.0,
+      totalReviews:      j['total_reviews']    as int?    ?? 0,
+      completedServices: j['total_jobs_completed'] as int? ?? 0,
+      activeOffers:      j['active_offers']    as int?    ?? 0,
+      pendingOffers:     j['pending_offers']   as int?    ?? 0,
     );
   }
 
@@ -231,7 +226,7 @@ class ArtisanJobRepository {
 
   /// Fetch the authenticated artisan's own profile (name, rating, stats…)
   Future<ArtisanMyProfile> getMyProfile() async {
-    final res  = await _dio.get(ApiConstants.artisanProfile);
+    final res  = await _dio.get(ApiConstants.me);
     final data = (res.data['data'] ?? res.data) as Map<String, dynamic>;
     return ArtisanMyProfile.fromJson(data);
   }

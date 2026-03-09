@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/auth_state.dart';
+import '../../../../core/widgets/atlas_logo.dart';
+import '../../../../core/widgets/client_bottom_nav_bar.dart';
 import '../../../../data/repositories/profile_repository.dart';
 
 class ClientProfileScreen extends StatefulWidget {
@@ -132,7 +134,7 @@ class _ClientProfileScreenState extends State<ClientProfileScreen> {
           // ── Bottom navigation bar ────────────────────────────────
           const Positioned(
             bottom: 28, left: 0, right: 0,
-            child: Center(child: _BottomNavBar(activeIndex: 4)),
+            child: Center(child: ClientBottomNavBar(activeIndex: 4)),
           ),
         ],
       ),
@@ -192,7 +194,7 @@ class _Header extends StatelessWidget {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              _WhiteLogo(),
+              const AtlasLogo(),
               const Row(
                 children: [
                   _HeaderIconBtn(Icons.calendar_today_outlined),
@@ -208,34 +210,6 @@ class _Header extends StatelessWidget {
   }
 }
 
-class _WhiteLogo extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) => Row(
-    mainAxisSize: MainAxisSize.min,
-    crossAxisAlignment: CrossAxisAlignment.center,
-    children: [
-      const Text('Atlas',
-        style: TextStyle(
-          fontFamily: 'Poppins', fontSize: 22,
-          fontWeight: FontWeight.w700, color: Colors.white,
-        )),
-      const SizedBox(width: 4),
-      Container(
-        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-        decoration: BoxDecoration(
-          color: Colors.white.withValues(alpha: 0.25),
-          borderRadius: BorderRadius.circular(6),
-          border: Border.all(color: Colors.white, width: 1),
-        ),
-        child: const Text('Fix',
-          style: TextStyle(
-            fontFamily: 'Poppins', fontSize: 16,
-            fontWeight: FontWeight.w700, color: Colors.white,
-          )),
-      ),
-    ],
-  );
-}
 
 class _HeaderIconBtn extends StatelessWidget {
   final IconData icon;
@@ -436,64 +410,3 @@ class _LogoutBtn extends StatelessWidget {
   );
 }
 
-// ── Bottom navigation bar ─────────────────────────────────────────────────────
-
-class _BottomNavBar extends StatelessWidget {
-  final int activeIndex;
-  const _BottomNavBar({required this.activeIndex});
-
-  @override
-  Widget build(BuildContext context) {
-    final items = [
-      Icons.home_outlined,
-      Icons.list_alt_outlined,
-      Icons.add,
-      Icons.chat_bubble_outline_rounded,
-      Icons.person_outline_rounded,
-    ];
-
-    return Container(
-      width: 342, height: 60,
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-      decoration: BoxDecoration(
-        color: const Color(0xFF303030),
-        borderRadius: BorderRadius.circular(100),
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: List.generate(items.length, (i) {
-          final active = i == activeIndex;
-          if (i == 2) {
-            return GestureDetector(
-              onTap: () => context.push('/client/service-categories'),
-              child: Container(
-                width: 44, height: 44,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  border: Border.all(color: Colors.white, width: 1),
-                ),
-                child: const Icon(Icons.add, color: Colors.white, size: 22),
-              ),
-            );
-          }
-          return GestureDetector(
-            onTap: () {
-              if (i == 0) context.go('/client/dashboard');
-              if (i == 1) context.go('/client/mes-demandes');
-              if (i == 3) context.go('/client/messages');
-            },
-            child: Container(
-              width: 44, height: 44,
-              decoration: BoxDecoration(
-                color: active ? Colors.white : Colors.transparent,
-                shape: BoxShape.circle,
-              ),
-              child: Icon(items[i],
-                color: active ? AppColors.primary : Colors.white, size: 22),
-            ),
-          );
-        }),
-      ),
-    );
-  }
-}

@@ -2,6 +2,12 @@ import 'package:dio/dio.dart';
 import '../../core/netwrok/api_client.dart';
 import '../../core/constants/api_constants.dart';
 
+String? _resolveUrl(String? url) {
+  if (url == null || url.isEmpty) return null;
+  if (url.startsWith('http')) return url;
+  return '${ApiConstants.storageBaseUrl}$url';
+}
+
 // ── Model ──────────────────────────────────────────────────────────────────────
 
 class UserProfile {
@@ -32,21 +38,20 @@ class UserProfile {
   });
 
   factory UserProfile.fromJson(Map<String, dynamic> j) {
-    // Support nested 'profile' or 'client_profile' sub-object
-    final p = (j['profile'] ?? j['client_profile'] ?? {}) as Map<String, dynamic>;
     return UserProfile(
-      id:             j['id'] as int? ?? 0,
-      name:           j['name'] as String? ?? '',
-      email:          j['email'] as String? ?? '',
-      phone:          (j['phone'] ?? p['phone']) as String? ?? '',
-      birthdate:      (j['birthdate'] ?? p['birthdate']) as String?,
-      city:           (j['city'] ?? p['city']) as String?,
-      address:        (j['address'] ?? p['address']) as String?,
-      postalCode:     (j['postal_code'] ?? p['postal_code']) as String?,
-      avatarUrl:      (j['avatar_url'] ?? p['avatar_url'] ??
-                       j['avatar']    ?? p['avatar']) as String?,
-      demandesCount:  j['demandes_count'] as int? ?? 0,
-      completedCount: j['completed_count'] as int? ?? 0,
+      id:             j['id']          as int?    ?? 0,
+      name:           j['name']        as String? ?? '',
+      email:          j['email']       as String? ?? '',
+      phone:          j['phone']       as String? ?? '',
+      birthdate:      j['birthdate']   as String?,
+      city:           j['city']        as String?,
+      address:        j['address']     as String?,
+      postalCode:     j['postal_code'] as String?,
+      avatarUrl:      _resolveUrl(j['avatar'] as String? ?? j['avatar_url'] as String?),
+      demandesCount:  j['activeRequests']    as int?
+                   ?? j['demandes_count']    as int? ?? 0,
+      completedCount: j['completedRequests'] as int?
+                   ?? j['completed_count']   as int? ?? 0,
     );
   }
 }

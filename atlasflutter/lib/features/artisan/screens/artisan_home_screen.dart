@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/constants/app_colors.dart';
+import '../../../core/widgets/atlas_logo.dart';
 import '../../../core/storage/secure_storage.dart';
 import '../../../data/repositories/artisan_job_repository.dart';
 
@@ -136,7 +137,7 @@ class _ArtisanHomeScreenState extends State<ArtisanHomeScreen> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  _WhiteLogo(),
+                  const AtlasLogo(),
                   Row(children: [
                     GestureDetector(
                       onTap: () => context.push('/artisan/agenda'),
@@ -306,30 +307,6 @@ class _ArtisanHomeScreenState extends State<ArtisanHomeScreen> {
   }
 }
 
-// ── White logo ─────────────────────────────────────────────────────────────────
-class _WhiteLogo extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) => Row(
-    mainAxisSize: MainAxisSize.min,
-    children: [
-      const Text('Atlas',
-        style: TextStyle(fontFamily: 'Poppins', fontSize: 22,
-            fontWeight: FontWeight.w700, color: Colors.white)),
-      const SizedBox(width: 4),
-      Container(
-        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-        decoration: BoxDecoration(
-          color: Colors.white.withValues(alpha: 0.25),
-          borderRadius: BorderRadius.circular(6),
-          border: Border.all(color: Colors.white),
-        ),
-        child: const Text('Fix',
-          style: TextStyle(fontFamily: 'Poppins', fontSize: 16,
-              fontWeight: FontWeight.w700, color: Colors.white)),
-      ),
-    ],
-  );
-}
 
 class _HeaderIconBtn extends StatelessWidget {
   final IconData icon;

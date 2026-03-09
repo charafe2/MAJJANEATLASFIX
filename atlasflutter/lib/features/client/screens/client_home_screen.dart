@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/constants/app_colors.dart';
+import '../../../../core/widgets/atlas_logo.dart';
+import '../../../../core/widgets/client_bottom_nav_bar.dart';
 import '../../../../data/repositories/service_request_repository.dart';
 import '../../../../data/repositories/artisan_repository.dart';
 import '../../../../data/repositories/conversation_repository.dart';
@@ -160,7 +162,7 @@ class _ClientHomeScreenState extends State<ClientHomeScreen> {
                       ),
                       const SizedBox(height: 14),
                       SizedBox(
-                        height: 343,
+                        height: 345,
                         child: _artisansLoading
                             ? const Center(child: CircularProgressIndicator(
                                 color: AppColors.primary, strokeWidth: 2))
@@ -225,7 +227,7 @@ class _ClientHomeScreenState extends State<ClientHomeScreen> {
           // ── Bottom nav (floating pill) ────────────────────────────
           const Positioned(
             bottom: 28, left: 0, right: 0,
-            child: Center(child: _BottomNavBar(activeIndex: 0)),
+            child: Center(child: ClientBottomNavBar(activeIndex: 0)),
           ),
         ],
       ),
@@ -267,7 +269,7 @@ class _HomeHeader extends StatelessWidget {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     // Logo
-                    _WhiteLogo(),
+                    const AtlasLogo(),
                     // Icon buttons — CSS: gap:15px
                     Row(children: [
                       _HeaderIconBtn(
@@ -294,19 +296,6 @@ class _HomeHeader extends StatelessWidget {
   }
 }
 
-// AtlasFix logo — forced white so it shows on the orange header
-class _WhiteLogo extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) => ColorFiltered(
-    colorFilter: const ColorFilter.mode(Colors.white, BlendMode.srcIn),
-    child: Image.asset(
-      'assets/images/AtlasFix.png',
-      height: 36,
-      fit: BoxFit.contain,
-      filterQuality: FilterQuality.high,
-    ),
-  );
-}
 
 // Header icon buttons
 // CSS: Frame 1597881071 — 40x40, bg #FFFFFF, border-radius 125px, icon #393C40
@@ -598,7 +587,7 @@ class _PromoCard extends StatelessWidget {
   Widget build(BuildContext context) {
     const Color orange     = Color(0xFFFC5A15);
     const double radius    = 20.0;
-    const double cardH     = 148.0;
+    const double cardH     = 155.0;
     const double imgOver   = 24.0;  // character overflows above card top
     const double backShift = 7.0;   // back card down/right offset
 
@@ -898,8 +887,11 @@ class _ArtisanCardState extends State<_ArtisanCard> {
                 ]),
                 // CSS: gap 4px
                 const SizedBox(height: 4),
-                // Specialty — Inter 400 12px #45556C
-                Text(a.specialty,
+                // Specialty + years — Inter 400 12px #45556C
+                Text(
+                  a.yearsExperience != null
+                      ? '${a.specialty} · ${a.yearsExperience} ans'
+                      : a.specialty,
                   maxLines: 1, overflow: TextOverflow.ellipsis,
                   style: const TextStyle(
                     fontFamily: 'Inter',
@@ -913,11 +905,14 @@ class _ArtisanCardState extends State<_ArtisanCard> {
                   const Icon(Icons.location_on_outlined,
                       size: 14, color: Color(0xFF62748E)),
                   const SizedBox(width: 4),
-                  Text(a.city,
-                    style: const TextStyle(
-                      fontFamily: 'Inter',
-                      fontSize: 12,
-                      color: Color(0xFF62748E),
+                  Expanded(
+                    child: Text(a.city,
+                      maxLines: 1, overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        fontFamily: 'Inter',
+                        fontSize: 12,
+                        color: Color(0xFF62748E),
+                      ),
                     ),
                   ),
                 ]),
@@ -1107,71 +1102,3 @@ class _FaqItem extends StatelessWidget {
   );
 }
 
-// ── Bottom navigation bar ─────────────────────────────────────────────────────
-class _BottomNavBar extends StatelessWidget {
-  final int activeIndex;
-  const _BottomNavBar({required this.activeIndex});
-
-  void _onTap(BuildContext context, int index) {
-    if (index == activeIndex) return;
-    switch (index) {
-      case 0: context.go('/client/dashboard');            break;
-      case 1: context.go('/client/mes-demandes');         break;
-      case 2: context.push('/client/service-categories'); break;
-      case 3: context.go('/client/messages');             break;
-      case 4: context.go('/client/profile');              break;
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    const icons = [
-      Icons.home_outlined,
-      Icons.list_alt_outlined,
-      Icons.add,
-      Icons.chat_bubble_outline_rounded,
-      Icons.person_outline_rounded,
-    ];
-
-    return Container(
-      width: 342, height: 60,
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-      decoration: BoxDecoration(
-        color: const Color(0xFF303030),
-        borderRadius: BorderRadius.circular(100),
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: List.generate(icons.length, (i) {
-          final active = i == activeIndex;
-          if (i == 2) {
-            return GestureDetector(
-              onTap: () => _onTap(context, i),
-              child: Container(
-                width: 44, height: 44,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  border: Border.all(color: Colors.white),
-                ),
-                child: const Icon(Icons.add, color: Colors.white, size: 22),
-              ),
-            );
-          }
-          return GestureDetector(
-            onTap: () => _onTap(context, i),
-            child: Container(
-              width: 44, height: 44,
-              decoration: BoxDecoration(
-                color: active ? Colors.white : Colors.transparent,
-                shape: BoxShape.circle,
-              ),
-              child: Icon(icons[i],
-                color: active ? AppColors.primary : Colors.white,
-                size: 22),
-            ),
-          );
-        }),
-      ),
-    );
-  }
-}

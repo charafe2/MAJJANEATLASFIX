@@ -2,6 +2,21 @@ import 'package:dio/dio.dart';
 import '../../core/netwrok/api_client.dart';
 import '../../core/constants/api_constants.dart';
 
+// ── Helpers ───────────────────────────────────────────────────────────────────
+
+String? _fullUrl(String? url) {
+  if (url == null || url.isEmpty) return null;
+  if (url.startsWith('http')) return url;
+  return '${ApiConstants.storageBaseUrl}$url';
+}
+
+// API returns rating as "4.5/5" — extract the numeric part
+double _parseRating(dynamic raw) {
+  if (raw == null) return 0.0;
+  final s = raw.toString().split('/').first.trim();
+  return double.tryParse(s) ?? 0.0;
+}
+
 // ── Models ────────────────────────────────────────────────────────────────────
 
 class PublicArtisan {
@@ -19,6 +34,9 @@ class PublicArtisan {
   final int?   yearsExperience;
   final int    completedServices;
   final String? subscriptionTier;
+  final Map<int, int> ratingBreakdown; // star (5→1) → count
+  final int?   responseRate;           // percent
+  final int?   memberSince;            // year
 
   const PublicArtisan({
     required this.id, required this.name, required this.specialty,
@@ -27,32 +45,55 @@ class PublicArtisan {
     required this.skills, required this.portfolioPhotos,
     required this.isVerified, this.yearsExperience,
     required this.completedServices, this.subscriptionTier,
+    this.ratingBreakdown = const {},
+    this.responseRate,
+    this.memberSince,
   });
 
   factory PublicArtisan.fromJson(Map<String, dynamic> j) {
-    final user     = j['user'] as Map<String, dynamic>? ?? {};
-    final skillsRaw  = j['skills'] as List<dynamic>? ?? [];
-    final photosRaw  = j['portfolio_photos'] as List<dynamic>? ?? [];
+    // portfolio: list endpoint uses 'portfolio_photos', detail uses 'portfolio'
+    final photosRaw = (j['portfolio'] as List<dynamic>?
+                    ?? j['portfolio_photos'] as List<dynamic>? ?? []);
+    // skills: detail endpoint uses 'services', list may use 'skills'
+    final servicesRaw = (j['services'] as List<dynamic>?
+                      ?? j['skills']   as List<dynamic>? ?? []);
+    // rating breakdown (detail endpoint only)
+    final rawBreakdown = j['rating_breakdown'] as Map<String, dynamic>? ?? {};
+    final breakdown = <int, int>{};
+    for (final entry in rawBreakdown.entries) {
+      final star  = int.tryParse(entry.key) ?? 0;
+      final count = (entry.value as Map<String, dynamic>?)?['count'] as int? ?? 0;
+      breakdown[star] = count;
+    }
 
     return PublicArtisan(
-      id:                j['id']          as int,
-      name:              user['full_name'] as String?  ?? 'Artisan',
-      specialty:         j['business_name'] as String? ??
-                         j['service']       as String? ?? '',
-      city:              j['city']         as String?  ?? '',
-      rating:            double.tryParse('${j['rating_average'] ?? 0}') ?? 0,
-      reviews:           j['total_reviews'] as int?    ?? 0,
-      avatarUrl:         user['avatar_url'] as String?,
-      bio:               j['bio']          as String?,
-      skills:            skillsRaw.map((e) => e.toString()).toList(),
-      portfolioPhotos:   photosRaw.map((e) {
-        if (e is Map) return e['url'] as String? ?? '';
+      id:                j['id']               as int,
+      name:              j['name']             as String?  ?? 'Artisan',
+      specialty:         j['specialty']        as String?  ??
+                         j['service']          as String?  ??
+                         j['category']         as String?  ?? '',
+      city:              j['city']             as String?  ?? '',
+      rating:            _parseRating(j['rating']),
+      reviews:           j['reviews_count']    as int?
+                      ?? j['reviews']          as int?     ?? 0,
+      avatarUrl:         _fullUrl(j['avatar']  as String?),
+      bio:               j['bio']              as String?,
+      skills:            servicesRaw.map((e) {
+        if (e is Map) return e['name'] as String? ?? '';
         return e.toString();
       }).toList(),
-      isVerified:        j['is_verified']  as bool?    ?? false,
-      yearsExperience:   j['years_experience'] as int?,
-      completedServices: j['completed_services'] as int? ?? 0,
+      portfolioPhotos:   photosRaw.map((e) {
+        if (e is Map) return _fullUrl(e['url'] as String?) ?? '';
+        return _fullUrl(e.toString()) ?? '';
+      }).toList(),
+      isVerified:        j['verified']         as bool?    ?? false,
+      yearsExperience:   j['experience_years'] as int?,
+      completedServices: j['jobs_completed']   as int?
+                      ?? j['completed_services'] as int?   ?? 0,
       subscriptionTier:  j['subscription_tier'] as String?,
+      ratingBreakdown:   breakdown,
+      responseRate:      j['response_rate']    as int?,
+      memberSince:       j['member_since']     as int?,
     );
   }
 }

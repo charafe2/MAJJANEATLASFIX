@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/constants/app_colors.dart';
+import '../../../../core/widgets/atlas_logo.dart';
+import '../../../../core/widgets/client_bottom_nav_bar.dart';
 import '../../../../data/repositories/service_request_repository.dart';
 import '../../../../data/repositories/conversation_repository.dart';
 
@@ -27,6 +29,20 @@ IconData _categoryIcon(String name) {
   if (n.contains('déménag'))  return Icons.local_shipping_outlined;
   if (n.contains('climatis') || n.contains('clim')) return Icons.ac_unit_outlined;
   return Icons.build_outlined;
+}
+
+Color _categoryColor(String name) {
+  final n = name.toLowerCase();
+  if (n.contains('plomb'))                           return const Color(0xFF2B7FFF);
+  if (n.contains('élec') || n.contains('elec'))      return const Color(0xFFF0B100);
+  if (n.contains('restaur'))                         return const Color(0xFF00AA44);
+  if (n.contains('beauté') || n.contains('coiff'))   return const Color(0xFFF6339A);
+  if (n.contains('peinture'))                        return const Color(0xFF7C3AED);
+  if (n.contains('menuiser'))                        return const Color(0xFF92400E);
+  if (n.contains('nettoy'))                          return const Color(0xFF0891B2);
+  if (n.contains('jardinage'))                       return const Color(0xFF16A34A);
+  if (n.contains('déménag'))                         return const Color(0xFF8B5CF6);
+  return const Color(0xFFFC5A15);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -112,6 +128,7 @@ class _ClientMesDemandesScreenState extends State<ClientMesDemandesScreen> {
           Column(
             children: [
               _buildHeader(context),
+              _buildTitleRow(),
               _buildFilterBar(),
               Expanded(child: _buildBody()),
             ],
@@ -127,7 +144,7 @@ class _ClientMesDemandesScreenState extends State<ClientMesDemandesScreen> {
           // Bottom nav
           const Positioned(
             bottom: 28, left: 0, right: 0,
-            child: Center(child: _BottomNavBar(activeIndex: 1)),
+            child: Center(child: ClientBottomNavBar(activeIndex: 1)),
           ),
         ],
       ),
@@ -140,7 +157,7 @@ class _ClientMesDemandesScreenState extends State<ClientMesDemandesScreen> {
       decoration: const BoxDecoration(
         color: AppColors.primary,
         borderRadius: BorderRadius.only(
-          bottomLeft: Radius.circular(20),
+          bottomLeft:  Radius.circular(20),
           bottomRight: Radius.circular(20),
         ),
       ),
@@ -149,12 +166,12 @@ class _ClientMesDemandesScreenState extends State<ClientMesDemandesScreen> {
         child: Padding(
           padding: const EdgeInsets.fromLTRB(24, 12, 24, 20),
           child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              // Logo + icon buttons
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  _WhiteLogo(),
+                  const AtlasLogo(),
                   Row(children: [
                     GestureDetector(
                       onTap: () => context.push('/client/agenda'),
@@ -166,52 +183,63 @@ class _ClientMesDemandesScreenState extends State<ClientMesDemandesScreen> {
                 ],
               ),
               const SizedBox(height: 16),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  const Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text('Mes demandes',
-                        style: TextStyle(
-                          fontFamily: 'Poppins', fontWeight: FontWeight.w700,
-                          fontSize: 20, color: Colors.white,
-                        )),
-                      SizedBox(height: 2),
-                      Text('Gérez vos demandes de service',
-                        style: TextStyle(
-                          fontFamily: 'Public Sans',
-                          fontSize: 12, color: Colors.white70,
-                        )),
-                    ],
-                  ),
-                  GestureDetector(
-                    onTap: () => context.push('/client/service-categories'),
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(24),
-                      ),
-                      child: const Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(Icons.add, color: AppColors.primary, size: 16),
-                          SizedBox(width: 4),
-                          Text('Nouvelle',
-                            style: TextStyle(
-                              fontFamily: 'Public Sans', fontWeight: FontWeight.w700,
-                              fontSize: 12, color: AppColors.primary,
-                            )),
-                        ],
+              // Search bar
+              Container(
+                height: 48,
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.8),
+                  borderRadius: BorderRadius.circular(100),
+                ),
+                child: Row(
+                  children: [
+                    const SizedBox(width: 16),
+                    const Icon(Icons.search_rounded,
+                        color: Color(0xFF393C40), size: 20),
+                    const SizedBox(width: 8),
+                    const Expanded(
+                      child: Text('Quelle service recherchez-vous ?',
+                        style: TextStyle(fontFamily: 'Public Sans', fontSize: 14,
+                            color: Color(0xFF494949))),
+                    ),
+                    GestureDetector(
+                      onTap: () => context.push('/client/service-categories'),
+                      child: Container(
+                        width: 36, height: 36,
+                        margin: const EdgeInsets.only(right: 6),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF393C40),
+                          borderRadius: BorderRadius.circular(1000),
+                        ),
+                        child: const Icon(Icons.arrow_forward_rounded,
+                            color: Colors.white, size: 18),
                       ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ],
           ),
         ),
+      ),
+    );
+  }
+
+  // ── Title row ───────────────────────────────────────────────────────────────
+  Widget _buildTitleRow() {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(24, 20, 24, 4),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          const Text('Mes demandes',
+            style: TextStyle(fontFamily: 'Public Sans', fontWeight: FontWeight.w700,
+                fontSize: 18, letterSpacing: -0.306, color: Color(0xFF191C24))),
+          GestureDetector(
+            onTap: () => context.push('/client/service-categories'),
+            child: const Icon(Icons.add_circle_outline_rounded,
+                color: AppColors.primary, size: 26),
+          ),
+        ],
       ),
     );
   }
@@ -481,85 +509,73 @@ class _RequestCard extends StatelessWidget {
   }
 
   Widget _buildCardHeader() {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(18, 16, 14, 16),
-      child: Row(
-        children: [
-          Container(
-            width: 42, height: 42,
-            decoration: BoxDecoration(
-              color: AppColors.primary.withValues(alpha: 0.1),
-              shape: BoxShape.circle,
+    final color       = _categoryColor(request.category);
+    final offerCount  = request.offers.length;
+    final avatarUrls  = request.offers
+        .where((o) => o.artisanAvatar != null && o.artisanAvatar!.isNotEmpty)
+        .map((o) => o.artisanAvatar!)
+        .take(3)
+        .toList();
+    final extraCount  = (offerCount - 3).clamp(0, 99);
+
+    return GestureDetector(
+      onTap: onToggle,
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(17, 19, 17, 19),
+        child: Row(
+          children: [
+            // Colored rounded-square icon
+            Container(
+              width: 51, height: 51,
+              decoration: BoxDecoration(
+                color: color,
+                borderRadius: BorderRadius.circular(15),
+              ),
+              child: Icon(_categoryIcon(request.category),
+                  color: Colors.white, size: 26),
             ),
-            child: Icon(_categoryIcon(request.category),
-              color: AppColors.primary, size: 20),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(children: [
-                  Text(request.category,
-                    style: const TextStyle(
-                      fontFamily: 'Poppins', fontWeight: FontWeight.w600,
-                      fontSize: 15, color: Color(0xFF314158),
-                    )),
-                  if (request.offers.isNotEmpty) ...[
-                    const SizedBox(width: 8),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFFFEDD4),
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      child: Text(
-                        '${request.offers.length} réponse${request.offers.length > 1 ? 's' : ''}',
-                        style: const TextStyle(
-                          fontFamily: 'Public Sans', fontSize: 11,
-                          fontWeight: FontWeight.w600, color: AppColors.primary,
-                        )),
-                    ),
-                  ],
-                ]),
-                const SizedBox(height: 4),
-                _StatusPill(status: request.status),
-              ],
+            const SizedBox(width: 14),
+
+            // Category name
+            Expanded(
+              child: Text(request.category,
+                style: const TextStyle(fontFamily: 'Public Sans',
+                    fontWeight: FontWeight.w500, fontSize: 20,
+                    letterSpacing: -0.449, color: Color(0xFF314158)),
+                maxLines: 2, overflow: TextOverflow.ellipsis),
             ),
-          ),
-          Row(mainAxisSize: MainAxisSize.min, children: [
+            const SizedBox(width: 10),
+
+            // Response count + stacked avatars
+            if (offerCount > 0)
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  Text('$offerCount réponse${offerCount > 1 ? 's' : ''}',
+                    style: const TextStyle(fontFamily: 'Inter', fontSize: 12,
+                        color: Color(0xFF314158))),
+                  const SizedBox(height: 4),
+                  _StackedAvatars(urls: avatarUrls, extra: extraCount),
+                ],
+              ),
+            const SizedBox(width: 10),
+
+            // Trash button
             if (request.status == 'open' || request.status == 'in_progress')
               GestureDetector(
                 onTap: onCancel,
                 child: Container(
-                  width: 34, height: 34,
+                  width: 35, height: 35,
                   decoration: BoxDecoration(
-                    color: const Color(0xFFFEF2F2),
-                    borderRadius: BorderRadius.circular(8),
+                    color: const Color(0x1AE7000B),
+                    shape: BoxShape.circle,
                   ),
                   child: const Icon(Icons.delete_outline_rounded,
-                    color: Color(0xFFEF4444), size: 18),
+                      color: Color(0xFFE7000B), size: 18),
                 ),
               ),
-            const SizedBox(width: 6),
-            GestureDetector(
-              onTap: onToggle,
-              child: AnimatedRotation(
-                turns: isExpanded ? 0.5 : 0,
-                duration: const Duration(milliseconds: 220),
-                child: Container(
-                  width: 34, height: 34,
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFF3F4F6),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: const Icon(Icons.keyboard_arrow_down_rounded,
-                    color: AppColors.primary, size: 22),
-                ),
-              ),
-            ),
-          ]),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -650,6 +666,64 @@ class _RequestCard extends StatelessWidget {
     const months = ['jan', 'fév', 'mar', 'avr', 'mai', 'jun',
                     'jul', 'aoû', 'sep', 'oct', 'nov', 'déc'];
     return '${dt.day} ${months[dt.month - 1]}. ${dt.year}';
+  }
+}
+
+// ── Stacked avatars ───────────────────────────────────────────────────────────
+
+class _StackedAvatars extends StatelessWidget {
+  final List<String> urls;
+  final int extra; // count beyond 3
+
+  const _StackedAvatars({required this.urls, required this.extra});
+
+  static const _size   = 26.0;
+  static const _offset = 13.0; // overlap
+
+  @override
+  Widget build(BuildContext context) {
+    final items = <Widget>[];
+    for (int i = 0; i < urls.length; i++) {
+      items.add(Positioned(
+        left: i * _offset,
+        child: _circle(child: Image.network(urls[i], fit: BoxFit.cover,
+          errorBuilder: (_, __, ___) => _placeholder(i))),
+      ));
+    }
+    if (extra > 0) {
+      items.add(Positioned(
+        left: urls.length * _offset,
+        child: _circle(
+          color: const Color(0xFFFC5A15),
+          child: Text('+$extra',
+            style: const TextStyle(fontFamily: 'Montserrat',
+                fontWeight: FontWeight.w500, fontSize: 7,
+                color: Color(0xFFFC5A15))),
+        ),
+      ));
+    }
+    final totalWidth = _offset * (urls.length - 1) + _size
+        + (extra > 0 ? _offset : 0);
+    return SizedBox(
+      width: totalWidth.clamp(_size, 200),
+      height: _size,
+      child: Stack(children: items),
+    );
+  }
+
+  Widget _circle({required Widget child, Color? color}) => Container(
+    width: _size, height: _size,
+    decoration: BoxDecoration(
+      shape: BoxShape.circle,
+      color: color ?? const Color(0xFFE5E7EB),
+      border: Border.all(color: Colors.white, width: 0.93),
+    ),
+    child: ClipOval(child: child),
+  );
+
+  Widget _placeholder(int i) {
+    const colors = [Color(0xFF93C5FD), Color(0xFF6EE7B7), Color(0xFFFCA5A5)];
+    return Container(color: colors[i % colors.length]);
   }
 }
 
@@ -1105,57 +1179,8 @@ class _CancelDialogState extends State<_CancelDialog> {
   }
 }
 
-// ── Status pill ───────────────────────────────────────────────────────────────
-
-class _StatusPill extends StatelessWidget {
-  final String status;
-  const _StatusPill({required this.status});
-
-  @override
-  Widget build(BuildContext context) {
-    final (label, bg, fg) = switch (status) {
-      'open'        => ('En attente', const Color(0xFFFEFCE8), const Color(0xFFA65F00)),
-      'in_progress' => ('En cours',   const Color(0xFFF0FDF4), const Color(0xFF008236)),
-      'completed'   => ('Terminé',    const Color(0xFFEFF6FF), const Color(0xFF1D4ED8)),
-      'cancelled'   => ('Annulé',     const Color(0xFFFEF2F2), const Color(0xFFC10007)),
-      _             => (status,       const Color(0xFFF3F4F6), const Color(0xFF62748E)),
-    };
-
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-      decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(20)),
-      child: Text(label,
-        style: TextStyle(fontFamily: 'Public Sans', fontSize: 11,
-            fontWeight: FontWeight.w600, color: fg)),
-    );
-  }
-}
-
 // ── Shared header widgets ─────────────────────────────────────────────────────
 
-class _WhiteLogo extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) => Row(
-    mainAxisSize: MainAxisSize.min,
-    children: [
-      const Text('Atlas',
-        style: TextStyle(fontFamily: 'Poppins', fontSize: 20,
-            fontWeight: FontWeight.w700, color: Colors.white)),
-      const SizedBox(width: 4),
-      Container(
-        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-        decoration: BoxDecoration(
-          color: Colors.white.withValues(alpha: 0.25),
-          borderRadius: BorderRadius.circular(6),
-          border: Border.all(color: Colors.white),
-        ),
-        child: const Text('Fix',
-          style: TextStyle(fontFamily: 'Poppins', fontSize: 14,
-              fontWeight: FontWeight.w700, color: Colors.white)),
-      ),
-    ],
-  );
-}
 
 class _HeaderIconBtn extends StatelessWidget {
   final IconData icon;
@@ -1168,74 +1193,6 @@ class _HeaderIconBtn extends StatelessWidget {
   );
 }
 
-// ── Bottom nav ────────────────────────────────────────────────────────────────
-
-class _BottomNavBar extends StatelessWidget {
-  final int activeIndex;
-  const _BottomNavBar({required this.activeIndex});
-
-  void _onTap(BuildContext context, int index) {
-    if (index == activeIndex) return;
-    switch (index) {
-      case 0: context.go('/client/dashboard');            break;
-      case 1: context.go('/client/mes-demandes');         break;
-      case 2: context.push('/client/service-categories'); break;
-      case 3: context.go('/client/messages');             break;
-      case 4: context.go('/client/profile');              break;
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    const icons = [
-      Icons.home_outlined,
-      Icons.list_alt_outlined,
-      Icons.add,
-      Icons.chat_bubble_outline_rounded,
-      Icons.person_outline_rounded,
-    ];
-
-    return Container(
-      width: 342, height: 60,
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-      decoration: BoxDecoration(
-        color: const Color(0xFF303030),
-        borderRadius: BorderRadius.circular(100),
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: List.generate(icons.length, (i) {
-          final active = i == activeIndex;
-          if (i == 2) {
-            return GestureDetector(
-              onTap: () => _onTap(context, i),
-              child: Container(
-                width: 44, height: 44,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  border: Border.all(color: Colors.white),
-                ),
-                child: const Icon(Icons.add, color: Colors.white, size: 22),
-              ),
-            );
-          }
-          return GestureDetector(
-            onTap: () => _onTap(context, i),
-            child: Container(
-              width: 44, height: 44,
-              decoration: BoxDecoration(
-                color: active ? Colors.white : Colors.transparent,
-                shape: BoxShape.circle,
-              ),
-              child: Icon(icons[i],
-                color: active ? AppColors.primary : Colors.white, size: 22),
-            ),
-          );
-        }),
-      ),
-    );
-  }
-}
 
 // ── Filter tab ─────────────────────────────────────────────────────────────────
 

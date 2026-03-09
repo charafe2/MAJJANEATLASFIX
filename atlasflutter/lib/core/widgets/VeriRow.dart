@@ -1,19 +1,13 @@
 import 'package:flutter/material.dart';
 import '../../../../core/constants/app_colors.dart';
+import 'atlas_logo.dart';
 
 // ── AtlasFix Logo — forced orange so it shows on light backgrounds ────────────
 class AtlasFixLogo extends StatelessWidget {
   const AtlasFixLogo({super.key});
   @override
-  Widget build(BuildContext context) => ColorFiltered(
-    colorFilter: const ColorFilter.mode(AppColors.primary, BlendMode.srcIn),
-    child: Image.asset(
-      'assets/images/AtlasFix.png',
-      height: 48,
-      fit: BoxFit.contain,
-      filterQuality: FilterQuality.high,
-    ),
-  );
+  Widget build(BuildContext context) =>
+      AtlasLogo(color: AppColors.primary, height: 48);
 }
 
 // ── Full-screen gradient background ───────────────────────────────────────────

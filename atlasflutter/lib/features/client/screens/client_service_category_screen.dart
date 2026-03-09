@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/constants/app_colors.dart';
+import '../../../../core/widgets/client_bottom_nav_bar.dart';
 import '../../../../data/repositories/service_request_repository.dart';
 
 // ── Icon mapping ──────────────────────────────────────────────────────────────
@@ -140,7 +141,7 @@ class _ClientServiceCategoryScreenState
             bottom: 28,
             left: 0,
             right: 0,
-            child: Center(child: _BottomNavBar()),
+            child: Center(child: ClientBottomNavBar(activeIndex: 2)),
           ),
         ],
       ),
@@ -339,63 +340,3 @@ class _CategoryTile extends StatelessWidget {
       );
 }
 
-// ── Bottom nav bar ────────────────────────────────────────────────────────────
-
-class _BottomNavBar extends StatelessWidget {
-  const _BottomNavBar();
-
-  @override
-  Widget build(BuildContext context) {
-    const icons = [
-      Icons.home_outlined,
-      Icons.list_alt_outlined,
-      Icons.add,
-      Icons.chat_bubble_outline_rounded,
-      Icons.person_outline_rounded,
-    ];
-
-    return Container(
-      width: 342,
-      height: 60,
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-      decoration: BoxDecoration(
-        color: const Color(0xFF303030),
-        borderRadius: BorderRadius.circular(100),
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: List.generate(icons.length, (i) {
-          // + button (center) — active/highlighted on this screen
-          if (i == 2) {
-            return const DecoratedBox(
-              decoration: BoxDecoration(
-                color: AppColors.primary,
-                shape: BoxShape.circle,
-              ),
-              child: SizedBox(
-                width: 44,
-                height: 44,
-                child: Icon(Icons.add, color: Colors.white, size: 22),
-              ),
-            );
-          }
-          return GestureDetector(
-            onTap: () {
-              if (i == 0) context.go('/client/dashboard');
-              if (i == 4) context.go('/client/profile');
-            },
-            child: Container(
-              width: 44,
-              height: 44,
-              decoration: const BoxDecoration(
-                color: Colors.transparent,
-                shape: BoxShape.circle,
-              ),
-              child: Icon(icons[i], color: Colors.white, size: 22),
-            ),
-          );
-        }),
-      ),
-    );
-  }
-}
