@@ -6,6 +6,7 @@ import '../../../../core/widgets/client_bottom_nav_bar.dart';
 import '../../../../data/repositories/service_request_repository.dart';
 import '../../../../data/repositories/artisan_repository.dart';
 import '../../../../data/repositories/conversation_repository.dart';
+import '../../../../core/auth_state.dart';
 
 // ── FAQ (static) ──────────────────────────────────────────────────────────────
 const _kFaq = [
@@ -184,6 +185,20 @@ class _ClientHomeScreenState extends State<ClientHomeScreen> {
                                   ),
                       ),
 
+                      // ── Artisan-only sections ─────────────────────────────
+                      if (AuthState.instance.isArtisan) ...[
+                        const SizedBox(height: 28),
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 14),
+                          child: _AddServiceCard(),
+                        ),
+                        const SizedBox(height: 28),
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 14),
+                          child: _ReferralSection(),
+                        ),
+                      ],
+
                       const SizedBox(height: 28),
 
                       // Questions fréquentes
@@ -277,8 +292,9 @@ class _HomeHeader extends StatelessWidget {
                         onTap: () => context.push('/client/agenda'),
                       ),
                       const SizedBox(width: 15),
-                      const _HeaderIconBtn(
+                      _HeaderIconBtn(
                         icon: Icons.notifications_none_rounded,
+                        onTap: () => context.push('/client/notifications'),
                       ),
                     ]),
                   ],
@@ -1100,5 +1116,215 @@ class _FaqItem extends StatelessWidget {
       ),
     ),
   );
+}
+
+// ── "Ajouter un service" card (artisan-only) ───────────────────────────────────
+class _AddServiceCard extends StatelessWidget {
+  const _AddServiceCard();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [Color(0xFFFFF3EE), Color(0xFFFFE0D3)],
+        ),
+        border: Border.all(color: AppColors.primary, width: 1),
+        borderRadius: BorderRadius.circular(9.8),
+        boxShadow: const [
+          BoxShadow(color: Color(0x1A000000), blurRadius: 1.84, offset: Offset(0, 0.61)),
+        ],
+      ),
+      padding: const EdgeInsets.fromLTRB(15, 20, 15, 0),
+      child: Column(
+        children: [
+          // Dark inner card
+          Container(
+            width: double.infinity,
+            decoration: BoxDecoration(
+              color: const Color(0xCC393C40),
+              borderRadius: BorderRadius.circular(8.6),
+              boxShadow: const [
+                BoxShadow(color: Color(0x40000000), blurRadius: 4, offset: Offset(0, 2)),
+              ],
+            ),
+            padding: const EdgeInsets.fromLTRB(12, 20, 10, 16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Container(
+                      width: 36, height: 35,
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: const Icon(Icons.build_outlined,
+                          color: AppColors.primary, size: 20),
+                    ),
+                    const SizedBox(width: 12),
+                    const Expanded(
+                      child: Text(
+                        "En tant qu'artisan, souhaitez-vous ajouter un autre service ?",
+                        style: TextStyle(
+                          fontFamily: 'Public Sans',
+                          fontWeight: FontWeight.w600,
+                          fontSize: 16,
+                          height: 1.25,
+                          letterSpacing: 0.242,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 10),
+                const Text(
+                  'Vorem ipsum dolor sit amet, consectetur adipiscing elit. Etiam eu turpis molestie, dictum',
+                  style: TextStyle(
+                    fontFamily: 'Poppins',
+                    fontWeight: FontWeight.w400,
+                    fontSize: 12,
+                    height: 1.5,
+                    letterSpacing: -0.3125,
+                    color: Colors.white,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 16),
+          SizedBox(
+            width: double.infinity,
+            height: 39,
+            child: ElevatedButton.icon(
+              onPressed: () {},
+              icon: const Icon(Icons.add_circle_outline_rounded,
+                  color: Colors.white, size: 18),
+              label: const Text(
+                'Ajouter un service',
+                style: TextStyle(
+                  fontFamily: 'Public Sans',
+                  fontWeight: FontWeight.w500,
+                  fontSize: 12,
+                  letterSpacing: -0.191532,
+                  color: Colors.white,
+                ),
+              ),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primary,
+                elevation: 0,
+                shape: const StadiumBorder(),
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+              ),
+            ),
+          ),
+          const SizedBox(height: 16),
+        ],
+      ),
+    );
+  }
+}
+
+// ── "Programme de Parrainage" section (artisan-only) ──────────────────────────
+class _ReferralSection extends StatelessWidget {
+  const _ReferralSection();
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'Programme de Parrainage',
+          style: TextStyle(
+            fontFamily: 'Public Sans',
+            fontWeight: FontWeight.w700,
+            fontSize: 18,
+            letterSpacing: -0.273557,
+            color: Color(0xFF191C24),
+          ),
+        ),
+        const SizedBox(height: 16),
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.fromLTRB(13, 13, 13, 12),
+          decoration: BoxDecoration(
+            gradient: const LinearGradient(
+              begin: Alignment.centerLeft,
+              end: Alignment.centerRight,
+              colors: [Color(0xFFFEFCE8), Color(0xFFFFF7ED)],
+            ),
+            border: Border.all(color: const Color(0xFFFFF085), width: 1),
+            borderRadius: BorderRadius.circular(10),
+          ),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Icon(Icons.bolt_rounded, color: Color(0xFFD08700), size: 20),
+              const SizedBox(width: 8),
+              const Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Gagnez 1 boost gratuit',
+                      style: TextStyle(
+                        fontFamily: 'Inter',
+                        fontWeight: FontWeight.w700,
+                        fontSize: 12,
+                        height: 1.33,
+                        color: Color(0xFF733E0A),
+                      ),
+                    ),
+                    SizedBox(height: 4),
+                    Text(
+                      "(7 jours) pour chaque ami qui crée un compte artisan sur AtlasFix grâce à votre lien.",
+                      style: TextStyle(
+                        fontFamily: 'Inter',
+                        fontWeight: FontWeight.w400,
+                        fontSize: 12,
+                        height: 1.33,
+                        color: Color(0xFF733E0A),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 16),
+        SizedBox(
+          width: double.infinity,
+          height: 39,
+          child: ElevatedButton.icon(
+            onPressed: () {},
+            icon: const Icon(Icons.share_outlined, color: Colors.white, size: 17),
+            label: const Text(
+              'Générer mon lien de parrainage',
+              style: TextStyle(
+                fontFamily: 'Public Sans',
+                fontWeight: FontWeight.w500,
+                fontSize: 12,
+                letterSpacing: -0.191532,
+                color: Colors.white,
+              ),
+            ),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.primary,
+              elevation: 0,
+              shape: const StadiumBorder(),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
 }
 

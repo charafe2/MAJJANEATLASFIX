@@ -112,7 +112,7 @@ class _ClientProfileScreenState extends State<ClientProfileScreen> {
                                 _MenuBtn(
                                   icon:  Icons.account_balance_wallet_outlined,
                                   label: 'Mes paiements',
-                                  onTap: () {},
+                                  onTap: () => context.push('/client/payments'),
                                 ),
                                 const SizedBox(height: 120),
 
@@ -195,11 +195,14 @@ class _Header extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               const AtlasLogo(),
-              const Row(
+              Row(
                 children: [
-                  _HeaderIconBtn(Icons.calendar_today_outlined),
-                  SizedBox(width: 15),
-                  _HeaderIconBtn(Icons.notifications_none_rounded),
+                  const _HeaderIconBtn(Icons.calendar_today_outlined),
+                  const SizedBox(width: 15),
+                  GestureDetector(
+                    onTap: () => context.push('/client/notifications'),
+                    child: const _HeaderIconBtn(Icons.notifications_none_rounded),
+                  ),
                 ],
               ),
             ],

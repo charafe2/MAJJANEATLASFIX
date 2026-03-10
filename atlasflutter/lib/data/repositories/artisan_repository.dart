@@ -76,7 +76,7 @@ class PublicArtisan {
       rating:            _parseRating(j['rating']),
       reviews:           j['reviews_count']    as int?
                       ?? j['reviews']          as int?     ?? 0,
-      avatarUrl:         _fullUrl(j['avatar']  as String?),
+      avatarUrl:         _fullUrl(j['avatar'] as String? ?? j['avatar_url'] as String?),
       bio:               j['bio']              as String?,
       skills:            servicesRaw.map((e) {
         if (e is Map) return e['name'] as String? ?? '';

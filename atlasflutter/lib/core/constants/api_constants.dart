@@ -47,6 +47,9 @@ class ApiConstants {
   static const String artisanStats     = '/artisan/stats';
   static const String artisanProfile   = '/artisan/profile';
 
+  // ── Client: payments ──────────────────────────────────────────────────────
+  static const String clientPayments   = '/client/payments';
+
   // ── Notifications ─────────────────────────────────────────────────────────
   static const String notifications    = '/notifications';
 }

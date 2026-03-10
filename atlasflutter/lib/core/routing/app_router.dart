@@ -21,19 +21,24 @@ import '../../features/client/screens/client_service_category_screen.dart';
 import '../../features/client/screens/client_service_type_screen.dart';
 import '../../features/client/screens/client_request_details_screen.dart';
 import '../../features/client/screens/client_mes_demandes_screen.dart';
+import '../../features/client/screens/client_request_offers_screen.dart';
 import '../../features/client/screens/client_messages_screen.dart';
 import '../../features/client/screens/client_chat_screen.dart';
+import '../../features/client/screens/client_payments_screen.dart';
+import '../../features/client/screens/client_request_view_screen.dart';
+import '../../features/client/screens/client_notifications_screen.dart';
 import '../../features/artisan/screens/artisan_public_profile_screen.dart';
 import '../../features/artisan/screens/artisan_home_screen.dart';
 import '../../features/artisan/screens/artisan_offers_screen.dart';
 import '../../features/artisan/screens/artisan_request_detail_screen.dart';
 import '../../features/artisan/screens/artisan_profile_screen.dart';
 import '../../data/repositories/artisan_job_repository.dart';
+import '../../data/repositories/service_request_repository.dart';
 
 // ── Protected routes that require login ───────────────────────────────────────
 const _protectedRoutes = [
   '/client/dashboard', '/client/profile', '/client/info', '/client/agenda',
-  '/client/mes-demandes', '/client/messages', '/client/chat',
+  '/client/mes-demandes', '/client/payments', '/client/request-offers', '/client/request-view', '/client/notifications', '/client/messages', '/client/chat',
   '/client/service-categories', '/client/service-types',
   '/client/nouvelle-demande',
   '/artisan/dashboard', '/artisan/offers', '/artisan/profile',
@@ -152,6 +157,30 @@ final appRouter = GoRouter(
 
     GoRoute(path: '/client/mes-demandes',
       builder: (_, __) => const ClientMesDemandesScreen()),
+
+    GoRoute(path: '/client/payments',
+      builder: (_, __) => const ClientPaymentsScreen()),
+
+    GoRoute(path: '/client/request-view/:id',
+      builder: (_, state) {
+        final extra = state.extra as Map<String, dynamic>? ?? {};
+        return ClientRequestViewScreen(
+          requestId:      int.tryParse(state.pathParameters['id'] ?? '') ?? 0,
+          initialRequest: extra['request'] as ServiceRequest?,
+        );
+      }),
+
+    GoRoute(path: '/client/request-offers/:id',
+      builder: (_, state) {
+        final extra = state.extra as Map<String, dynamic>? ?? {};
+        return ClientRequestOffersScreen(
+          requestId:      int.tryParse(state.pathParameters['id'] ?? '') ?? 0,
+          initialRequest: extra['request'] as ServiceRequest?,
+        );
+      }),
+
+    GoRoute(path: '/client/notifications',
+      builder: (_, __) => const ClientNotificationsScreen()),
 
     GoRoute(path: '/client/messages',
       builder: (_, __) => const ClientMessagesScreen()),

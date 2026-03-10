@@ -3,6 +3,12 @@ import 'package:image_picker/image_picker.dart';
 import '../../core/netwrok/api_client.dart';
 import '../../core/constants/api_constants.dart';
 
+String? _fullUrl(String? url) {
+  if (url == null || url.isEmpty) return null;
+  if (url.startsWith('http')) return url;
+  return '${ApiConstants.storageBaseUrl}$url';
+}
+
 // ── Models ────────────────────────────────────────────────────────────────────
 
 class ServiceCategory {
@@ -65,7 +71,7 @@ class Offer {
       status:          j['status'] as String? ?? 'pending',
       respondedAt:     DateTime.tryParse(j['created_at'] as String? ?? '')
                        ?? DateTime.now(),
-      artisanAvatar:   user['avatar_url'] as String?,
+      artisanAvatar:   _fullUrl(user['avatar_url'] as String?),
     );
   }
 }
@@ -147,7 +153,7 @@ class ServiceRequestRepository {
     List<XFile>?    photos,
   }) async {
     final fd = FormData.fromMap({
-      'category_id':     categoryId,
+      'service_category_id': categoryId,
       'service_type_id': serviceTypeId,
       'description':     description,
       'city':            city,
