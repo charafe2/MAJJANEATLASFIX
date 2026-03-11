@@ -88,47 +88,62 @@ const team = [
   display: flex;
   align-items: center;
   justify-content: center;
+  overflow: hidden;
+}
 
-  /* Exact Figma gradient stack + blurred handyman photo */
+/* Blurred background image — very faint */
+.hero::before {
+  content: '';
+  position: absolute;
+  inset: -5%;
+  background: url('@/assets/images/Handy.jpg') center center / cover no-repeat;
+  filter: blur(18px);
+  opacity: 0.25;
+  z-index: 0;
+  pointer-events: none;
+}
+
+/* White wash + subtle tint overlays */
+.hero::after {
+  content: '';
+  position: absolute;
+  inset: 0;
   background:
-    linear-gradient(180deg, rgba(255,255,255,0) 0%, #FFFFFF 93.31%),
-    linear-gradient(111.07deg, rgba(252,90,21,0.024) 0.25%, rgba(252,90,21,0.048) 99.75%),
-    linear-gradient(238.17deg, rgba(30,64,175,0.104) 11.35%, rgba(240,177,0,0.052) 88.65%),
-    linear-gradient(180deg, rgba(252,90,21,0.04) 0%, rgba(255,255,255,0.04) 100%),
-    url('https://images.unsplash.com/photo-1621905251189-08b45249bea5?w=1440&q=80') center/cover no-repeat;
-
-  /* The Figma backdrop-filter on the background layer */
-  backdrop-filter: blur(15.05px);
+    linear-gradient(180deg, rgba(255, 255, 255, 0.82) 0%, rgba(255, 255, 255, 0.92) 100%),
+    linear-gradient(111.07deg, rgba(252, 90, 21, 0.024) 0.25%, rgba(252, 90, 21, 0.048) 99.75%),
+    linear-gradient(238.17deg, rgba(30, 64, 175, 0.104) 11.35%, rgba(240, 177, 0, 0.052) 88.65%);
+  z-index: 1;
+  pointer-events: none;
 }
 
 .hero-inner {
   position: relative;
-  z-index: 1;
+  z-index: 2;
   text-align: center;
   max-width: 720px;
-  padding: 140px 24px 100px;
+  padding: 120px 24px 80px;
   animation: fadeUp 0.7s ease both;
 }
 
-/* Orange pill label — matches screenshot exactly */
+/* White pill tag with shadow */
 .hero-tag {
   display: inline-block;
-  font-size: 22px;
-  font-weight: 700;
+  font-size: 20px;
+  font-weight: 600;
   color: #FC5A15;
-  background: rgba(252, 90, 21, 0.07);
-  border: 1.5px solid rgba(252, 90, 21, 0.18);
-  border-radius: 6px;
-  padding: 6px 20px;
+  background: #ffffff;
+  border-radius: 12px;
+  padding: 12px 32px;
   margin-bottom: 32px;
   letter-spacing: -0.2px;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.10);
 }
 
 .hero-title {
-  font-size: clamp(26px, 3.2vw, 40px);
-  font-weight: 700;
-  line-height: 1.25;
-  color: #1a1a2e;
+  font-size: clamp(26px, 3.2vw, 38px);
+  font-weight: 600;
+  line-height: 1.3;
+  color: #1e3a5f;
   margin: 0 0 24px;
 }
 
@@ -146,6 +161,8 @@ const team = [
   font-weight: 600;
 }
 
-
-
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
 </style>

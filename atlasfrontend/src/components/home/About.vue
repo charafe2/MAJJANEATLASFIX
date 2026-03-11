@@ -6,7 +6,7 @@
       <!-- ── LEFT: image + stat card ───────────────────────────────────── -->
       <div class="ab-image-wrap">
         <img
-          src="https://images.unsplash.com/photo-1621905251189-08b45d6a269e?w=700&q=80"
+          src="../../assets/images/artisan.png"
           alt="Artisan AtlasFix"
           class="ab-image"
         />
@@ -102,17 +102,47 @@
 <style scoped>
 /* ── Section ────────────────────────────────────────────────────────────── */
 .ab-section {
-  background: #ffffff;
+  position: relative;
   padding: 80px 0;
+  overflow: hidden;
+  background-color: white;
+
+}
+
+/* Blurred background image */
+.ab-section::before {
+  content: '';
+  position: absolute;
+  inset: -5%;
+  filter: blur(15.05px);
+  z-index: 0;
+  pointer-events: none;
+}
+
+/* Gradient overlays */
+.ab-section::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0) 0%, #FFFFFF 93.31%),
+    linear-gradient(111.07deg, rgba(252, 90, 21, 0.024) 0.25%, rgba(252, 90, 21, 0.048) 99.75%),
+    linear-gradient(238.17deg, rgba(30, 64, 175, 0.104) 11.35%, rgba(240, 177, 0, 0.052) 88.65%),
+    linear-gradient(180deg, rgba(252, 90, 21, 0.04) 0%, rgba(255, 255, 255, 0.04) 100%);
+  z-index: 1;
+  pointer-events: none;
 }
 
 .ab-wrapper {
+  position: relative;
+  z-index: 2;
   max-width: 1235px;
   margin: 0 auto;
   padding: 0 40px;
   display: flex;
   align-items: center;
   gap: 72px;
+
 }
 
 /* ── LEFT: image ────────────────────────────────────────────────────────── */

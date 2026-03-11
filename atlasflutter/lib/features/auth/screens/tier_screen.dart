@@ -28,7 +28,7 @@ class _TierScreenState extends State<TierScreen> {
       // TODO: POST /api/auth/artisan/choose-tier when endpoint is ready
       AuthState.instance.setLoggedIn(true, role: 'artisan');
       if (!mounted) return;
-      context.go('/artisan/dashboard');
+      context.go('/artisan/home');
     } finally {
       if (mounted) setState(() => _loading = false);
     }

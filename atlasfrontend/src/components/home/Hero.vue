@@ -40,20 +40,26 @@
         </div>
 
         <!-- Service dropdown -->
-        <div class="hs-search-field">
-          <select class="hs-select">
-            <option value="" disabled selected>Quel service recherchez-vous ?</option>
-            <option>Plomberie</option>
-            <option>Électricité</option>
-            <option>Peinture</option>
-            <option>Climatisation</option>
-            <option>Menuiserie</option>
-            <option>Réparations générales</option>
-          </select>
-          <!-- Custom caret -->
-          <svg class="hs-caret" viewBox="0 0 24 24" fill="none">
-            <path d="M6 9l6 6 6-6" stroke="#58595B" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-          </svg>
+        <div class="hs-search-field" ref="dropdownRef">
+          <div class="hs-select-trigger" @click="dropdownOpen = !dropdownOpen">
+            <span :class="selectedService ? 'hs-select-value' : 'hs-select-placeholder'">
+              {{ selectedService || 'Quel service recherchez-vous ?' }}
+            </span>
+            <svg class="hs-caret" :class="{ open: dropdownOpen }" viewBox="0 0 24 24" fill="none">
+              <path d="M6 9l6 6 6-6" stroke="#58595B" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </div>
+          <transition name="hs-drop">
+            <ul v-if="dropdownOpen" class="hs-dropdown">
+              <li
+                v-for="s in services"
+                :key="s"
+                class="hs-dropdown-item"
+                :class="{ selected: selectedService === s }"
+                @click="selectService(s)"
+              >{{ s }}</li>
+            </ul>
+          </transition>
         </div>
 
         <!-- Divider -->
@@ -67,7 +73,10 @@
         />
 
         <!-- CTA button -->
-        <button class="hs-btn">Demandez votre service</button>
+        <button class="hs-btn">
+          <span class="hs-btn-text">Demandez votre service</span>
+          <span class="hs-btn-pulse"></span>
+        </button>
       </div>
 
       <!-- Trust badges -->
@@ -107,7 +116,40 @@
   </section>
 </template>
 
-<script setup></script>
+<script setup>
+import { ref, onMounted, onUnmounted } from 'vue'
+
+const services = [
+  'Réparations générales',
+  'Plomberie',
+  'Électricité',
+  'Peinture',
+  'Électroménager',
+  'Nettoyage',
+  'Déménagement',
+  'Climatisation',
+  'Menuiserie',
+  'Carrelage',
+]
+
+const selectedService = ref('')
+const dropdownOpen    = ref(false)
+const dropdownRef     = ref(null)
+
+function selectService(s) {
+  selectedService.value = s
+  dropdownOpen.value = false
+}
+
+function onClickOutside(e) {
+  if (dropdownRef.value && !dropdownRef.value.contains(e.target)) {
+    dropdownOpen.value = false
+  }
+}
+
+onMounted(()  => document.addEventListener('click', onClickOutside))
+onUnmounted(() => document.removeEventListener('click', onClickOutside))
+</script>
 
 <style scoped>
 /* ── Hero wrapper ───────────────────────────────────────────────────────── */
@@ -115,7 +157,7 @@
   position: relative;
   min-height: 826px;
   background: #ffffff;
-  overflow: hidden;
+  /* overflow removed — allows dropdown to escape the hero bounds */
   display: flex;
   align-items: center;
   justify-content: center;
@@ -125,6 +167,7 @@
 .hs-bg {
   position: absolute;
   inset: 0;
+  overflow: hidden; /* clip the bg image here instead */
 }
 
 .hs-bg-img {
@@ -192,6 +235,8 @@
 
 /* ── Search bar ─────────────────────────────────────────────────────────── */
 .hs-search {
+  position: relative;
+  z-index: 50;
   display: flex;
   align-items: center;
   background: #ffffff;
@@ -225,27 +270,81 @@
   height: 100%;
 }
 
-.hs-select {
+/* Custom trigger row */
+.hs-select-trigger {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
   width: 100%;
   height: 100%;
-  border: none;
-  outline: none;
-  background: transparent;
+  cursor: pointer;
+  gap: 6px;
+  padding-right: 4px;
+  user-select: none;
+}
+
+.hs-select-placeholder {
   font-family: 'Poppins', sans-serif;
   font-size: 17px;
   color: rgba(16, 24, 40, 0.5);
-  appearance: none;
-  cursor: pointer;
-  padding-right: 28px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.hs-select-value {
+  font-family: 'Poppins', sans-serif;
+  font-size: 17px;
+  color: #101828;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .hs-caret {
-  position: absolute;
-  right: 4px;
+  flex-shrink: 0;
   width: 20px;
   height: 20px;
-  pointer-events: none;
+  transition: transform 0.2s ease;
 }
+.hs-caret.open { transform: rotate(180deg); }
+
+/* Dropdown panel */
+.hs-dropdown {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: -18px;
+  min-width: 260px;
+  background: #ffffff;
+  border-radius: 12px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.12), 0 2px 8px rgba(0,0,0,0.06);
+  list-style: none;
+  margin: 0;
+  padding: 6px 0;
+  z-index: 999;
+  max-height: 260px;
+  overflow-y: auto;
+  scrollbar-width: none;
+}
+
+.hs-dropdown::-webkit-scrollbar { display: none; }
+
+.hs-dropdown-item {
+  padding: 12px 20px;
+  font-family: 'Poppins', sans-serif;
+  font-size: 15px;
+  color: #393939;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+.hs-dropdown-item:hover   { background: #FFF5F0; color: #FC5A15; }
+.hs-dropdown-item.selected { color: #FC5A15; font-weight: 500; }
+
+/* Dropdown transition */
+.hs-drop-enter-active,
+.hs-drop-leave-active { transition: opacity 0.15s ease, transform 0.15s ease; }
+.hs-drop-enter-from,
+.hs-drop-leave-to     { opacity: 0; transform: translateY(-6px); }
 
 /* Divider */
 .hs-divider {
@@ -270,24 +369,52 @@
 
 /* CTA button */
 .hs-btn {
+  position: relative;
   flex-shrink: 0;
+  width: 282px;
   height: 55px;
-  padding: 0 28px;
   background: #FC5A15;
   color: #ffffff;
   font-family: 'Poppins', sans-serif;
   font-weight: 500;
-  font-size: 17px;
+  font-size: 18px;
+  line-height: 27px;
+  letter-spacing: -0.356px;
+  text-align: center;
   border: none;
-  border-radius: 11px;
+  border-radius: 11.4px;
   cursor: pointer;
   white-space: nowrap;
   margin-left: 8px;
-  transition: background 0.2s;
+  overflow: hidden;
+  transition: background 0.2s, transform 0.15s;
 }
 
 .hs-btn:hover {
   background: #e04e12;
+  transform: translateY(-1px);
+}
+
+.hs-btn-text {
+  position: relative;
+  z-index: 1;
+}
+
+/* Ripple pulse ring */
+.hs-btn-pulse {
+  position: absolute;
+  inset: -4px;
+  border-radius: 15px;
+  background: transparent;
+  border: 2px solid rgba(252, 90, 21, 0.5);
+  animation: btn-pulse 2s ease-out infinite;
+  pointer-events: none;
+}
+
+@keyframes btn-pulse {
+  0%   { transform: scale(1);    opacity: 1; }
+  60%  { transform: scale(1.06); opacity: 0; }
+  100% { transform: scale(1.06); opacity: 0; }
 }
 
 /* ── Trust badges ───────────────────────────────────────────────────────── */

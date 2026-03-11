@@ -28,7 +28,7 @@ class _LoginScreenState extends State<LoginScreen> {
       await SecureStorage.saveUser(r.user.toJson());
       AuthState.instance.setLoggedIn(true, role: r.user.accountType);
       if (!mounted) return;
-      context.go(r.user.accountType == 'client' ? '/client/dashboard' : '/artisan/dashboard');
+      context.go(r.user.accountType == 'client' ? '/client/dashboard' : '/artisan/home');
     } on DioException catch (e) {
       setState(() => _errors.addAll(AuthRepository.parseErrors(e)));
     } finally {

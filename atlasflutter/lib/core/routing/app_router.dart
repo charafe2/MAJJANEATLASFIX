@@ -32,6 +32,7 @@ import '../../features/artisan/screens/artisan_home_screen.dart';
 import '../../features/artisan/screens/artisan_offers_screen.dart';
 import '../../features/artisan/screens/artisan_request_detail_screen.dart';
 import '../../features/artisan/screens/artisan_profile_screen.dart';
+import '../../features/artisan/screens/artisan_available_requests_screen.dart';
 import '../../data/repositories/artisan_job_repository.dart';
 import '../../data/repositories/service_request_repository.dart';
 
@@ -41,7 +42,7 @@ const _protectedRoutes = [
   '/client/mes-demandes', '/client/payments', '/client/request-offers', '/client/request-view', '/client/notifications', '/client/messages', '/client/chat',
   '/client/service-categories', '/client/service-types',
   '/client/nouvelle-demande',
-  '/artisan/dashboard', '/artisan/offers', '/artisan/profile',
+  '/artisan/home', '/artisan/offers', '/artisan/profile',
   '/artisan/available-requests', '/artisan/request', '/artisan/messages',
   '/artisan/agenda',
 ];
@@ -63,7 +64,7 @@ final appRouter = GoRouter(
 
     // Redirect authenticated users away from auth screens
     if (loggedIn && (location == '/login' || location == '/splash')) {
-      return AuthState.instance.isArtisan ? '/artisan/dashboard' : '/client/dashboard';
+      return AuthState.instance.isArtisan ? '/artisan/home' : '/client/dashboard';
     }
 
     return null;
@@ -208,7 +209,7 @@ final appRouter = GoRouter(
       }),
 
     // ── Artisan dashboard ─────────────────────────────────────────────────
-    GoRoute(path: '/artisan/dashboard',
+    GoRoute(path: '/artisan/home',
       builder: (_, __) => const ArtisanHomeScreen()),
 
     GoRoute(path: '/artisan/offers',
@@ -218,7 +219,7 @@ final appRouter = GoRouter(
       builder: (_, __) => const ArtisanProfileScreen()),
 
     GoRoute(path: '/artisan/available-requests',
-      builder: (_, __) => const ArtisanOffersScreen()),  // reuse offers tab for now
+      builder: (_, __) => const ArtisanAvailableRequestsScreen()),
 
     GoRoute(path: '/artisan/request/:id',
       builder: (_, state) {

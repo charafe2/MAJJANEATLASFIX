@@ -94,7 +94,8 @@
   position: absolute;
   inset: 0;
   background:
-    linear-gradient(rgba(18,18,18,0.78), rgba(18,18,18,0.78)),;
+    linear-gradient(rgba(18,18,18,0.92), rgba(18,18,18,0.92)),
+    url('../assets/images/artisan.png') center / cover no-repeat;
   z-index: 0;
 }
 

@@ -66,8 +66,8 @@ const services = ref([
   { title: 'Menuiserie',           image: 'https://images.unsplash.com/photo-1504148455328-c376907d081c?w=400&q=80', icon: '/icons/hammer.svg' },
   { title: 'Climatisation',        image: 'https://images.unsplash.com/photo-1631545806609-bae1b2e66987?w=400&q=80', icon: '/icons/ac.svg' },
   { title: 'Réparations générales',image: 'https://images.unsplash.com/photo-1581783898377-1c85bf937427?w=400&q=80', icon: '/icons/wrench.svg' },
-  { title: 'Carrelage',            image: 'https://images.unsplash.com/photo-1558618047-3c8c76ca7d13?w=400&q=80', icon: '/icons/tile.svg' },
-  { title: 'Maçonnerie',           image: 'https://images.unsplash.com/photo-1504307651254-35680f356dfd?w=400&q=80', icon: '/icons/brick.svg' },
+  { title: 'Carrelage',            image: new URL('../../assets/images/zlij.png', import.meta.url).href, icon: '/icons/tile.svg' },
+  { title: 'Maçonnerie',           image: new URL('../../assets/images/brickwall.jpg', import.meta.url).href, icon: '/icons/brick.svg' },
 ])
 
 const trackRef = ref(null)
@@ -83,11 +83,31 @@ const scroll = (dir) => {
 .services-section {
   background: #fff;
   padding: 80px 0;
+  position: relative;
+  overflow: hidden;
+}
+
+/* Zellige decorative background on the left */
+.services-section::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 44.5%; /* ≈ 641px / 1440px */
+  height: 100%;
+  background: url('../../assets/images/zlij.png') center / cover no-repeat;
+  -webkit-mask-image: linear-gradient(180deg, #fff 0%, transparent 14.45%, transparent 79.33%, #fff 100%);
+  mask-image: linear-gradient(180deg, #fff 0%, transparent 14.45%, transparent 79.33%, #fff 100%);
+  opacity: 0.18;
+  pointer-events: none;
+  z-index: 0;
 }
 
 .services-container {
   max-width: 1280px;
   margin: 0 auto;
+  position: relative;
+  z-index: 1;
   padding: 0 64px;
 }
 
@@ -147,9 +167,9 @@ const scroll = (dir) => {
   background: #fff;
   box-shadow: 0 4px 20px rgba(0,0,0,0.08);
   transition: transform 0.3s ease, box-shadow 0.3s ease;
-  /* CRITICAL: overflow must be visible so the icon circle
-     can poke above the top of the card content area */
   overflow: visible;
+  display: flex;
+  flex-direction: column;
 }
 
 .service-card:hover {
@@ -206,10 +226,15 @@ const scroll = (dir) => {
 /* ── Card content ─────────────────────────────────────────────────────── */
 /* top padding = half circle (35px) + breathing room (20px) = 55px */
 .card-content {
+  flex: 1;
   padding: 55px 20px 28px;
   text-align: center;
   background: #fff;
   border-radius: 0 0 14px 14px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
 }
 
 .card-title {
@@ -247,7 +272,7 @@ const scroll = (dir) => {
 /* ── Arrows ───────────────────────────────────────────────────────────── */
 .arrow {
   position: absolute;
-  top: calc(50% - 10px);  /* rough center of card, compensating for padding */
+  top: 88px; /* center of the image area (156px / 2 = 78px + 10px track padding) */
   transform: translateY(-50%);
   width: 42px;
   height: 42px;

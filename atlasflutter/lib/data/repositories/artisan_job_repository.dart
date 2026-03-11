@@ -177,6 +177,7 @@ class ArtisanMyProfile {
   final int     completedServices;
   final int     activeOffers;
   final int     pendingOffers;
+  final String? referralCode;
 
   const ArtisanMyProfile({
     required this.id,
@@ -190,6 +191,7 @@ class ArtisanMyProfile {
     required this.completedServices,
     required this.activeOffers,
     required this.pendingOffers,
+    this.referralCode,
   });
 
   factory ArtisanMyProfile.fromJson(Map<String, dynamic> j) {
@@ -207,6 +209,7 @@ class ArtisanMyProfile {
       completedServices: j['total_jobs_completed'] as int? ?? 0,
       activeOffers:      j['active_offers']    as int?    ?? 0,
       pendingOffers:     j['pending_offers']   as int?    ?? 0,
+      referralCode:      j['referral_code']    as String?,
     );
   }
 

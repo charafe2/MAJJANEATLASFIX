@@ -64,8 +64,11 @@ const steps = [
 
 <style scoped>
 .hiw-section {
-  background: #ffffff;
   padding: 80px 0;
+  background:
+    linear-gradient(rgba(255,255,255,0.88), rgba(255,255,255,0.88)),
+    url('../../assets/images/brickwall.jpg') center / cover no-repeat;
+  background-color: #ffffff;
 }
 
 .hiw-wrapper {

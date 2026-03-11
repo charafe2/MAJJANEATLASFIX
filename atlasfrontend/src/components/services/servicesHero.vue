@@ -512,6 +512,8 @@ export default defineComponent({
   overflow: hidden;
   transition: transform 0.25s ease, box-shadow 0.25s ease;
   animation: fadeUp 0.5s ease both;
+  display: flex;
+  flex-direction: column;
 }
 
 .service-card:hover {
@@ -560,6 +562,11 @@ export default defineComponent({
   display: flex;
   flex-direction: column;
   gap: 16px;
+  flex: 1;
+}
+
+.service-btn {
+  margin-top: auto;
 }
 
 .service-title {

@@ -56,7 +56,7 @@ class _OtpVerifyScreenState extends State<OtpVerifyScreen> {
      
       if (!mounted) return;
       context.go(widget.data['account_type'] == 'artisan'
-          ? '/artisan/dashboard' : '/client/dashboard');
+          ? '/artisan/home' : '/client/dashboard');
     } on DioException catch (e) {
       final errs = AuthRepository.parseErrors(e);
       setState(() => _error = errs['general'] ?? errs['code'] ?? 'Code invalide');

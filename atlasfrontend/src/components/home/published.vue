@@ -218,7 +218,7 @@ const bullets = [
   gap: 32px;
   background-image:
     linear-gradient(rgba(0,0,0,0.67), rgba(0,0,0,0.67)),
-    url('https://images.unsplash.com/photo-1530124566582-a618bc2615dc?w=900&q=80');
+    url('../../assets/images/tools (2).png');
   background-size: cover;
   background-position: center;
 }

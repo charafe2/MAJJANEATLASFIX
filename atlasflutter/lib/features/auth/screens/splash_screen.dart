@@ -31,7 +31,7 @@ class _SplashScreenState extends State<SplashScreen>
     if (token != null) {
       final user = await SecureStorage.getUser();
       context.go(user?['account_type'] == 'artisan'
-          ? '/artisan/dashboard' : '/client/dashboard');
+          ? '/artisan/home' : '/client/dashboard');
     } else {
       context.go('/login');
     }

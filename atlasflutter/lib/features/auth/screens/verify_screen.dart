@@ -58,7 +58,7 @@ class _VerifyScreenState extends State<VerifyScreen> {
     try {
       final r = await _repo.verifyCode(userId: widget.userId, code: _code);
       if (!mounted) return;
-      context.go(widget.accountType == 'client' ? '/client/dashboard' : '/artisan/dashboard');
+      context.go(widget.accountType == 'client' ? '/client/dashboard' : '/artisan/home');
     } on DioException catch (e) {
       final errs = AuthRepository.parseErrors(e);
       setState(() => _error = errs['general'] ?? errs['code'] ?? 'Code invalide');
