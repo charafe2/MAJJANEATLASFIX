@@ -32,7 +32,9 @@ import '../../features/artisan/screens/artisan_home_screen.dart';
 import '../../features/artisan/screens/artisan_offers_screen.dart';
 import '../../features/artisan/screens/artisan_request_detail_screen.dart';
 import '../../features/artisan/screens/artisan_profile_screen.dart';
+import '../../features/artisan/screens/artisan_info_screen.dart';
 import '../../features/artisan/screens/artisan_available_requests_screen.dart';
+import '../../features/artisan/screens/artisan_client_profile_screen.dart';
 import '../../data/repositories/artisan_job_repository.dart';
 import '../../data/repositories/service_request_repository.dart';
 
@@ -42,9 +44,9 @@ const _protectedRoutes = [
   '/client/mes-demandes', '/client/payments', '/client/request-offers', '/client/request-view', '/client/notifications', '/client/messages', '/client/chat',
   '/client/service-categories', '/client/service-types',
   '/client/nouvelle-demande',
-  '/artisan/home', '/artisan/offers', '/artisan/profile',
+  '/artisan/home', '/artisan/offers', '/artisan/profile', '/artisan/info',
   '/artisan/available-requests', '/artisan/request', '/artisan/messages',
-  '/artisan/agenda',
+  '/artisan/agenda', '/artisan/client-profile',
 ];
 
 bool _isProtected(String location) =>
@@ -218,8 +220,22 @@ final appRouter = GoRouter(
     GoRoute(path: '/artisan/profile',
       builder: (_, __) => const ArtisanProfileScreen()),
 
+    GoRoute(path: '/artisan/info',
+      builder: (_, __) => const ArtisanInfoScreen()),
+
     GoRoute(path: '/artisan/available-requests',
       builder: (_, __) => const ArtisanAvailableRequestsScreen()),
+
+    GoRoute(path: '/artisan/client-profile/:id',
+      builder: (_, state) {
+        final extra = state.extra as Map<String, dynamic>? ?? {};
+        return ArtisanClientProfileScreen(
+          clientId:     int.tryParse(state.pathParameters['id'] ?? ''),
+          clientName:   extra['name']   as String? ?? 'Client',
+          clientAvatar: extra['avatar'] as String?,
+          clientCity:   extra['city']   as String?,
+        );
+      }),
 
     GoRoute(path: '/artisan/request/:id',
       builder: (_, state) {

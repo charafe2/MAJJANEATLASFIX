@@ -153,7 +153,17 @@ class _ArtisanRequestDetailScreenState
                       const SizedBox(height: 18),
 
                       // ── Client card ─────────────────────────────────────
-                      _ClientCard(request: req),
+                      GestureDetector(
+                        onTap: () => context.push(
+                          '/artisan/client-profile/${req.clientId ?? 0}',
+                          extra: {
+                            'name':   req.clientName ?? 'Client',
+                            'avatar': req.clientAvatar,
+                            'city':   req.clientCity ?? req.city,
+                          },
+                        ),
+                        child: _ClientCard(request: req),
+                      ),
                       const SizedBox(height: 18),
 
                       // ── Lieu d'intervention ──────────────────────────────

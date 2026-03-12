@@ -49,6 +49,7 @@ const routes = [
   { path: '/client/nouvelle-demande',    component: () => import('../views/client/NouvelleDemande.vue'),      meta: { requiresAuth: true, accountType: 'client' } },
   { path: '/artisan/demandes-clients',   component: () => import('../views/artisan/DemandesClients.vue'),     meta: { requiresAuth: true, accountType: 'artisan' } },
   { path: '/artisan/mes-demandes',       component: () => import('../views/artisan/MesDemandesAcceptees.vue'),meta: { requiresAuth: true, accountType: 'artisan' } },
+  { path: '/artisan/ajouter-service',    component: () => import('../views/artisan/AjouterService.vue'),      meta: { requiresAuth: true, accountType: 'artisan' } },
   { path: '/client/demandes/:id',        component: () => import('../views/DemandeDetail.vue'),               meta: { requiresAuth: true, accountType: 'client' },  props: { role: 'client' } },
   { path: '/artisan/demandes/:id',       component: () => import('../views/DemandeDetail.vue'),               meta: { requiresAuth: true, accountType: 'artisan' }, props: { role: 'artisan' } },
 

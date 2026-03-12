@@ -19,7 +19,7 @@
     <!-- Card grid -->
     <div class="grid">
       <div
-        v-for="(row, rowIdx) in filteredRows"
+        v-for="(row, rowIdx) in pagedRows"
         :key="rowIdx"
         class="grid-row"
       >
@@ -55,7 +55,7 @@
                 {{ s }}
               </li>
             </ul>
-            <button class="card-btn">
+            <button class="card-btn" @click="goToService(card)">
               Voir les artisans
               <svg viewBox="0 0 20 20" fill="none">
                 <path d="M4 10h12M12 6l4 4-4 4" stroke="white" stroke-width="1.667"
@@ -66,9 +66,20 @@
         </div>
       </div>
 
-      <p v-if="filteredRows.length === 0" class="no-results">
+      <p v-if="filteredFlat.length === 0" class="no-results">
         Aucun service trouvé pour «&nbsp;{{ searchQuery }}&nbsp;»
       </p>
+    </div>
+
+    <!-- Load More -->
+    <div v-show="hasMore" class="load-more-wrapper">
+      <p class="load-more-count">{{ Math.min(visibleCount, filteredFlat.length) }} / {{ filteredFlat.length }} services affichés</p>
+      <button class="load-more-btn" @click="loadMore">
+        Voir plus de services
+        <svg width="18" height="18" viewBox="0 0 20 20" fill="none">
+          <path d="M10 4v12M4 10l6 6 6-6" stroke="currentColor" stroke-width="1.67" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </button>
     </div>
 
   </section>
@@ -397,24 +408,66 @@ const ROWS = [
   ],
 ]
 
+/* ─── Slug map (title → route slug) ────────────────────── */
+const SLUG_MAP = {
+  'Plomberie':                              'plomberie',
+  'Électricité':                            'electricite',
+  'Peinture':                               'peinture',
+  'Réparations générales':                  'reparations-generales',
+  'Déménagement':                           'demenagement',
+  'Électroménager':                         'electromenager',
+  'Nettoyage':                              'nettoyage',
+  'Chauffage, Ventilation et Climatisation':'chauffage-ventilation-climatisation',
+}
+
+const PER_PAGE = 12
+
+/* Flat array of all cards — static, no need to be reactive */
+const ALL_CARDS = ROWS.flat()
+
 export default defineComponent({
   name: 'ServicesGrid',
   data() {
     return {
       searchQuery: '',
-      rows: ROWS,
+      visibleCount: PER_PAGE,
     }
   },
   computed: {
-    filteredRows() {
+    filteredFlat() {
       const q = this.searchQuery.trim().toLowerCase()
-      if (!q) return this.rows
-      return this.rows
-        .map(row => row.filter(card =>
-          card.title.toLowerCase().includes(q) ||
-          card.services.some(s => s.toLowerCase().includes(q))
-        ))
-        .filter(row => row.length > 0)
+      if (!q) return ALL_CARDS
+      return ALL_CARDS.filter(card =>
+        card.title.toLowerCase().includes(q) ||
+        card.services.some(s => s.toLowerCase().includes(q))
+      )
+    },
+    hasMore() {
+      return this.visibleCount < this.filteredFlat.length
+    },
+    pagedRows() {
+      const slice = this.filteredFlat.slice(0, this.visibleCount)
+      const rows = []
+      for (let i = 0; i < slice.length; i += 4) {
+        rows.push(slice.slice(i, i + 4))
+      }
+      return rows
+    },
+  },
+  watch: {
+    searchQuery() {
+      this.visibleCount = PER_PAGE
+    },
+  },
+  methods: {
+    loadMore() {
+      this.visibleCount += PER_PAGE
+    },
+    goToService(card) {
+      const slug = SLUG_MAP[card.title]
+      if (slug) {
+        this.$router.push(`/services/${slug}`)
+      }
     },
   },
 })
@@ -618,6 +671,43 @@ export default defineComponent({
   color: #62748E;
   font-size: 16px;
   padding: 48px 0;
+}
+
+/* ─── Load More ───────────────────────── */
+.load-more-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 0 16px;
+}
+
+.load-more-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 14px 40px;
+  background: white;
+  border: 2px solid #FC5A15;
+  border-radius: 999px;
+  font-family: 'Inter', sans-serif;
+  font-size: 15px;
+  font-weight: 500;
+  color: #FC5A15;
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s;
+}
+
+.load-more-btn:hover {
+  background: #FC5A15;
+  color: white;
+}
+
+.load-more-count {
+  font-family: 'Inter', sans-serif;
+  font-size: 13px;
+  color: #62748E;
+  margin: 0;
 }
 
 /* ─── Keyframes ───────────────────────── */

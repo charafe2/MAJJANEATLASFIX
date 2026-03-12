@@ -48,8 +48,10 @@ class AvailableRequest {
   final String status;
   final DateTime createdAt;
   final int    offersCount;
+  final int?    clientId;
   final String? clientName;
   final String? clientAvatar;
+  final String? clientCity;
   final List<String> photos;
 
   const AvailableRequest({
@@ -61,8 +63,10 @@ class AvailableRequest {
     required this.status,
     required this.createdAt,
     required this.offersCount,
+    this.clientId,
     this.clientName,
     this.clientAvatar,
+    this.clientCity,
     required this.photos,
   });
 
@@ -83,8 +87,10 @@ class AvailableRequest {
       createdAt:    DateTime.tryParse(j['created_at'] as String? ?? '')
                     ?? DateTime.now(),
       offersCount:  j['offers_count'] as int? ?? 0,
+      clientId:     client?['id']      as int?,
       clientName:   user?['full_name'] as String?,
       clientAvatar: user?['avatar_url'] as String?,
+      clientCity:   user?['city']      as String?,
       photos: photosRaw.map((e) {
         if (e is Map) return e['url'] as String? ?? '';
         return e.toString();

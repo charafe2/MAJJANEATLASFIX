@@ -47,8 +47,8 @@
 
       <!-- Services grid -->
       <div class="services-grid">
-        <div 
-          v-for="(service, index) in filteredServices" 
+        <div
+          v-for="(service, index) in visibleServices"
           :key="index"
           class="service-card"
           :style="{ animationDelay: `${(index % 4) * 0.1}s` }"
@@ -67,10 +67,10 @@
           <!-- Content -->
           <div class="service-content">
             <h3 class="service-title">{{ service.title }}</h3>
-            
+
             <div class="service-items">
-              <div 
-                v-for="(item, idx) in service.items" 
+              <div
+                v-for="(item, idx) in service.items"
                 :key="idx"
                 class="service-item"
               >
@@ -90,6 +90,17 @@
             </button>
           </div>
         </div>
+      </div>
+
+      <!-- Load More -->
+      <div v-if="visibleCount < filteredServices.length" class="load-more-wrapper">
+        <p class="load-more-count">{{ Math.min(visibleCount, filteredServices.length) }} / {{ filteredServices.length }} services</p>
+        <button class="load-more-btn" @click="loadMore">
+          Voir plus de services
+          <svg width="18" height="18" viewBox="0 0 20 20" fill="none">
+            <path d="M10 4v12M4 10l6 6 6-6" stroke="currentColor" stroke-width="1.67" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </button>
       </div>
 
     </div>
@@ -145,14 +156,26 @@ const SecuriseIcon = defineComponent({
 export default defineComponent({
   name: 'HeroSection',
   components: { ArtisansIcon, SatisfactionIcon, DisponibiliteIcon, SecuriseIcon },
+  watch: {
+    searchQuery() { this.visibleCount = 12 },
+  },
   methods: {
     goToService(slug) {
-      this.$router.push(`/services/${slug}`)
+      if (slug) this.$router.push(`/services/${slug}`)
+    },
+    loadMore() {
+      this.visibleCount += 12
     },
   },
   data() {
+    const ic = (paths) => defineComponent({ render: () => h('svg', { width: 24, height: 24, viewBox: '0 0 24 24', fill: 'none' }, paths) })
+    const p  = (d, extra = {}) => h('path', { d, stroke: '#FC5A15', 'stroke-width': 2, 'stroke-linecap': 'round', 'stroke-linejoin': 'round', ...extra })
+    const c  = (cx, cy, r) => h('circle', { cx, cy, r, stroke: '#FC5A15', 'stroke-width': 2 })
+    const r  = (x, y, w, hh, rx) => h('rect', { x, y, width: w, height: hh, rx, stroke: '#FC5A15', 'stroke-width': 2, fill: 'none' })
+
     return {
       searchQuery: '',
+      visibleCount: 12,
       stats: [
         { value: '500+',  label: 'Artisans',      iconComponent: ArtisansIcon },
         { value: '4.8/5', label: 'Satisfaction',  iconComponent: SatisfactionIcon },
@@ -160,98 +183,34 @@ export default defineComponent({
         { value: '100%',  label: 'Sécurisé',      iconComponent: SecuriseIcon },
       ],
       services: [
-        {
-          title: 'Plomberie',
-          slug: 'plomberie',
-          image: 'https://images.unsplash.com/photo-1607472586893-edb57bdc0e39?w=600&q=80',
-          items: ['Réparation de fuite', 'Installation sanitaire', 'Réparation de toilette', 'Débouchage'],
-          iconComponent: defineComponent({
-            render: () => h('svg', { width: 24, height: 24, viewBox: '0 0 24 24', fill: 'none' }, [
-              h('path', { d: 'M8 3v16M8 12h8', stroke: '#FC5A15', 'stroke-width': 2, 'stroke-linecap': 'round' })
-            ])
-          })
-        },
-        {
-          title: 'Électricité',
-          slug: 'electricite',
-          image: 'https://images.unsplash.com/photo-1621905251918-48416bd8575a?w=600&q=80',
-          items: ['Installation de luminaires', 'Réparation prises & interrupteurs', 'Installation ventilateur de plafond'],
-          iconComponent: defineComponent({
-            render: () => h('svg', { width: 24, height: 24, viewBox: '0 0 24 24', fill: 'none' }, [
-              h('path', { d: 'M13 2L3 14h8l-1 8 10-12h-8l1-8z', stroke: '#FC5A15', 'stroke-width': 2, 'stroke-linejoin': 'round' })
-            ])
-          })
-        },
-        {
-          title: 'Peinture',
-          slug: 'peinture',
-          image: 'https://images.unsplash.com/photo-1562259929-b4e1fd3aef09?w=600&q=80',
-          items: ['Travaux de peinture intérieure'],
-          iconComponent: defineComponent({
-            render: () => h('svg', { width: 24, height: 24, viewBox: '0 0 24 24', fill: 'none' }, [
-              h('path', { d: 'M4 15l4-8 4 8M6 12h4M18 9v6', stroke: '#FC5A15', 'stroke-width': 2, 'stroke-linecap': 'round' }),
-              h('path', { d: 'M18 6a2 2 0 1 0 0-4 2 2 0 0 0 0 4z', stroke: '#FC5A15', 'stroke-width': 2 })
-            ])
-          })
-        },
-        {
-          title: 'Réparations générales',
-          slug: 'reparations-generales',
-          image: 'https://images.unsplash.com/photo-1581578731548-c64695cc6952?w=600&q=80',
-          items: ['Montage TV, étagères, tringles', 'Réparation portes & serrures', 'Petites menuiseries', 'Joints & silicone'],
-          iconComponent: defineComponent({
-            render: () => h('svg', { width: 24, height: 24, viewBox: '0 0 24 24', fill: 'none' }, [
-              h('path', { d: 'M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z', stroke: '#FC5A15', 'stroke-width': 2 })
-            ])
-          })
-        },
-        {
-          title: 'Déménagement',
-          slug: 'demenagement',
-          image: 'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=600&q=80',
-          items: ['Déménagement local', 'Emballage & déballage', 'Transport de meubles'],
-          iconComponent: defineComponent({
-            render: () => h('svg', { width: 24, height: 24, viewBox: '0 0 24 24', fill: 'none' }, [
-              h('path', { d: 'M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z', stroke: '#FC5A15', 'stroke-width': 2, 'stroke-linejoin': 'round' }),
-              h('polyline', { points: '9 22 9 12 15 12 15 22', stroke: '#FC5A15', 'stroke-width': 2, 'stroke-linejoin': 'round' })
-            ])
-          })
-        },
-        {
-          title: 'Électroménager',
-          slug: 'electromenager',
-          image: 'https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?w=600&q=80',
-          items: ['Réparation lave-linge / sèche-linge', 'Réparation réfrigérateur', 'Réparation four / cuisinière'],
-          iconComponent: defineComponent({
-            render: () => h('svg', { width: 24, height: 24, viewBox: '0 0 24 24', fill: 'none' }, [
-              h('rect', { x: 3, y: 3, width: 18, height: 18, rx: 2, stroke: '#FC5A15', 'stroke-width': 2 }),
-              h('path', { d: 'M3 9h18M9 3v18', stroke: '#FC5A15', 'stroke-width': 2 })
-            ])
-          })
-        },
-        {
-          title: 'Nettoyage',
-          slug: 'nettoyage',
-          image: 'https://images.unsplash.com/photo-1628177142898-93e36e4e3a50?w=600&q=80',
-          items: ['Nettoyage standard', 'Nettoyage en profondeur', 'Nettoyage après déménagement'],
-          iconComponent: defineComponent({
-            render: () => h('svg', { width: 24, height: 24, viewBox: '0 0 24 24', fill: 'none' }, [
-              h('circle', { cx: 12, cy: 12, r: 10, stroke: '#FC5A15', 'stroke-width': 2 }),
-              h('path', { d: 'M8 8l8 8M16 8l-8 8', stroke: '#FC5A15', 'stroke-width': 2, 'stroke-linecap': 'round' })
-            ])
-          })
-        },
-        {
-          title: 'Chauffage, Ventilation et Climatisation',
-          slug: 'chauffage-ventilation-climatisation',
-          image: 'https://images.unsplash.com/photo-1581244277943-fe4a9c777189?w=600&q=80',
-          items: ['Entretien climatisation', 'Réparation climatisation', 'Entretien chauffage'],
-          iconComponent: defineComponent({
-            render: () => h('svg', { width: 24, height: 24, viewBox: '0 0 24 24', fill: 'none' }, [
-              h('path', { d: 'M14 3v18M7 10l5-5 5 5', stroke: '#FC5A15', 'stroke-width': 2, 'stroke-linecap': 'round', 'stroke-linejoin': 'round' })
-            ])
-          })
-        },
+        { title: 'Plomberie',                               slug: 'plomberie',                              image: 'https://images.unsplash.com/photo-1607472586893-edb57bdc0e39?w=600&q=80', items: ['Réparation de fuite', 'Installation sanitaire', 'Réparation de toilette', 'Débouchage'],                        iconComponent: ic([p('M8 3v16M8 12h8')]) },
+        { title: 'Électricité',                             slug: 'electricite',                            image: 'https://images.unsplash.com/photo-1621905251918-48416bd8575a?w=600&q=80', items: ['Installation de luminaires', 'Réparation prises & interrupteurs', 'Ventilateur de plafond'],                  iconComponent: ic([p('M13 2L3 14h8l-1 8 10-12h-8l1-8z')]) },
+        { title: 'Peinture',                                slug: 'peinture',                               image: 'https://images.unsplash.com/photo-1562259929-b4e1fd3aef09?w=600&q=80', items: ['Peinture intérieure', 'Peinture extérieure'],                                                                     iconComponent: ic([p('M4 15l4-8 4 8M6 12h4M18 9v6'), p('M18 6a2 2 0 1 0 0-4 2 2 0 0 0 0 4z', { fill: 'none' })]) },
+        { title: 'Réparations générales',                   slug: 'reparations-generales',                  image: 'https://images.unsplash.com/photo-1581578731548-c64695cc6952?w=600&q=80', items: ['Montage TV, étagères', 'Réparation portes & serrures', 'Petites menuiseries', 'Joints & silicone'],           iconComponent: ic([p('M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z')]) },
+        { title: 'Déménagement',                            slug: 'demenagement',                           image: 'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=600&q=80', items: ['Déménagement local', 'Emballage & déballage', 'Transport de meubles'],                                            iconComponent: ic([p('M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z'), h('polyline', { points: '9 22 9 12 15 12 15 22', stroke: '#FC5A15', 'stroke-width': 2 })]) },
+        { title: 'Électroménager',                          slug: 'electromenager',                         image: 'https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?w=600&q=80', items: ['Réparation lave-linge', 'Réparation réfrigérateur', 'Réparation four / cuisinière'],                              iconComponent: ic([r(3, 3, 18, 18, 2), p('M3 9h18M9 3v18')]) },
+        { title: 'Nettoyage',                               slug: 'nettoyage',                              image: 'https://images.unsplash.com/photo-1628177142898-93e36e4e3a50?w=600&q=80', items: ['Nettoyage standard', 'Nettoyage en profondeur', 'Nettoyage après déménagement'],                               iconComponent: ic([c(12, 12, 10), p('M8 8l8 8M16 8l-8 8')]) },
+        { title: 'Chauffage, Ventilation et Climatisation', slug: 'chauffage-ventilation-climatisation',    image: 'https://images.unsplash.com/photo-1581244277943-fe4a9c777189?w=600&q=80', items: ['Entretien climatisation', 'Réparation climatisation', 'Entretien chauffage'],                                  iconComponent: ic([p('M14 3v18M7 10l5-5 5 5')]) },
+        { title: 'Mécanicien Mobile',                       slug: null,                                     image: 'https://images.unsplash.com/photo-1599256872237-5dae43b37e58?w=600&q=80', items: ['Diagnostic de base', 'Remplacement plaquettes de frein', 'Remplacement batterie', 'Vérification alternateur'],  iconComponent: ic([p('M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z')]) },
+        { title: 'Vidange Mobile',                          slug: null,                                     image: 'https://images.unsplash.com/photo-1487754180451-c456f719a1fc?w=600&q=80', items: ['Vidange standard', 'Vidange huile synthétique'],                                                                  iconComponent: ic([p('M12 22a7 7 0 0 0 7-7c0-2-1-3.9-3-5.5S12.5 5 12 2.5C11.5 5 10 7.4 8 9c-2 1.6-3 3.5-3 5a7 7 0 0 0 7 7z')]) },
+        { title: 'Assistance Routière',                     slug: null,                                     image: 'https://images.unsplash.com/photo-1449965408869-eaa3f722e40d?w=600&q=80', items: ['Démarrage batterie', 'Changement de pneu', 'Ouverture de porte (lockout)'],                                     iconComponent: ic([p('M5 17H3a2 2 0 0 1-2-2V9a2 2 0 0 1 2-2h11l5 5v5h-2'), c(7, 17, 2), c(17, 17, 2)]) },
+        { title: "Organisation d'événements",               slug: null,                                     image: 'https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=600&q=80', items: ['Planification complète', 'Coordination le jour'],                                                                 iconComponent: ic([p('M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2z')]) },
+        { title: 'Photographie',                            slug: null,                                     image: 'https://images.unsplash.com/photo-1542038374944-65417f4e5fb7?w=600&q=80', items: ["Photographie d'événements", 'Portraits', 'Photographie de produits'],                                           iconComponent: ic([p('M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z'), c(12, 13, 4)]) },
+        { title: 'Vidéographie',                            slug: null,                                     image: 'https://images.unsplash.com/photo-1492691527719-9d1e07e534b4?w=600&q=80', items: ["Vidéos d'événements", 'Vidéos promotionnelles'],                                                                  iconComponent: ic([p('M23 7l-7 5 7 5V7z'), r(1, 5, 15, 14, 2)]) },
+        { title: 'Musique & Animation',                     slug: null,                                     image: 'https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=600&q=80', items: ['DJ', 'Groupes de musique', 'Musiciens solo'],                                                                      iconComponent: ic([p('M9 18V5l12-2v13'), c(6, 18, 3), c(18, 16, 3)]) },
+        { title: 'Beauté & Style',                          slug: null,                                     image: 'https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?w=600&q=80', items: ['Maquillage', 'Coiffure', 'Forfaits mariage'],                                                                      iconComponent: ic([p('M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z')]) },
+        { title: 'Services de Restauration',                slug: null,                                     image: 'https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=600&q=80', items: ['Aide au service', 'Serveurs'],                                                                                     iconComponent: ic([p('M18 8h1a4 4 0 0 1 0 8h-1M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8zM6 1v3M10 1v3M14 1v3')]) },
+        { title: "Décoration d'Événements",                 slug: null,                                     image: 'https://images.unsplash.com/photo-1530103862676-de8c9debad1d?w=600&q=80', items: ['Décoration de salle', 'Ballons & arches', 'Centres de table'],                                                  iconComponent: ic([p('M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z')]) },
+        { title: 'Location de Matériel',                    slug: null,                                     image: 'https://images.unsplash.com/photo-1549294413-26f195200c16?w=600&q=80', items: ['Chaises & tables', 'Vaisselle', 'Tentes & chapiteaux'],                                                             iconComponent: ic([p('M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z')]) },
+        { title: 'Réparation Ordinateurs',                  slug: null,                                     image: 'https://images.unsplash.com/photo-1593642632559-0c6d3fc62b89?w=600&q=80', items: ['Réparation ordinateur portable', 'Suppression de virus', 'Récupération de données'],                             iconComponent: ic([p('M2 17h20M4 5h16a1 1 0 0 1 1 1v11H3V6a1 1 0 0 1 1-1z'), p('M8 21h8M12 17v4')]) },
+        { title: 'Réseau & WiFi',                           slug: null,                                     image: 'https://images.unsplash.com/photo-1558494949-ef010cbdcc31?w=600&q=80', items: ['Installation routeur', 'Optimisation WiFi', 'Installation réseau maison'],                                        iconComponent: ic([p('M5 12.55a11 11 0 0 1 14.08 0'), p('M1.42 9a16 16 0 0 1 21.16 0'), p('M8.53 16.11a6 6 0 0 1 6.95 0'), h('circle', { cx: 12, cy: 20, r: 1, fill: '#FC5A15', stroke: 'none' })]) },
+        { title: 'Maison Connectée',                        slug: null,                                     image: 'https://images.unsplash.com/photo-1558002038-1055e5a1c6ff?w=600&q=80', items: ['Installation caméras', 'Serrures intelligentes', 'Éclairage intelligent'],                                         iconComponent: ic([p('M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z'), p('M9 22V12h6v10')]) },
+        { title: 'Réparation Téléphones & Tablettes',       slug: null,                                     image: 'https://images.unsplash.com/photo-1580910051074-3eb694886505?w=600&q=80', items: ["Remplacement d'écran", 'Remplacement batterie', 'Réparation port de charge'],                                  iconComponent: ic([p('M17 2H7a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2z'), p('M12 18h.01')]) },
+        { title: 'Lavage auto à domicile',                  slug: null,                                     image: 'https://images.unsplash.com/photo-1520340356584-f9917d1eea6f?w=600&q=80', items: ['Nettoyage extérieur', 'Nettoyage intérieur', 'Lavage complet'],                                                  iconComponent: ic([p('M3 17l2-7h14l2 7H3z'), c(7.5, 17, 2), c(16.5, 17, 2), p('M5 10h14')]) },
+        { title: 'Car Detailing',                           slug: null,                                     image: 'https://images.unsplash.com/photo-1502161254066-6c74afbf07aa?w=600&q=80', items: ['Detailing intérieur', 'Detailing extérieur', 'Detailing complet'],                                               iconComponent: ic([c(12, 12, 10), p("M8 13s1.5 2 4 2 4-2 4-2"), p('M9 9h.01M15 9h.01')]) },
+        { title: 'Jardinage & Extérieur',                   slug: null,                                     image: 'https://images.unsplash.com/photo-1416879595882-3373a0480b5b?w=600&q=80', items: ['Tonte de gazon', 'Taille de haies', 'Entretien jardin'],                                                         iconComponent: ic([p('M12 22V12'), p('M12 12C12 8 15 5 19 5c0 4-3 7-7 7z'), p('M12 12C12 8 9 5 5 5c0 4 3 7 7 7z')]) },
+        { title: 'Support Technique',                       slug: null,                                     image: 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=600&q=80', items: ["Configuration d'appareils", 'Assistance logicielle', 'Support email & comptes'],                               iconComponent: ic([c(12, 12, 10), p('M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3'), h('circle', { cx: 12, cy: 17, r: 1, fill: '#FC5A15', stroke: 'none' })]) },
+        { title: 'Diagnostic OBD mobile',                   slug: null,                                     image: 'https://images.unsplash.com/photo-1635073908681-b5a3c630a54c?w=600&q=80', items: ['Diagnostic électronique', 'Lecture des codes défaut', 'Rapport de diagnostic'],                                iconComponent: ic([p('M9 3H5a2 2 0 0 0-2 2v4m6-6h10a2 2 0 0 1 2 2v4M9 3v18m0 0h10a2 2 0 0 0 2-2V9M9 21H5a2 2 0 0 1-2-2V9m0 0h18')]) },
       ]
     }
   },
@@ -259,12 +218,15 @@ export default defineComponent({
     filteredServices() {
       if (!this.searchQuery) return this.services
       const query = this.searchQuery.toLowerCase()
-      return this.services.filter(service => 
+      return this.services.filter(service =>
         service.title.toLowerCase().includes(query) ||
         service.items.some(item => item.toLowerCase().includes(query))
       )
-    }
-  }
+    },
+    visibleServices() {
+      return this.filteredServices.slice(0, this.visibleCount)
+    },
+  },
 })
 </script>
 
@@ -649,5 +611,41 @@ export default defineComponent({
 @media (max-width: 500px) {
   .services-grid { grid-template-columns: 1fr; }
   .service-image { height: 160px; }
+}
+
+.load-more-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 0 16px;
+}
+
+.load-more-count {
+  font-family: 'Inter', sans-serif;
+  font-size: 13px;
+  color: #62748E;
+  margin: 0;
+}
+
+.load-more-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 14px 40px;
+  background: white;
+  border: 2px solid #FC5A15;
+  border-radius: 999px;
+  font-family: 'Inter', sans-serif;
+  font-size: 15px;
+  font-weight: 500;
+  color: #FC5A15;
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s;
+}
+
+.load-more-btn:hover {
+  background: #FC5A15;
+  color: white;
 }
 </style>

@@ -296,27 +296,28 @@ class ArtisanBottomNavBar extends StatelessWidget {
   final int activeIndex;
   const ArtisanBottomNavBar({super.key, required this.activeIndex});
 
+  // null = center tools button (image asset)
+  static const _imageAssets = [
+    'assets/images/HomeIcone.png',
+    'assets/images/ReservationIcone.png',
+    'assets/images/tools.png',   // center: available requests
+    'assets/images/ChatIcone.png',
+    'assets/images/profileicone.png',
+  ];
+
   void _onTap(BuildContext context, int index) {
     if (index == activeIndex) return;
     switch (index) {
-      case 0: context.go('/artisan/home');             break;
-      case 1: context.go('/artisan/offers');           break;
+      case 0: context.go('/artisan/home');                 break;
+      case 1: context.go('/artisan/offers');               break;
       case 2: context.push('/artisan/available-requests'); break;
-      case 3: context.go('/artisan/messages');         break;
-      case 4: context.go('/artisan/profile');          break;
+      case 3: context.go('/artisan/messages');             break;
+      case 4: context.go('/artisan/profile');              break;
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    const icons = [
-      Icons.home_outlined,
-      Icons.assignment_outlined,
-      Icons.handyman_outlined,
-      Icons.chat_bubble_outline_rounded,
-      Icons.person_outline_rounded,
-    ];
-
     return Container(
       width: 342, height: 60,
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
@@ -326,30 +327,48 @@ class ArtisanBottomNavBar extends StatelessWidget {
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: List.generate(icons.length, (i) {
+        children: List.generate(5, (i) {
           final active = i == activeIndex;
+
+          // Centre button — special orange/bordered circle
           if (i == 2) {
             return GestureDetector(
               onTap: () => _onTap(context, i),
               child: Container(
                 width: 44, height: 44,
                 decoration: BoxDecoration(
+                  color: active ? AppColors.primary : Colors.transparent,
                   shape: BoxShape.circle,
-                  border: Border.all(color: Colors.white),
+                  border: active ? null : Border.all(color: Colors.white, width: 1),
                 ),
-                child: const Icon(Icons.handyman_outlined, color: Colors.white, size: 22),
+                child: Center(
+                  child: ColorFiltered(
+                    colorFilter: const ColorFilter.mode(
+                        Colors.white, BlendMode.srcIn),
+                    child: Image.asset(_imageAssets[i], width: 22, height: 22),
+                  ),
+                ),
               ),
             );
           }
+
           return GestureDetector(
             onTap: () => _onTap(context, i),
             child: Container(
               width: 44, height: 44,
               decoration: BoxDecoration(
-                color: active ? AppColors.primary : Colors.transparent,
+                color: active ? Colors.white : Colors.transparent,
                 shape: BoxShape.circle,
               ),
-              child: Icon(icons[i], color: Colors.white, size: 22),
+              child: Center(
+                child: ColorFiltered(
+                  colorFilter: ColorFilter.mode(
+                    active ? AppColors.primary : Colors.white,
+                    BlendMode.srcIn,
+                  ),
+                  child: Image.asset(_imageAssets[i], width: 22, height: 22),
+                ),
+              ),
             ),
           );
         }),

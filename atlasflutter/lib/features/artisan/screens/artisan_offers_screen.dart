@@ -15,11 +15,11 @@ class ArtisanOffersScreen extends StatefulWidget {
 class _ArtisanOffersScreenState extends State<ArtisanOffersScreen> {
   final _repo = ArtisanJobRepository();
 
-  List<ArtisanOffer> _all     = [];
-  List<ArtisanOffer> _shown   = [];
+  List<ArtisanOffer> _all    = [];
+  List<ArtisanOffer> _shown  = [];
   bool               _loading = true;
   String?            _error;
-  String?            _activeFilter; // null = all, 'pending', 'accepted', 'rejected'
+  String?            _activeFilter;
 
   @override
   void initState() {
@@ -71,22 +71,21 @@ class _ArtisanOffersScreenState extends State<ArtisanOffersScreen> {
     );
   }
 
-  // ── build ──────────────────────────────────────────────────────────────────
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
       body: Stack(
         children: [
-          // Gradient bg
+          // ── Gradient background ─────────────────────────────────────────
           Positioned.fill(
             child: Container(
               decoration: const BoxDecoration(
                 gradient: LinearGradient(
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
-                  stops: [0.0, 0.6238],
-                  colors: [Color(0x4DFF8C5B), Colors.white],
+                  stops: [0.0, 0.55],
+                  colors: [Color(0x33FC5A15), Colors.white],
                 ),
               ),
             ),
@@ -99,7 +98,7 @@ class _ArtisanOffersScreenState extends State<ArtisanOffersScreen> {
             ],
           ),
 
-          // Bottom fade
+          // ── Bottom fade ─────────────────────────────────────────────────
           Positioned(
             bottom: 0, left: 0, right: 0,
             child: Container(
@@ -122,7 +121,7 @@ class _ArtisanOffersScreenState extends State<ArtisanOffersScreen> {
     );
   }
 
-  // ── Orange header ──────────────────────────────────────────────────────────
+  // ── Header (logo + search) ──────────────────────────────────────────────────
   Widget _buildHeader() {
     return Container(
       decoration: const BoxDecoration(
@@ -138,7 +137,6 @@ class _ArtisanOffersScreenState extends State<ArtisanOffersScreen> {
           padding: const EdgeInsets.fromLTRB(24, 12, 24, 20),
           child: Column(
             children: [
-              // Logo + icons
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
@@ -169,8 +167,6 @@ class _ArtisanOffersScreenState extends State<ArtisanOffersScreen> {
                 ],
               ),
               const SizedBox(height: 16),
-
-              // Search bar
               Container(
                 height: 48,
                 padding: const EdgeInsets.only(left: 16, right: 6),
@@ -187,7 +183,7 @@ class _ArtisanOffersScreenState extends State<ArtisanOffersScreen> {
                       style: TextStyle(
                         fontFamily: 'Public Sans',
                         fontSize: 14,
-                        letterSpacing: -0.01 * 14,
+                        letterSpacing: -0.014,
                         color: Color(0xFF494949),
                       )),
                   ),
@@ -219,27 +215,46 @@ class _ArtisanOffersScreenState extends State<ArtisanOffersScreen> {
         slivers: [
           SliverToBoxAdapter(
             child: Padding(
-              padding: const EdgeInsets.fromLTRB(24, 20, 24, 0),
+              padding: const EdgeInsets.fromLTRB(20, 24, 20, 0),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Title row
+                  // ── Title row ──────────────────────────────────────────
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
-                      const Text('Mes demandes acceptées',
+                      const Text(
+                        'Mes demandes acceptées',
                         style: TextStyle(
                           fontFamily: 'Public Sans',
-                          fontWeight: FontWeight.w700,
-                          fontSize: 18,
-                          letterSpacing: -0.273,
+                          fontWeight: FontWeight.w800,
+                          fontSize: 20,
+                          letterSpacing: -0.3,
                           color: Color(0xFF191C24),
-                        )),
-                      const Icon(Icons.assignment_outlined,
-                          color: AppColors.primary, size: 24),
+                        ),
+                      ),
+                      Container(
+                        width: 36, height: 36,
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(8),
+                          boxShadow: const [
+                            BoxShadow(
+                              color: Color(0x14000000),
+                              blurRadius: 6,
+                              offset: Offset(0, 2),
+                            ),
+                          ],
+                        ),
+                        child: const Icon(Icons.assignment_outlined,
+                            color: AppColors.primary, size: 20),
+                      ),
                     ],
                   ),
                   const SizedBox(height: 4),
+
+                  // ── Subtitle ───────────────────────────────────────────
                   Text(
                     _loading
                         ? 'Chargement...'
@@ -252,24 +267,24 @@ class _ArtisanOffersScreenState extends State<ArtisanOffersScreen> {
                   ),
                   const SizedBox(height: 16),
 
-                  // Filter button
+                  // ── Filter row ─────────────────────────────────────────
                   Row(children: [
-                    GestureDetector(
-                      onTap: _showFilterSheet,
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 16, vertical: 10),
-                        decoration: BoxDecoration(
-                          color: _activeFilter != null
-                              ? AppColors.primary
-                              : AppColors.primary,
-                          borderRadius: BorderRadius.circular(100),
-                        ),
-                        child: Row(mainAxisSize: MainAxisSize.min, children: [
-                          const Icon(Icons.filter_list_rounded,
-                              color: Colors.white, size: 16),
-                          const SizedBox(width: 6),
-                          Text(
+                    // Funnel icon
+                    const Icon(Icons.filter_list_rounded,
+                        color: Color(0xFF62748E), size: 22),
+                    const SizedBox(width: 10),
+                    // Wide orange Filtrer button
+                    Expanded(
+                      child: GestureDetector(
+                        onTap: _showFilterSheet,
+                        child: Container(
+                          height: 44,
+                          decoration: BoxDecoration(
+                            color: AppColors.primary,
+                            borderRadius: BorderRadius.circular(100),
+                          ),
+                          alignment: Alignment.center,
+                          child: Text(
                             _activeFilter == null
                                 ? 'Filtrer'
                                 : _activeFilter == 'accepted'
@@ -280,11 +295,11 @@ class _ArtisanOffersScreenState extends State<ArtisanOffersScreen> {
                             style: const TextStyle(
                               fontFamily: 'Public Sans',
                               fontWeight: FontWeight.w600,
-                              fontSize: 13,
+                              fontSize: 15,
                               color: Colors.white,
                             ),
                           ),
-                        ]),
+                        ),
                       ),
                     ),
                     if (_activeFilter != null) ...[
@@ -292,21 +307,22 @@ class _ArtisanOffersScreenState extends State<ArtisanOffersScreen> {
                       GestureDetector(
                         onTap: () => _setFilter(null),
                         child: const Icon(Icons.close_rounded,
-                            color: Color(0xFF62748E), size: 18),
+                            color: Color(0xFF62748E), size: 20),
                       ),
                     ],
                   ]),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 20),
                 ],
               ),
             ),
           ),
 
-          // Content
+          // ── Cards ─────────────────────────────────────────────────────
           if (_loading)
             const SliverFillRemaining(
-              child: Center(child: CircularProgressIndicator(
-                  color: AppColors.primary)),
+              child: Center(
+                child: CircularProgressIndicator(color: AppColors.primary),
+              ),
             )
           else if (_error != null)
             SliverFillRemaining(child: _buildError())
@@ -314,7 +330,7 @@ class _ArtisanOffersScreenState extends State<ArtisanOffersScreen> {
             SliverFillRemaining(child: _buildEmpty())
           else
             SliverPadding(
-              padding: const EdgeInsets.fromLTRB(24, 0, 24, 120),
+              padding: const EdgeInsets.fromLTRB(20, 0, 20, 120),
               sliver: SliverList(
                 delegate: SliverChildBuilderDelegate(
                   (_, i) => Padding(
@@ -339,8 +355,11 @@ class _ArtisanOffersScreenState extends State<ArtisanOffersScreen> {
       Icon(Icons.assignment_outlined, size: 56, color: Colors.grey.shade300),
       const SizedBox(height: 16),
       const Text('Aucune demande pour le moment.',
-        style: TextStyle(fontFamily: 'Public Sans',
-            fontSize: 14, color: Color(0xFF9CA3AF))),
+        style: TextStyle(
+          fontFamily: 'Public Sans',
+          fontSize: 14,
+          color: Color(0xFF9CA3AF),
+        )),
     ]),
   );
 
@@ -349,8 +368,11 @@ class _ArtisanOffersScreenState extends State<ArtisanOffersScreen> {
       Icon(Icons.wifi_off_rounded, size: 48, color: Colors.grey.shade300),
       const SizedBox(height: 12),
       Text(_error!, textAlign: TextAlign.center,
-        style: const TextStyle(fontFamily: 'Public Sans',
-            fontSize: 14, color: Color(0xFF62748E))),
+        style: const TextStyle(
+          fontFamily: 'Public Sans',
+          fontSize: 14,
+          color: Color(0xFF62748E),
+        )),
       const SizedBox(height: 20),
       ElevatedButton.icon(
         onPressed: _load,
@@ -359,8 +381,7 @@ class _ArtisanOffersScreenState extends State<ArtisanOffersScreen> {
         style: ElevatedButton.styleFrom(
           backgroundColor: AppColors.primary,
           foregroundColor: Colors.white,
-          shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12)),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         ),
       ),
     ]),
@@ -378,9 +399,14 @@ class _OfferCard extends StatelessWidget {
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0xFFE5E7EB), width: 1),
         boxShadow: const [
-          BoxShadow(color: Color(0x14000000), blurRadius: 8, offset: Offset(0, 2)),
+          BoxShadow(
+            color: Color(0x0A000000),
+            blurRadius: 12,
+            offset: Offset(0, 4),
+          ),
         ],
       ),
       child: Padding(
@@ -388,13 +414,13 @@ class _OfferCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // ── Top row: avatar + status ──────────────────────────────────
+            // ── Top row: avatar + info + status ──────────────────────────
             Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 // Avatar
                 CircleAvatar(
-                  radius: 22,
+                  radius: 24,
                   backgroundColor: const Color(0xFFFFE5D9),
                   backgroundImage: offer.clientAvatar != null
                       ? NetworkImage(offer.clientAvatar!)
@@ -405,9 +431,10 @@ class _OfferCard extends StatelessWidget {
                               ? offer.clientName![0].toUpperCase()
                               : 'C',
                           style: const TextStyle(
-                              color: AppColors.primary,
-                              fontWeight: FontWeight.w700,
-                              fontSize: 16),
+                            color: AppColors.primary,
+                            fontWeight: FontWeight.w700,
+                            fontSize: 18,
+                          ),
                         )
                       : null,
                 ),
@@ -422,27 +449,32 @@ class _OfferCard extends StatelessWidget {
                         offer.clientName ?? 'Client',
                         style: const TextStyle(
                           fontFamily: 'Public Sans',
-                          fontWeight: FontWeight.w600,
-                          fontSize: 14,
+                          fontWeight: FontWeight.w700,
+                          fontSize: 15,
                           color: Color(0xFF191C24),
                         ),
                       ),
                       const SizedBox(height: 2),
                       Text(
-                        'Soumis le ${_formatDate(offer.createdAt)}',
+                        'Complété le ${_fmtDate(offer.createdAt)}',
                         style: const TextStyle(
                           fontFamily: 'Public Sans',
                           fontSize: 11,
                           color: Color(0xFF9CA3AF),
                         ),
                       ),
-                      const SizedBox(height: 6),
-                      // Tags
-                      Wrap(spacing: 6, children: [
-                        _Tag(offer.category),
-                        if (offer.serviceType.isNotEmpty)
-                          _Tag(offer.serviceType),
-                      ]),
+                      const SizedBox(height: 5),
+                      // Inline tags (not chips)
+                      Text(
+                        [offer.category, if (offer.serviceType.isNotEmpty) offer.serviceType]
+                            .join(' • '),
+                        style: const TextStyle(
+                          fontFamily: 'Public Sans',
+                          fontSize: 11,
+                          color: Color(0xFF62748E),
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
                     ],
                   ),
                 ),
@@ -451,70 +483,115 @@ class _OfferCard extends StatelessWidget {
                 _StatusBadge(status: offer.status),
               ],
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 14),
 
-            // ── Description (orange title) ────────────────────────────────
-            Text(
-              offer.description.length > 80
-                  ? '${offer.description.substring(0, 80)}…'
-                  : offer.description,
-              style: const TextStyle(
-                fontFamily: 'Public Sans',
-                fontWeight: FontWeight.w600,
-                fontSize: 15,
-                height: 1.4,
-                color: AppColors.primary,
+            // ── Description in orange box ─────────────────────────────────
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+              decoration: BoxDecoration(
+                color: const Color(0xFFFFF7ED),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: const Color(0xFFFED7AA), width: 1.5),
+              ),
+              child: Text(
+                offer.description.length > 90
+                    ? '${offer.description.substring(0, 90)}…'
+                    : offer.description,
+                style: const TextStyle(
+                  fontFamily: 'Public Sans',
+                  fontWeight: FontWeight.w700,
+                  fontSize: 14,
+                  height: 1.4,
+                  color: AppColors.primary,
+                ),
               ),
             ),
             const SizedBox(height: 12),
 
-            // ── Info row ──────────────────────────────────────────────────
-            Row(children: [
-              const Icon(Icons.location_on_outlined,
-                  size: 14, color: Color(0xFF62748E)),
-              const SizedBox(width: 3),
-              Flexible(
-                child: Text(offer.city,
-                  style: const TextStyle(
-                    fontFamily: 'Public Sans', fontSize: 12,
-                    color: Color(0xFF62748E)),
-                  overflow: TextOverflow.ellipsis),
-              ),
-              const SizedBox(width: 12),
-              if (offer.duration > 0) ...[
-                const Icon(Icons.timer_outlined,
-                    size: 14, color: Color(0xFF62748E)),
-                const SizedBox(width: 3),
-                Text('De fin: ${offer.durationLabel}',
-                  style: const TextStyle(
-                    fontFamily: 'Public Sans', fontSize: 12,
-                    color: Color(0xFF62748E))),
-              ],
-            ]),
-            const SizedBox(height: 12),
-
-            // ── Price row ─────────────────────────────────────────────────
-            Row(children: [
-              Text(
-                '${offer.price.toStringAsFixed(0)} DH',
-                style: const TextStyle(
-                  fontFamily: 'Public Sans',
-                  fontWeight: FontWeight.w700,
-                  fontSize: 22,
-                  color: Color(0xFF191C24),
+            // ── Info row (date / duration / city) ─────────────────────────
+            Wrap(
+              spacing: 12,
+              runSpacing: 4,
+              children: [
+                _InfoChip(
+                  icon: Icons.calendar_today_outlined,
+                  label: _fmtDateTime(offer.createdAt),
                 ),
-              ),
-              if (offer.duration > 0) ...[
-                const SizedBox(width: 12),
-                Text(offer.durationLabel,
-                  style: const TextStyle(
-                    fontFamily: 'Public Sans', fontSize: 12,
-                    color: Color(0xFF62748E))),
+                if (offer.duration > 0)
+                  _InfoChip(
+                    icon: Icons.timer_outlined,
+                    label: 'Durée: ${offer.durationLabel}',
+                  ),
+                _InfoChip(
+                  icon: Icons.location_on_outlined,
+                  label: offer.city,
+                ),
               ],
-            ]),
+            ),
             const SizedBox(height: 14),
 
-            // ── Action buttons ────────────────────────────────────────────
+            // ── Price + duration estimated ─────────────────────────────────
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                // Your proposal
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'Votre proposition',
+                        style: TextStyle(
+                          fontFamily: 'Public Sans',
+                          fontSize: 11,
+                          color: Color(0xFF62748E),
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        '${offer.price.toStringAsFixed(0)} DH',
+                        style: const TextStyle(
+                          fontFamily: 'Public Sans',
+                          fontWeight: FontWeight.w800,
+                          fontSize: 26,
+                          color: AppColors.primary,
+                          height: 1.1,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                // Estimated duration
+                if (offer.duration > 0)
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      const Text(
+                        'Durée estimée',
+                        style: TextStyle(
+                          fontFamily: 'Public Sans',
+                          fontSize: 11,
+                          color: Color(0xFF62748E),
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        offer.durationLabel,
+                        style: const TextStyle(
+                          fontFamily: 'Public Sans',
+                          fontWeight: FontWeight.w700,
+                          fontSize: 14,
+                          color: Color(0xFF191C24),
+                        ),
+                      ),
+                    ],
+                  ),
+              ],
+            ),
+            const SizedBox(height: 16),
+
+            // ── Action buttons ─────────────────────────────────────────────
             Row(children: [
               // Annuler
               Expanded(
@@ -522,58 +599,82 @@ class _OfferCard extends StatelessWidget {
                   onPressed: () {},
                   style: OutlinedButton.styleFrom(
                     foregroundColor: const Color(0xFFEF4444),
-                    side: const BorderSide(color: Color(0xFFEF4444)),
+                    side: const BorderSide(color: Color(0xFFEF4444), width: 1.5),
                     shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(20)),
-                    padding: const EdgeInsets.symmetric(vertical: 10),
+                    padding: const EdgeInsets.symmetric(vertical: 11),
                   ),
-                  child: const Text('Annuler',
-                    style: TextStyle(
-                      fontFamily: 'Public Sans',
-                      fontWeight: FontWeight.w500,
-                      fontSize: 12,
-                    )),
+                  child: const Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(Icons.cancel_outlined, size: 14),
+                      SizedBox(width: 4),
+                      Text('Annuler',
+                        style: TextStyle(
+                          fontFamily: 'Public Sans',
+                          fontWeight: FontWeight.w600,
+                          fontSize: 12,
+                        )),
+                    ],
+                  ),
                 ),
               ),
               const SizedBox(width: 8),
+
               // Contacter
               Expanded(
-                child: OutlinedButton(
+                child: ElevatedButton(
                   onPressed: () {},
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: const Color(0xFF62748E),
-                    side: const BorderSide(color: Color(0xFFE2E8F0)),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.primary,
+                    foregroundColor: Colors.white,
+                    elevation: 0,
                     shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(20)),
-                    padding: const EdgeInsets.symmetric(vertical: 10),
+                    padding: const EdgeInsets.symmetric(vertical: 11),
                   ),
-                  child: const Text('Contacter',
-                    style: TextStyle(
-                      fontFamily: 'Public Sans',
-                      fontWeight: FontWeight.w500,
-                      fontSize: 12,
-                    )),
+                  child: const Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(Icons.chat_bubble_outline_rounded, size: 14),
+                      SizedBox(width: 4),
+                      Text('Contacter',
+                        style: TextStyle(
+                          fontFamily: 'Public Sans',
+                          fontWeight: FontWeight.w600,
+                          fontSize: 12,
+                        )),
+                    ],
+                  ),
                 ),
               ),
               const SizedBox(width: 8),
+
               // Profil
               Expanded(
                 child: ElevatedButton(
                   onPressed: onDetail,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF303030),
+                    backgroundColor: const Color(0xFF1F2937),
                     foregroundColor: Colors.white,
                     elevation: 0,
                     shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(20)),
-                    padding: const EdgeInsets.symmetric(vertical: 10),
+                    padding: const EdgeInsets.symmetric(vertical: 11),
                   ),
-                  child: const Text('Profil',
-                    style: TextStyle(
-                      fontFamily: 'Public Sans',
-                      fontWeight: FontWeight.w500,
-                      fontSize: 12,
-                    )),
+                  child: const Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(Icons.person_outline_rounded, size: 14),
+                      SizedBox(width: 4),
+                      Text('Profil',
+                        style: TextStyle(
+                          fontFamily: 'Public Sans',
+                          fontWeight: FontWeight.w600,
+                          fontSize: 12,
+                        )),
+                    ],
+                  ),
                 ),
               ),
             ]),
@@ -583,8 +684,38 @@ class _OfferCard extends StatelessWidget {
     );
   }
 
-  static String _formatDate(DateTime dt) =>
+  static String _fmtDate(DateTime dt) =>
       '${dt.day.toString().padLeft(2, '0')}/${dt.month.toString().padLeft(2, '0')}/${dt.year}';
+
+  static String _fmtDateTime(DateTime dt) {
+    final d = '${dt.year}-${dt.month.toString().padLeft(2, '0')}-${dt.day.toString().padLeft(2, '0')}';
+    final t = '${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}';
+    return '$d à $t';
+  }
+}
+
+// ── Info chip ──────────────────────────────────────────────────────────────────
+class _InfoChip extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  const _InfoChip({required this.icon, required this.label});
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(icon, size: 13, color: const Color(0xFF62748E)),
+        const SizedBox(width: 3),
+        Text(label,
+          style: const TextStyle(
+            fontFamily: 'Public Sans',
+            fontSize: 11,
+            color: Color(0xFF62748E),
+          )),
+      ],
+    );
+  }
 }
 
 // ── Status badge ───────────────────────────────────────────────────────────────
@@ -597,52 +728,41 @@ class _StatusBadge extends StatelessWidget {
     final isAccepted = status == 'accepted';
     final isRejected = status == 'rejected';
 
-    final bg   = isAccepted ? const Color(0xFFDCFCE7)
+    final bg    = isAccepted ? const Color(0xFFDCFCE7)
                 : isRejected ? const Color(0xFFFEE2E2)
                 : const Color(0xFFFFF3E0);
-    final fg   = isAccepted ? const Color(0xFF16A34A)
+    final fg    = isAccepted ? const Color(0xFF16A34A)
                 : isRejected ? const Color(0xFFDC2626)
                 : const Color(0xFFF97316);
     final label = isAccepted ? 'Confirmé'
                 : isRejected ? 'Refusé'
-                : 'En attente de confirmation';
+                : 'En attente';
+    final icon  = isAccepted ? Icons.check_circle_outline_rounded
+                : isRejected ? Icons.cancel_outlined
+                : Icons.hourglass_empty_rounded;
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
       decoration: BoxDecoration(
         color: bg,
         borderRadius: BorderRadius.circular(100),
       ),
-      child: Text(label,
-        style: TextStyle(
-          fontFamily: 'Public Sans',
-          fontWeight: FontWeight.w600,
-          fontSize: 10,
-          color: fg,
-        )),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 12, color: fg),
+          const SizedBox(width: 4),
+          Text(label,
+            style: TextStyle(
+              fontFamily: 'Public Sans',
+              fontWeight: FontWeight.w600,
+              fontSize: 11,
+              color: fg,
+            )),
+        ],
+      ),
     );
   }
-}
-
-// ── Tag chip ──────────────────────────────────────────────────────────────────
-class _Tag extends StatelessWidget {
-  final String label;
-  const _Tag(this.label);
-
-  @override
-  Widget build(BuildContext context) => Container(
-    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-    decoration: BoxDecoration(
-      color: const Color(0xFFF1F5F9),
-      borderRadius: BorderRadius.circular(6),
-    ),
-    child: Text(label,
-      style: const TextStyle(
-        fontFamily: 'Public Sans', fontSize: 10,
-        color: Color(0xFF62748E),
-        fontWeight: FontWeight.w500,
-      )),
-  );
 }
 
 // ── Filter bottom sheet ────────────────────────────────────────────────────────
@@ -663,14 +783,13 @@ class _FilterSheet extends StatelessWidget {
     return Container(
       decoration: const BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
-      padding: const EdgeInsets.fromLTRB(24, 20, 24, 32),
+      padding: const EdgeInsets.fromLTRB(24, 12, 24, 32),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Handle
           Center(
             child: Container(
               width: 40, height: 4,

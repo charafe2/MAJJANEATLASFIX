@@ -4,7 +4,7 @@
 
       <!-- LEFT — Logo -->
       <div class="logo" @click="$router.push('/Home')">
-        Atlas <span>Fix</span>
+        <img src="../assets/images/Exclude (1).png" alt="AtlasFix Logo" class="logo-img" />
       </div>
 
       <!-- CENTER — Nav pill -->
@@ -135,7 +135,7 @@
         <!-- Language -->
         <div class="lang">
           <span class="lang-text">FR</span>
-          <span class="flag">🇫🇷</span>
+          <img class="flag-img" src="../assets/images/Fr.png" alt="FR" />
           <svg width="7" height="4" viewBox="0 0 7 4" fill="none">
             <path d="M1 1l2.5 2L6 1" stroke="#0047AB" stroke-width="1.5" stroke-linecap="round"/>
           </svg>
@@ -350,13 +350,16 @@ onUnmounted(() => {
 
 /* ── LOGO ─────────────────────────────────────────────────── */
 .logo {
-  font-weight: 700;
-  font-size: 22px;
   cursor: pointer;
-  color: #155DFC;
   flex-shrink: 0;
+  display: flex;
+  align-items: center;
 }
-.logo span { color: #FC5A15; }
+.logo-img {
+  height: 48px;
+  width: auto;
+  display: block;
+}
 
 /* ── NAV PILL ─────────────────────────────────────────────── */
 .nav-box {
@@ -681,7 +684,7 @@ onUnmounted(() => {
   color: #444444;
 }
 
-.flag { font-size: 14px; line-height: 1; }
+.flag-img { width: 20px; height: 14px; object-fit: cover; border-radius: 2px; display: block; }
 
 /* ── HAMBURGER ────────────────────────────────────────────── */
 .hamburger {

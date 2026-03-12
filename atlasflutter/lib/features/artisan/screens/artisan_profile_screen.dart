@@ -162,7 +162,7 @@ class _ArtisanProfileScreenState extends State<ArtisanProfileScreen> {
                             _ProfileMenuItem(
                               icon:  Icons.manage_accounts_outlined,
                               label: 'Mes Informations',
-                              onTap: () {},
+                              onTap: () => context.push('/artisan/info'),
                             ),
                             const SizedBox(height: 12),
                             _ProfileMenuItem(

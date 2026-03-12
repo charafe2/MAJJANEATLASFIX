@@ -306,7 +306,7 @@
                 <path d="M1 1l4 4 4-4" stroke="#314158" stroke-width="1.698"/>
               </svg>
             </div>
-            <button class="add-service-btn" @click="openAddServiceModal">
+            <button class="add-service-btn" @click="$router.push('/artisan/ajouter-service')">
               <svg viewBox="0 0 20 20" fill="none">
                 <path d="M10 5v10M5 10h10" stroke="white" stroke-width="1.833" stroke-linecap="round" stroke-linejoin="round"/>
               </svg>
@@ -345,7 +345,7 @@
                 >{{ svc.category }} — {{ svc.type }}</span>
               </template>
               <span v-else class="no-data">Aucun service configuré</span>
-              <button class="service-tag-add" @click="openAddServiceModal" title="Ajouter un service">
+              <button class="service-tag-add" @click="$router.push('/artisan/ajouter-service')" title="Ajouter un service">
                 <svg viewBox="0 0 22 22" fill="none">
                   <path d="M11 5v12M5 11h12" stroke="white" stroke-width="1.833" stroke-linecap="round" stroke-linejoin="round"/>
                 </svg>

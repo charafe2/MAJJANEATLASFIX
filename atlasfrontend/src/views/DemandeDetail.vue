@@ -1167,12 +1167,12 @@ function showToast(message, type = 'success') {
 
 /* ── Shared buttons ──────────────────────────────────────────────────────── */
 .btn-primary {
-  display: inline-flex;
+  display: flex;
   align-items: center;
   justify-content: center;
   gap: 8px;
-  padding: 0 20px;
-  height: 40px;
+  padding: 10px 20px;
+  min-height: 40px;
   background: #FC5A15;
   color: #fff;
   border: none;
@@ -1183,18 +1183,20 @@ function showToast(message, type = 'success') {
   cursor: pointer;
   text-decoration: none;
   transition: background 0.15s;
-  white-space: nowrap;
+  white-space: normal;
+  word-break: break-word;
+  box-sizing: border-box;
 }
 .btn-primary:hover { background: #e04e0f; }
 .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
 
 .btn-outline {
-  display: inline-flex;
+  display: flex;
   align-items: center;
   justify-content: center;
   gap: 8px;
-  padding: 0 20px;
-  height: 48px;
+  padding: 12px 20px;
+  min-height: 48px;
   background: #fff;
   color: #FC5A15;
   border: 2px solid #FC5A15;
@@ -1205,7 +1207,9 @@ function showToast(message, type = 'success') {
   cursor: pointer;
   text-decoration: none;
   transition: background 0.15s;
-  white-space: nowrap;
+  white-space: normal;
+  word-break: break-word;
+  box-sizing: border-box;
 }
 .btn-outline:hover { background: #FFF7ED; }
 .btn-outline:disabled { opacity: 0.5; cursor: not-allowed; border-color: #D1D5DC; color: #314158; }

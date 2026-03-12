@@ -1,5 +1,37 @@
 <template>
   <div class="page-wrapper">
+
+    <!-- ── Owner header bar (full-width white, outside content container) ── -->
+    <div v-if="isOwner" class="owner-header-bar">
+      <div class="owner-header-inner">
+        <div class="owner-header-left">
+          <button class="back-btn" @click="goBack">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#62748E" stroke-width="1.67" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="15 18 9 12 15 6"/>
+            </svg>
+            Retour
+          </button>
+          <div class="owner-header-titles">
+            <h1 class="owner-page-title">Mon profil</h1>
+            <p class="owner-page-subtitle">Gérez vos informations personnelles</p>
+          </div>
+        </div>
+        <button class="btn-modifier" :class="{ 'btn-modifier--save': isEditing }" :disabled="saving" @click="handleModifierClick">
+          <!-- Save icon when editing -->
+          <svg v-if="isEditing" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.67" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="20 6 9 17 4 12"/>
+          </svg>
+          <!-- Edit icon when viewing -->
+          <svg v-else width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.67" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+          </svg>
+          <span v-if="saving" class="btn-modifier-spinner"></span>
+          <span v-else>{{ isEditing ? 'Enregistrer' : 'Modifier' }}</span>
+        </button>
+      </div>
+    </div>
+
     <div class="page-content">
 
       <!-- ── Shared: loading / error ─────────────────────────────────────── -->
@@ -22,52 +54,69 @@
         ══════════════════════════════════════════════════════════════════ -->
         <template v-if="isOwner">
 
-          <!-- Back btn -->
-          <button class="back-btn" @click="goBack">
-            <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-              <path d="M12.5 15l-5-5 5-5" stroke="#62748E" stroke-width="1.67" stroke-linecap="round" stroke-linejoin="round"/>
-            </svg>
-            Retour
-          </button>
-
-          <!-- Orange header banner -->
+          <!-- ── Orange banner ────────────────────────────────────────────── -->
           <div class="owner-banner">
-            <div class="owner-banner-left">
-              <div class="owner-avatar" :style="{ background: avatarColor(client.name) }">
-                {{ initials(client.name) }}
-              </div>
-              <div class="owner-identity">
-                <h1 class="owner-name">{{ client.name || '—' }}</h1>
-                <div class="owner-meta">
-                  <span v-if="client.email">
-                    <svg width="14" height="14" viewBox="0 0 20 20" fill="none"><rect x="2" y="4" width="16" height="13" rx="1.5" stroke="rgba(255,255,255,.8)" stroke-width="1.5"/><path d="M2 7.5l8 5 8-5" stroke="rgba(255,255,255,.8)" stroke-width="1.5" stroke-linejoin="round"/></svg>
-                    {{ client.email }}
-                  </span>
-                  <span v-if="client.phone">
-                    <svg width="14" height="14" viewBox="0 0 20 20" fill="none"><path d="M18 13.5v2.25A1.5 1.5 0 0 1 16.5 17c-6.627 0-12-5.373-12-12A1.5 1.5 0 0 1 6 3.5h2.25a.75.75 0 0 1 .75.75c0 1.013.168 1.985.48 2.893a.75.75 0 0 1-.17.79l-1.07 1.07a12.001 12.001 0 0 0 4.707 4.707l1.07-1.07a.75.75 0 0 1 .79-.17c.908.312 1.88.48 2.893.48a.75.75 0 0 1 .75.75z" stroke="rgba(255,255,255,.8)" stroke-width="1.5"/></svg>
-                    {{ client.phone }}
-                  </span>
-                  <span v-if="client.city">
-                    <svg width="14" height="14" viewBox="0 0 20 20" fill="none"><path d="M10 2C6.13 2 3 5.13 3 9c0 5.25 7 11 7 11s7-5.75 7-11c0-3.87-3.13-7-7-7z" stroke="rgba(255,255,255,.8)" stroke-width="1.5" stroke-linejoin="round"/><circle cx="10" cy="9" r="2" stroke="rgba(255,255,255,.8)" stroke-width="1.5"/></svg>
-                    {{ client.city }}
-                  </span>
+            <div class="owner-banner-inner">
+
+              <!-- Avatar -->
+              <div class="owner-avatar-group">
+                <div class="owner-avatar" :style="{ background: avatarColor(client.name) }">
+                  <img v-if="client.avatar" :src="client.avatar" :alt="client.name" class="owner-avatar-img" />
+                  <span v-else>{{ initials(client.name) }}</span>
+                </div>
+                <div class="owner-avatar-edit">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#FC5A15" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                  </svg>
                 </div>
               </div>
-            </div>
-            <div class="owner-stats">
-              <div class="owner-stat">
-                <span class="owner-stat-val">{{ client.completedRequests ?? 0 }}</span>
-                <span class="owner-stat-lbl">Demandes</span>
+
+              <!-- Identity + contact -->
+              <div class="owner-identity">
+                <h2 class="owner-name">{{ client.name || '—' }}</h2>
+                <div class="owner-meta">
+                  <div v-if="client.email" class="owner-meta-row">
+                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="1.33" y="3.33" width="13.33" height="9.33" rx="1.33" stroke="#fff" stroke-width="1.33"/><path d="M1.33 5.33L8 9.33l6.67-4" stroke="#fff" stroke-width="1.33" stroke-linecap="round"/></svg>
+                    <span>{{ client.email }}</span>
+                  </div>
+                  <div v-if="client.phone" class="owner-meta-row">
+                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 2h2.5l1.25 2.917L5.25 6.25S6.5 8.75 9.75 10l1.333-1.5L13.5 9.75v2C13.5 13.5 9 14.5 5 10.5 1 6.5 2 2.5 3 2z" stroke="#fff" stroke-width="1.33" stroke-linejoin="round"/></svg>
+                    <span>{{ client.phone }}</span>
+                  </div>
+                  <div v-if="client.address || client.city" class="owner-meta-row">
+                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M8 1.33A4.67 4.67 0 0 0 3.33 6c0 3.5 4.67 8.67 4.67 8.67S12.67 9.5 12.67 6A4.67 4.67 0 0 0 8 1.33z" stroke="#fff" stroke-width="1.33"/><circle cx="8" cy="6" r="1.33" stroke="#fff" stroke-width="1.33"/></svg>
+                    <span>{{ [client.address, client.city].filter(Boolean).join(', ') || '—' }}</span>
+                  </div>
+                </div>
               </div>
-              <div class="owner-stat-divider"></div>
-              <div class="owner-stat">
-                <span class="owner-stat-val">{{ client.activeRequests ?? 0 }}</span>
-                <span class="owner-stat-lbl">Projets terminés</span>
+
+              <!-- Stats -->
+              <div class="owner-stats">
+                <div class="owner-stat">
+                  <div class="owner-stat-icon">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
+                    </svg>
+                  </div>
+                  <span class="owner-stat-val">{{ client.completedRequests ?? 0 }}</span>
+                  <span class="owner-stat-lbl">Demandes</span>
+                </div>
+                <div class="owner-stat">
+                  <div class="owner-stat-icon">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
+                    </svg>
+                  </div>
+                  <span class="owner-stat-val">{{ client.activeRequests ?? 0 }}</span>
+                  <span class="owner-stat-lbl">Projets terminés</span>
+                </div>
               </div>
+
             </div>
           </div>
 
-          <!-- Tabs -->
+          <!-- ── Tabs ──────────────────────────────────────────────────────── -->
           <div class="owner-tabs">
             <button :class="['owner-tab', ownerTab === 'info'  ? 'owner-tab--active' : '']" @click="ownerTab = 'info'">Informations personnelles</button>
             <button :class="['owner-tab', ownerTab === 'prefs' ? 'owner-tab--active' : '']" @click="ownerTab = 'prefs'">Préférences</button>
@@ -81,11 +130,11 @@
               <div class="owner-form-grid">
                 <div class="owner-field">
                   <label>Prénom</label>
-                  <input v-model="editForm.first_name" type="text" placeholder="Prénom" />
+                  <input v-model="editForm.first_name" type="text" placeholder="Prénom" :disabled="!isEditing" :class="{ 'input-disabled': !isEditing }" />
                 </div>
                 <div class="owner-field">
                   <label>Nom</label>
-                  <input v-model="editForm.last_name" type="text" placeholder="Nom" />
+                  <input v-model="editForm.last_name" type="text" placeholder="Nom" :disabled="!isEditing" :class="{ 'input-disabled': !isEditing }" />
                 </div>
                 <div class="owner-field">
                   <label>Email</label>
@@ -93,26 +142,27 @@
                 </div>
                 <div class="owner-field">
                   <label>Téléphone</label>
-                  <input v-model="editForm.phone" type="tel" placeholder="+212 6XX XX XX XX" />
+                  <input v-model="editForm.phone" type="tel" placeholder="+212 6XX XX XX XX" :disabled="!isEditing" :class="{ 'input-disabled': !isEditing }" />
                 </div>
                 <div class="owner-field">
                   <label>Adresse</label>
-                  <input v-model="editForm.address" type="text" placeholder="Adresse complète" />
+                  <input v-model="editForm.address" type="text" placeholder="Adresse complète" :disabled="!isEditing" :class="{ 'input-disabled': !isEditing }" />
                 </div>
                 <div class="owner-field">
                   <label>Ville</label>
-                  <input v-model="editForm.city" type="text" placeholder="Ville" />
+                  <input v-model="editForm.city" type="text" placeholder="Ville" :disabled="!isEditing" :class="{ 'input-disabled': !isEditing }" />
+                </div>
+                <div class="owner-field">
+                  <label>Code postal</label>
+                  <input v-model="editForm.postal_code" type="text" placeholder="Code postal" :disabled="!isEditing" :class="{ 'input-disabled': !isEditing }" />
+                </div>
+                <div class="owner-field">
+                  <label>Date de naissance</label>
+                  <input v-model="editForm.birth_date" type="text" placeholder="JJ/MM/AAAA" :disabled="!isEditing" :class="{ 'input-disabled': !isEditing }" />
                 </div>
               </div>
 
               <div v-if="saveError" class="owner-save-error">{{ saveError }}</div>
-
-              <div class="owner-form-footer">
-                <button class="btn-save" :disabled="saving" @click="saveProfile">
-                  <span v-if="saving" class="btn-spinner"></span>
-                  <span v-else>Sauvegarder les modifications</span>
-                </button>
-              </div>
             </div>
           </div>
 
@@ -362,20 +412,23 @@ export default {
     const client   = ref({})
     const requests = ref([])
     const toast    = ref({ show: false, message: '', type: 'success' })
-    const ownerTab = ref('info')
-    const saving   = ref(false)
+    const ownerTab  = ref('info')
+    const isEditing = ref(false)
+    const saving    = ref(false)
     const saveError = ref('')
 
     // ── isOwner: true when no :id param (client viewing own profile) ──────
     const isOwner = computed(() => !route.params.id)
 
     const editForm = reactive({
-      first_name: '',
-      last_name:  '',
-      email:      '',
-      phone:      '',
-      address:    '',
-      city:       '',
+      first_name:  '',
+      last_name:   '',
+      email:       '',
+      phone:       '',
+      address:     '',
+      city:        '',
+      postal_code: '',
+      birth_date:  '',
     })
 
     const avatarSrc = computed(() =>
@@ -456,12 +509,14 @@ export default {
 
           // Populate edit form
           const nameParts = (client.value.name || '').split(' ')
-          editForm.first_name = nameParts[0] || ''
-          editForm.last_name  = nameParts.slice(1).join(' ') || ''
-          editForm.email      = client.value.email   || ''
-          editForm.phone      = client.value.phone   || ''
-          editForm.address    = client.value.address || ''
-          editForm.city       = client.value.city    || ''
+          editForm.first_name  = nameParts[0] || ''
+          editForm.last_name   = nameParts.slice(1).join(' ') || ''
+          editForm.email       = client.value.email       || ''
+          editForm.phone       = client.value.phone       || ''
+          editForm.address     = client.value.address     || ''
+          editForm.city        = client.value.city        || ''
+          editForm.postal_code = client.value.postal_code || ''
+          editForm.birth_date  = client.value.birth_date  || ''
         }
 
       } catch (e) {
@@ -497,6 +552,19 @@ export default {
         }
       } finally {
         saving.value = false
+      }
+    }
+
+    async function handleModifierClick() {
+      ownerTab.value = 'info'
+      if (!isEditing.value) {
+        isEditing.value = true
+        return
+      }
+      // Save and exit edit mode
+      await saveProfile()
+      if (!saveError.value) {
+        isEditing.value = false
       }
     }
 
@@ -562,9 +630,9 @@ export default {
 
     return {
       loading, error, client, requests, toast,
-      isOwner, ownerTab, editForm, saving, saveError,
+      isOwner, ownerTab, isEditing, editForm, saving, saveError,
       avatarSrc,
-      fetchProfile, goBack, saveProfile,
+      fetchProfile, goBack, saveProfile, handleModifierClick,
       handleCall, handleMessage, handleReport,
       formatDate, isCompleted, badgeClass, statusLabel,
       initials, avatarColor,
@@ -575,119 +643,296 @@ export default {
 
 <style scoped>
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-.page-wrapper { min-height: 100vh; font-family: 'Inter', system-ui, sans-serif; background: #F5F6FA; color: #314158; }
-.page-content { max-width: 1100px; margin: 0 auto; padding: 32px 24px 64px; }
+.page-wrapper {
+  min-height: 100vh;
+  font-family: 'Inter', system-ui, sans-serif;
+  background: linear-gradient(180deg, #FFF7ED 0%, #FFFFFF 100%);
+  color: #314158;
+}
+.page-content { max-width: 1200px; margin: 0 auto; padding: 28px 24px 64px; }
 
 /* ── Shared states ─────────────────────────────────────────────────────── */
 .state-box { min-height: 380px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px; color: #62748E; font-size: 16px; }
 .spinner { width: 44px; height: 44px; border: 3px solid #f3f4f6; border-top-color: #FC5A15; border-radius: 50%; animation: spin .75s linear infinite; }
 @keyframes spin { to { transform: rotate(360deg); } }
 .btn-retry { padding: 9px 28px; background: #FC5A15; color: #fff; border: none; border-radius: 10px; font-size: 14px; cursor: pointer; font-family: inherit; }
-.back-btn { display: inline-flex; align-items: center; gap: 8px; background: none; border: none; color: #62748E; font-size: 15px; cursor: pointer; margin-bottom: 20px; padding: 4px 8px; border-radius: 8px; font-family: inherit; transition: color .15s, background .15s; }
-.back-btn:hover { color: #FC5A15; background: rgba(252,90,21,.06); }
+.back-btn { display: inline-flex; align-items: center; gap: 6px; background: none; border: none; color: #62748E; font-size: 16px; cursor: pointer; padding: 0; font-family: inherit; transition: color .15s; letter-spacing: -0.3125px; }
+.back-btn:hover { color: #314158; }
 
 /* ══ OWNER VIEW ══════════════════════════════════════════════════════════ */
 
-/* Orange banner */
-.owner-banner {
-  background: linear-gradient(135deg, #FC5A15 0%, #e04a0b 100%);
-  border-radius: 16px;
-  padding: 28px 32px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 20px;
-  margin-bottom: 8px;
-  color: #fff;
+/* ── Owner header bar (full-width white strip) ─────────────────────────── */
+.owner-header-bar {
+  background: #FFFFFF;
+  border-bottom: 1px solid #E5E7EB;
+  width: 100%;
 }
-.owner-banner-left { display: flex; align-items: center; gap: 20px; }
-.owner-avatar {
-  width: 72px; height: 72px;
-  border-radius: 50%;
-  border: 3px solid rgba(255,255,255,.5);
-  display: flex; align-items: center; justify-content: center;
-  font-size: 26px; font-weight: 800; color: #fff;
+.owner-header-inner {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 24px 24px;
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+}
+.owner-header-left {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+}
+.owner-header-titles { display: flex; flex-direction: column; gap: 0; }
+.owner-page-title {
+  font-size: 30px;
+  font-weight: 400;
+  color: #314158;
+  line-height: 36px;
+  letter-spacing: 0.395508px;
+}
+.owner-page-subtitle {
+  font-size: 16px;
+  color: #62748E;
+  line-height: 24px;
+  letter-spacing: -0.3125px;
+}
+.btn-modifier {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 24px;
+  height: 48px;
+  background: #FC5A15;
+  color: #fff;
+  border: none;
+  border-radius: 10px;
+  font-size: 16px;
+  font-family: inherit;
+  cursor: pointer;
+  transition: opacity .15s;
+  letter-spacing: -0.3125px;
   flex-shrink: 0;
 }
-.owner-name { font-size: 22px; font-weight: 700; margin-bottom: 8px; }
-.owner-meta { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; font-size: 13px; opacity: .9; }
-.owner-meta span { display: flex; align-items: center; gap: 5px; }
-.owner-stats { display: flex; align-items: center; gap: 20px; flex-shrink: 0; }
-.owner-stat { text-align: center; }
-.owner-stat-val { display: block; font-size: 28px; font-weight: 800; line-height: 1; }
-.owner-stat-lbl { font-size: 12px; opacity: .85; }
-.owner-stat-divider { width: 1px; height: 40px; background: rgba(255,255,255,.3); }
+.btn-modifier:hover:not(:disabled) { opacity: .88; }
+.btn-modifier:disabled { opacity: .6; cursor: not-allowed; }
+.btn-modifier--save { background: #00A63E; }
+.btn-modifier-spinner {
+  width: 16px; height: 16px;
+  border: 2px solid rgba(255,255,255,.4);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: spin .7s linear infinite;
+  display: inline-block;
+}
+
+/* Orange banner */
+.owner-banner {
+  background: linear-gradient(180deg, #FC5A15 0%, #FF7A45 100%);
+  border-radius: 16px;
+  padding: 0 32px;
+  margin-bottom: 24px;
+  color: #fff;
+  height: 192px;
+  display: flex;
+  align-items: center;
+}
+.owner-banner-inner {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: center;
+  gap: 55px;
+  width: 100%;
+}
+
+/* Avatar */
+.owner-avatar-group {
+  position: relative;
+  width: 128px;
+  height: 128px;
+  flex-shrink: 0;
+}
+.owner-avatar {
+  width: 128px;
+  height: 128px;
+  border-radius: 50%;
+  border: 4px solid #fff;
+  box-shadow: 0 10px 15px -3px rgba(0,0,0,.1), 0 4px 6px -4px rgba(0,0,0,.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 36px;
+  font-weight: 600;
+  color: #fff;
+  overflow: hidden;
+}
+.owner-avatar-img { width: 100%; height: 100%; object-fit: cover; }
+.owner-avatar-edit {
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 31px;
+  height: 31px;
+  background: #fff;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+/* Identity */
+.owner-identity {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.owner-name {
+  font-size: 24px;
+  font-weight: 500;
+  color: #fff;
+  letter-spacing: 0.0703125px;
+  line-height: 32px;
+}
+.owner-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  opacity: 0.9;
+}
+.owner-meta-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 16px;
+  color: #fff;
+  line-height: 24px;
+  letter-spacing: -0.3125px;
+}
+
+/* Stats */
+.owner-stats {
+  display: flex;
+  align-items: flex-start;
+  gap: 24px;
+  flex-shrink: 0;
+}
+.owner-stat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0;
+  min-width: 69px;
+}
+.owner-stat-icon {
+  width: 48px;
+  height: 48px;
+  background: rgba(255,255,255,.2);
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 8px;
+}
+.owner-stat-val {
+  display: block;
+  font-size: 24px;
+  font-weight: 400;
+  color: #fff;
+  line-height: 32px;
+  text-align: center;
+  letter-spacing: 0.0703125px;
+}
+.owner-stat-lbl {
+  font-size: 14px;
+  color: #fff;
+  opacity: 0.9;
+  text-align: center;
+  line-height: 20px;
+  letter-spacing: -0.150391px;
+}
 
 /* Tabs */
 .owner-tabs {
   display: flex;
   gap: 0;
-  border-bottom: 2px solid #E8ECF0;
+  background: #fff;
+  border-bottom: 1px solid #E5E7EB;
   margin-bottom: 24px;
 }
 .owner-tab {
-  padding: 14px 20px;
+  padding: 14px 24px;
   background: none;
   border: none;
-  font-size: 14px;
-  font-weight: 500;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+  font-size: 16px;
+  font-weight: 400;
   color: #62748E;
   cursor: pointer;
-  border-bottom: 2px solid transparent;
-  margin-bottom: -2px;
   transition: color .15s, border-color .15s;
   font-family: inherit;
+  letter-spacing: -0.3125px;
+  line-height: 24px;
 }
 .owner-tab:hover { color: #FC5A15; }
-.owner-tab--active { color: #FC5A15; border-bottom-color: #FC5A15; font-weight: 600; }
+.owner-tab--active { color: #FC5A15; border-bottom-color: #FC5A15; }
 
-/* Tab content */
+/* Tab content & card */
 .owner-tab-content { }
 .owner-section-card {
   background: #fff;
-  border-radius: 16px;
-  padding: 28px 32px;
-  box-shadow: 0 1px 8px rgba(49,65,88,.07);
+  border-radius: 14px;
+  padding: 24px 24px 0;
 }
 .owner-section-title {
-  font-size: 16px;
-  font-weight: 700;
+  font-size: 20px;
+  font-weight: 400;
   color: #314158;
   margin-bottom: 24px;
-  padding-bottom: 16px;
-  border-bottom: 1px solid #F0F2F5;
+  line-height: 28px;
+  letter-spacing: -0.449219px;
 }
 .owner-form-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 20px;
+  gap: 24px;
 }
-.owner-field { display: flex; flex-direction: column; gap: 6px; }
-.owner-field label { font-size: 13px; font-weight: 500; color: #62748E; }
-.owner-field input {
-  height: 44px;
-  border: 1.5px solid #E2E6EA;
-  border-radius: 10px;
-  padding: 0 14px;
+.owner-field { display: flex; flex-direction: column; gap: 8px; }
+.owner-field label {
   font-size: 14px;
+  font-weight: 400;
+  color: #62748E;
+  line-height: 20px;
+  letter-spacing: -0.150391px;
+}
+.owner-field input {
+  height: 50px;
+  border: 1px solid #E5E7EB;
+  border-radius: 10px;
+  padding: 0 17px;
+  font-size: 16px;
   color: #314158;
   font-family: inherit;
   transition: border-color .15s;
   background: #fff;
   outline: none;
+  letter-spacing: -0.3125px;
 }
 .owner-field input:focus { border-color: #FC5A15; }
-.input-disabled { background: #F5F6FA !important; color: #99A1AF !important; cursor: not-allowed; }
+.input-disabled { background: #F9FAFB !important; color: #99A1AF !important; cursor: not-allowed; }
 .owner-save-error { margin-top: 16px; color: #DC2626; font-size: 13px; }
-.owner-form-footer { margin-top: 28px; display: flex; justify-content: flex-end; }
+.owner-form-footer { margin-top: 28px; padding-bottom: 24px; display: flex; justify-content: flex-end; }
 .btn-save {
   display: flex; align-items: center; gap: 8px;
-  height: 44px; padding: 0 28px;
+  height: 48px; padding: 0 28px;
   background: #FC5A15; color: #fff;
   border: none; border-radius: 10px;
-  font-size: 14px; font-weight: 600;
+  font-size: 16px; font-weight: 400;
   font-family: inherit; cursor: pointer;
   transition: opacity .15s;
+  letter-spacing: -0.3125px;
 }
 .btn-save:hover { opacity: .88; }
 .btn-save:disabled { opacity: .5; cursor: not-allowed; }
@@ -698,7 +943,7 @@ export default {
   border-radius: 50%;
   animation: spin .7s linear infinite;
 }
-.owner-soon { color: #62748E; font-size: 14px; }
+.owner-soon { color: #62748E; font-size: 14px; padding-bottom: 24px; }
 
 /* ══ ARTISAN VIEW (unchanged from before) ════════════════════════════════ */
 .profile-card { background: #fff; border: 1px solid #F3F4F6; box-shadow: 0 4px 12px rgba(0,0,0,.09); border-radius: 16px; padding: 33px; margin-bottom: 24px; }
@@ -769,8 +1014,15 @@ export default {
 .toast-enter-from, .toast-leave-to { opacity: 0; transform: translateY(10px); }
 
 /* ── Responsive ─────────────────────────────────────────────────────────── */
+@media (max-width: 900px) {
+  .owner-banner-inner { gap: 24px; }
+  .owner-stats { gap: 16px; }
+}
 @media (max-width: 768px) {
-  .owner-banner { flex-direction: column; align-items: flex-start; gap: 16px; }
+  .owner-page-header { flex-direction: column; align-items: flex-start; gap: 16px; }
+  .owner-banner { height: auto; padding: 24px; }
+  .owner-banner-inner { flex-direction: column; align-items: flex-start; gap: 20px; }
+  .owner-stats { flex-direction: row; }
   .owner-form-grid { grid-template-columns: 1fr; }
   .bottom-grid { grid-template-columns: 1fr; }
   .stats-row { grid-template-columns: repeat(2,1fr); }

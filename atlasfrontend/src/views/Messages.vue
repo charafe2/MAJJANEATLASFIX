@@ -1,18 +1,18 @@
 <template>
-  <div class="messages-page">
-
-    <!-- ── Page Header ──────────────────────────────────────────────────── -->
-    <div class="page-header">
-      <div class="header-inner">
-        <button class="btn-back" @click="$router.back()">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.67">
-            <path d="M19 12H5M5 12l7-7M5 12l7 7" stroke-linecap="round" stroke-linejoin="round"/>
-          </svg>
-          Retour
-        </button>
-        <h1 class="page-title">Messages</h1>
-      </div>
+  <!-- ── Full-width white header bar ──────────────────────────────────── -->
+  <div class="messages-header-bar">
+    <div class="messages-header-inner">
+      <button class="btn-back" @click="$router.back()">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="15 18 9 12 15 6"/>
+        </svg>
+        Retour
+      </button>
+      <h1 class="messages-page-title">Messages</h1>
     </div>
+  </div>
+
+  <div class="messages-page">
 
     <!-- ── Main layout ──────────────────────────────────────────────────── -->
     <div class="messages-layout">
@@ -608,29 +608,20 @@ watch(() => route.params.id, async (newId) => {
 </script>
 
 <style scoped>
-/* ── Base ─────────────────────────────────────────────────────────────────── */
-.messages-page {
-  min-height: 100vh;
-  background: linear-gradient(180deg, #FFF7ED 0%, #FFFFFF 100%);
-  font-family: 'Inter', sans-serif;
-  display: flex;
-  flex-direction: column;
-}
-
-/* ── Page header ──────────────────────────────────────────────────────────── */
-.page-header {
-  background: #fff;
+/* ── Header bar (full-width white) ───────────────────────────────────────── */
+.messages-header-bar {
+  font-family: inter;
+  background: #FFFFFF;
   border-bottom: 1px solid #E5E7EB;
+  width: 100%;
 }
-.header-inner {
+.messages-header-inner {
   max-width: 1440px;
   margin: 0 auto;
-  padding: 0 192px;
+  padding: 24px;
   display: flex;
   flex-direction: column;
-  gap: 0;
-  min-height: 125px;
-  justify-content: center;
+  gap: 4px;
 }
 .btn-back {
   display: inline-flex;
@@ -638,23 +629,32 @@ watch(() => route.params.id, async (newId) => {
   gap: 6px;
   background: none;
   border: none;
-  color: #62748E;
-  font-size: 16px;
-  font-family: 'Inter', sans-serif;
-  letter-spacing: -0.3125px;
   cursor: pointer;
+  font-size: 16px;
+  color: #62748E;
   padding: 0;
-  margin-bottom: 16px;
-  width: fit-content;
+  font-family: 'Inter', sans-serif;
+  transition: color 0.15s;
+  letter-spacing: -0.3125px;
 }
 .btn-back:hover { color: #314158; }
-.page-title {
+.messages-page-title {
   font-size: 30px;
   font-weight: 400;
   color: #314158;
-  letter-spacing: 0.395508px;
   margin: 0;
+  letter-spacing: 0.395508px;
   line-height: 36px;
+}
+
+/* ── Base ─────────────────────────────────────────────────────────────────── */
+.messages-page {
+  background: #F9FAFB;
+  font-family: 'Inter', sans-serif;
+  display: flex;
+  flex-direction: column;
+  padding: 24px;
+  box-sizing: border-box;
 }
 
 /* ── Layout ───────────────────────────────────────────────────────────────── */
@@ -663,19 +663,19 @@ watch(() => route.params.id, async (newId) => {
   display: flex;
   max-width: 1440px;
   width: 100%;
-  margin: 24px auto;
-  padding: 0 192px;
+  margin: 0 auto;
+  padding: 0;
   gap: 24px;
   box-sizing: border-box;
   min-height: 0;
-  height: calc(100vh - 200px);
+  height: calc(100vh - 290px);
 }
 
 /* ── Conversations panel ──────────────────────────────────────────────────── */
 .conversations-panel {
-  width: 360px;
+  width: 280px;
   flex-shrink: 0;
-  background: #F9FAFB;
+  background: #fff;
   border-radius: 14px;
   display: flex;
   flex-direction: column;
@@ -697,7 +697,7 @@ watch(() => route.params.id, async (newId) => {
 .search-input {
   width: 100%;
   padding: 10px 40px 10px 16px;
-  background: #F9FAFB;
+  background: #F3F4F6;
   border: none;
   border-radius: 10px;
   font-size: 16px;
@@ -1177,22 +1177,23 @@ watch(() => route.params.id, async (newId) => {
 
 /* ── Responsive ───────────────────────────────────────────────────────────── */
 @media (max-width: 1200px) {
-  .header-inner       { padding: 0 48px; }
-  .messages-layout    { padding: 0 48px; }
+  .messages-layout       { padding: 0; }
+  .messages-page         { padding: 16px; }
+  .messages-header-inner { padding: 16px; }
 }
 @media (max-width: 960px) {
-  .header-inner       { padding: 0 24px; }
-  .messages-layout    { padding: 0 24px; gap: 16px; }
-  .conversations-panel { width: 280px; }
+  .messages-layout     { gap: 16px; }
+  .conversations-panel { width: 260px; }
 }
 @media (max-width: 700px) {
-  .header-inner       { padding: 0 16px; }
-  .messages-layout    {
-    padding: 16px;
+  .messages-page         { padding: 12px; }
+  .messages-header-inner { padding: 12px; }
+  .messages-layout {
     flex-direction: column;
     height: auto;
+    min-height: calc(100vh - 240px);
   }
   .conversations-panel { width: 100%; max-height: 280px; }
-  .chat-panel         { min-height: 400px; }
+  .chat-panel          { min-height: 400px; }
 }
 </style>

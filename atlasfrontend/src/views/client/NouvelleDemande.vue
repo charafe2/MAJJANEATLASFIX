@@ -59,7 +59,9 @@
     <div class="nd-body">
 
       <!-- ── STEP 1 : Categories ─────────────────────────────────── -->
-      <div v-if="step === 1">
+      <div v-if="step === 1" class="step1-wrap">
+        <h2 class="step1-heading">Choisissez une catégorie</h2>
+        <p class="step1-sub">Sélectionnez la catégorie qui correspond à votre besoin</p>
         <div v-if="loadingCats" class="loading-msg">Chargement des catégories…</div>
         <p v-else-if="errorCats" class="error-msg">{{ errorCats }}</p>
         <div v-else class="cat-grid">
@@ -68,12 +70,17 @@
             :key="cat.id"
             class="cat-card"
             :class="{ selected: selectedCategory?.id === cat.id }"
-            @click="pickCategory(cat, i)"
+            @click="selectCategory(cat, i)"
           >
             <div class="cat-icon" :style="{ background: catColors[i % catColors.length] }">
               {{ cat.icon }}
             </div>
             <span class="cat-name">{{ cat.name }}</span>
+          </button>
+        </div>
+        <div class="step1-footer">
+          <button class="btn-orange btn-continuer" :disabled="!selectedCategory" @click="goToStep2">
+            Continuer
           </button>
         </div>
       </div>
@@ -294,21 +301,32 @@ onMounted(async () => {
   }
 })
 
-// ── Step 1 → 2 ───────────────────────────────────────────────────────────────
-async function pickCategory(cat, index) {
+// ── Step 1 : Select category (no navigation yet) ─────────────────────────────
+function selectCategory(cat, index) {
   selectedCategory.value      = cat
   selectedCategoryIndex.value = index
   selectedTypeIds.value       = []
-  step.value                  = 2
-  loadingTypes.value          = true
+}
+
+// ── Step 1 → 2 ───────────────────────────────────────────────────────────────
+async function goToStep2() {
+  if (!selectedCategory.value) return
+  step.value         = 2
+  loadingTypes.value = true
   try {
-    const { data } = await getServiceTypes(cat.id)
+    const { data } = await getServiceTypes(selectedCategory.value.id)
     serviceTypes.value = data.data
   } catch {
     serviceTypes.value = []
   } finally {
     loadingTypes.value = false
   }
+}
+
+// Keep old name as alias in case used elsewhere
+async function pickCategory(cat, index) {
+  selectCategory(cat, index)
+  await goToStep2()
 }
 
 // ── Photo handling ────────────────────────────────────────────────────────────
@@ -479,40 +497,70 @@ function goBack() {
   padding: 32px 24px 64px;
 }
 
+/* ── Step 1 ───────────────────────────────────────────────────────────────── */
+.step1-wrap { display: flex; flex-direction: column; }
+.step1-heading {
+  font-family: 'Poppins', sans-serif;
+  font-size: 30px;
+  font-weight: 500;
+  color: #314158;
+  margin: 0 0 8px;
+}
+.step1-sub {
+  font-family: 'Inter', sans-serif;
+  font-size: 16px;
+  font-weight: 400;
+  color: #62748E;
+  margin: 0 0 28px;
+}
+.step1-footer {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 32px;
+}
+.btn-continuer {
+  padding: 14px 40px;
+  font-size: 16px;
+  font-weight: 500;
+  border-radius: 12px;
+  min-width: 160px;
+}
+
 /* ── Category grid ────────────────────────────────────────────────────────── */
 .cat-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+  grid-template-columns: repeat(4, 1fr);
   gap: 16px;
 }
 .cat-card {
-font-family: "Poppins";
+  font-family: 'Inter', sans-serif;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 10px;
-  padding: 16px 8px;
+  gap: 12px;
+  padding: 20px 12px;
   background: #fff;
-  border: 2px solid transparent;
+  border: 2px solid #E5E7EB;
   border-radius: 14px;
   cursor: pointer;
   transition: border-color .15s, box-shadow .15s;
-  box-shadow: 0 1px 3px rgba(0,0,0,.07);
 }
-.cat-card:hover  { border-color: #FC5A15; box-shadow: 0 4px 12px rgba(252,90,21,.15); }
+.cat-card:hover    { border-color: #FC5A15; box-shadow: 0 4px 12px rgba(252,90,21,.15); }
 .cat-card.selected { border-color: #FC5A15; box-shadow: 0 4px 12px rgba(252,90,21,.2); }
 
 .cat-icon {
-  width: 60px;
-  height: 60px;
-  border-radius: 12px;
+  width: 67px;
+  height: 67px;
+  border-radius: 17px;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 32px;
+  font-size: 34px;
+  flex-shrink: 0;
 }
 .cat-name {
-  font-size: 12px;
+  font-family: 'Inter', sans-serif;
+  font-size: 16px;
   color: #314158;
   text-align: center;
   font-weight: 500;
@@ -705,23 +753,19 @@ select.form-input { appearance: none; padding-right: 40px; cursor: pointer; }
 .error-msg   { color: #EF4444; font-size: 14px; margin-bottom: 12px; }
 
 /* ── Responsive ──────────────────────────────────────────────────────────── */
-@media (max-width: 640px) {
-  .page-wrap   { padding: 20px 16px 20px; }
-  .step-header { padding: 12px 16px; }
-  .step-title  { font-size: 22px; }
-  .step1-wrap,
-  .step2-wrap,
-  .step3-wrap  { padding: 20px 16px 48px; }
-  .step2-heading,
-  .step2-cat-name { font-size: 18px; }
-  .step3-heading  { font-size: 18px; }
-  .step3-wrap     { padding: 20px 16px; }
+@media (max-width: 900px) {
+  .cat-grid { grid-template-columns: repeat(3, 1fr); }
 }
-
+@media (max-width: 640px) {
+  .cat-grid        { grid-template-columns: repeat(2, 1fr); }
+  .step1-heading   { font-size: 22px; }
+  .step2-heading,
+  .step2-cat-name  { font-size: 18px; }
+  .step3-heading   { font-size: 18px; }
+  .btn-continuer   { width: 100%; }
+}
 @media (max-width: 480px) {
-  .page-wrap   { padding: 16px 12px; }
-  .step-title  { font-size: 18px; }
   .btn-orange,
-  .btn-ghost   { width: 100%; }
+  .btn-ghost { width: 100%; }
 }
 </style>

@@ -237,39 +237,26 @@
         </div>
       </div>
 
-      <!-- Pagination -->
-      <div v-if="totalPages > 1" class="pagination">
-        <button class="page-btn" :class="{ disabled: currentPage === 1 }" @click="changePage(currentPage - 1)">
-          <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-            <path d="M12.5 5l-5 5 5 5" stroke="#314158" stroke-width="1.67" stroke-linecap="round"/>
-          </svg>
+      <!-- Load More -->
+      <div v-if="currentPage < totalPages" class="load-more-wrapper">
+        <button class="load-more-btn" :disabled="loadingMore" @click="loadMore">
+          <span v-if="loadingMore" class="load-more-spinner"></span>
+          <span>{{ loadingMore ? 'Chargement...' : 'Voir plus d\'artisans' }}</span>
         </button>
-
-        <button
-          v-for="page in totalPages"
-          :key="page"
-          class="page-btn"
-          :class="{ active: page === currentPage }"
-          @click="changePage(page)"
-        >
-          {{ page }}
-        </button>
-
-        <button class="page-btn" :class="{ disabled: currentPage === totalPages }" @click="changePage(currentPage + 1)">
-          <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-            <path d="M7.5 5l5 5-5 5" stroke="#314158" stroke-width="1.67" stroke-linecap="round"/>
-          </svg>
-        </button>
+        <p class="load-more-count">{{ artisans.length }} / {{ totalArtisans }} artisans</p>
       </div>
     </section>
 
   </div>
+         <How/>
+
 </template>
 
 <script setup>
 import { ref, computed, onMounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { getPublicCategories, getPublicArtisans } from '../api/artisans.js'
+import How from '.././components/home/How.vue';
 
 const route  = useRoute()
 const router = useRouter()
@@ -388,14 +375,17 @@ async function resolveCategory() {
   }
 }
 
-async function loadArtisans() {
-  loading.value = true
-  error.value   = false
+const loadingMore = ref(false)
+
+async function loadArtisans(append = false) {
+  if (append) loadingMore.value = true
+  else loading.value = true
+  error.value = false
 
   try {
     const params = {
       page:     currentPage.value,
-      per_page: 9,
+      per_page: 12,
     }
 
     if (categoryId.value) params.category_id = categoryId.value
@@ -403,13 +393,19 @@ async function loadArtisans() {
 
     const { data } = await getPublicArtisans(params)
 
-    artisans.value     = data.data ?? []
-    totalPages.value   = data.meta?.last_page ?? 1
+    const newItems = data.data ?? []
+    if (append) {
+      artisans.value = [...artisans.value, ...newItems]
+    } else {
+      artisans.value = newItems
+    }
+    totalPages.value    = data.meta?.last_page ?? 1
     totalArtisans.value = data.meta?.total ?? artisans.value.length
   } catch {
     error.value = true
   } finally {
-    loading.value = false
+    loading.value     = false
+    loadingMore.value = false
   }
 }
 
@@ -418,16 +414,15 @@ function onSearch() {
   clearTimeout(searchTimeout)
   searchTimeout = setTimeout(() => {
     currentPage.value = 1
-    loadArtisans()
+    loadArtisans(false)
   }, 400)
 }
 
-// ── Pagination ────────────────────────────────────────────────────────────────
-function changePage(page) {
-  if (page < 1 || page > totalPages.value) return
-  currentPage.value = page
-  loadArtisans()
-  window.scrollTo({ top: 0, behavior: 'smooth' })
+// ── Load more ─────────────────────────────────────────────────────────────────
+function loadMore() {
+  if (currentPage.value >= totalPages.value) return
+  currentPage.value++
+  loadArtisans(true)
 }
 
 // ── Navigation actions ────────────────────────────────────────────────────────
@@ -454,8 +449,9 @@ onMounted(async () => {
 watch(() => route.params.slug, async () => {
   currentPage.value = 1
   searchQuery.value = ''
+  artisans.value    = []
   categoryId.value  = await resolveCategory()
-  await loadArtisans()
+  await loadArtisans(false)
 })
 </script>
 
@@ -1058,39 +1054,56 @@ watch(() => route.params.slug, async () => {
 .btn-contact:hover { opacity: 0.9; }
 
 /* ══════════════════════════════════════════════════════════════
-   PAGINATION
+   LOAD MORE
    ══════════════════════════════════════════════════════════════ */
 
-.pagination {
-  width: 1248px;
-  max-width: calc(100% - 48px);
-  margin: 0 auto;
+.load-more-wrapper {
   display: flex;
-  justify-content: center;
+  flex-direction: column;
   align-items: center;
-  gap: 8px;
+  gap: 12px;
   padding: 40px 0;
 }
 
-.page-btn {
-  width: 40px;
-  height: 40px;
-  border: 1px solid #D1D5DC;
-  border-radius: 10px;
-  background: white;
-  font-family: 'Inter', sans-serif;
-  font-size: 15px;
-  color: #314158;
-  cursor: pointer;
+.load-more-btn {
   display: flex;
   align-items: center;
-  justify-content: center;
-  transition: all 0.2s;
+  gap: 8px;
+  padding: 14px 40px;
+  background: white;
+  border: 2px solid #FC5A15;
+  border-radius: 999px;
+  font-family: 'Inter', sans-serif;
+  font-size: 15px;
+  font-weight: 500;
+  color: #FC5A15;
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s;
 }
 
-.page-btn.active { background: #FC5A15; color: white; border-color: #FC5A15; }
-.page-btn.disabled { opacity: 0.4; cursor: not-allowed; pointer-events: none; }
-.page-btn:not(.disabled):not(.active):hover { border-color: #FC5A15; }
+.load-more-btn:hover:not(:disabled) {
+  background: #FC5A15;
+  color: white;
+}
+
+.load-more-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+
+.load-more-spinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid currentColor;
+  border-top-color: transparent;
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+  flex-shrink: 0;
+}
+
+.load-more-count {
+  font-family: 'Inter', sans-serif;
+  font-size: 13px;
+  color: #62748E;
+  margin: 0;
+}
 
 .avatar-clickable { cursor: pointer; }
 .avatar-clickable:hover .avatar-image,
