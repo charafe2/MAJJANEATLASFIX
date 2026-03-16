@@ -98,4 +98,18 @@
   margin: auto;
   margin-bottom: 8px;
 }
+
+/* ── Responsive ──────────────────────────────────────────────────────── */
+@media (max-width: 768px) {
+  .header { flex-direction: column; gap: 20px; }
+  .stats { justify-content: center; }
+}
+
+@media (max-width: 480px) {
+  .header { padding: 18px; border-radius: 12px; }
+  .left { flex-direction: column; align-items: center; text-align: center; gap: 12px; }
+  .avatar img { width: 90px; height: 90px; }
+  .stats { gap: 24px; }
+  .icon { width: 38px; height: 38px; }
+}
 </style>

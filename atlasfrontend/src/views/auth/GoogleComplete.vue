@@ -334,4 +334,17 @@ async function submit() {
 }
 
 @keyframes spin { to { transform: rotate(360deg); } }
+
+/* ── Responsive ──────────────────────────────────────────────────────── */
+@media (max-width: 480px) {
+  .page { padding: 16px; }
+  .card { padding: 28px 20px; border-radius: 18px; }
+  .title { font-size: 18px; }
+  .subtitle { font-size: 12px; }
+  .google-header { padding: 10px 12px; }
+  .greeting { font-size: 13px; }
+  .type-btn { font-size: 12px; padding: 8px; }
+  .prefix { padding: 0 10px; font-size: 12px; }
+  .submit-btn { padding: 12px; font-size: 14px; }
+}
 </style>

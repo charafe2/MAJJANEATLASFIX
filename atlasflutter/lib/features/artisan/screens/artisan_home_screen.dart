@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/widgets/atlas_logo.dart';
-import '../../../data/repositories/service_request_repository.dart';
 import '../../../data/repositories/artisan_repository.dart';
 import '../../../data/repositories/conversation_repository.dart';
 
@@ -22,20 +21,6 @@ IconData _catIcon(String name) {
   return Icons.build_outlined;
 }
 
-Color _catCircleColor(String name) {
-  final n = name.toLowerCase();
-  if (n.contains('répar') || n.contains('repar') || n.contains('général'))
-    return const Color(0xFFFB2C36);
-  if (n.contains('plomb'))  return const Color(0xFF2B7FFF);
-  if (n.contains('élec') || n.contains('elec'))  return const Color(0xFFF0B100);
-  if (n.contains('peint'))  return const Color(0xFFAD46FF);
-  if (n.contains('nettoy')) return const Color(0xFF00B8DB);
-  if (n.contains('déménag') || n.contains('demenag')) return const Color(0xFF615FFF);
-  if (n.contains('chauff') || n.contains('climati') || n.contains('ventil'))
-    return const Color(0xFFF54900);
-  return const Color(0xFF393C40);
-}
-
 const _kFaq = [
   'Comment fonctionne AtlasFix ?',
   'Comment puis-je contacter un client ?',
@@ -53,35 +38,34 @@ class ArtisanHomeScreen extends StatefulWidget {
 }
 
 class _ArtisanHomeScreenState extends State<ArtisanHomeScreen> {
-  final _catRepo     = ServiceRequestRepository();
   final _artisanRepo = ArtisanRepository();
 
   int _expandedFaq = 1;
 
-  List<ServiceCategory> _categories    = [];
   List<PublicArtisan>   _artisans      = [];
-  bool _catsLoading     = true;
   bool _artisansLoading = true;
+
+  String? _searchQuery;
+  String? _selectedCity;
+
+  static const _cities = [
+    'Casablanca', 'Rabat', 'Marrakech', 'Fès', 'Tanger',
+    'Agadir', 'Meknès', 'Oujda', 'Kenitra', 'Tétouan', 'Salé', 'Temara',
+  ];
 
   @override
   void initState() {
     super.initState();
-    _loadCategories();
     _loadArtisans();
   }
 
-  Future<void> _loadCategories() async {
-    try {
-      final data = await _catRepo.getCategories();
-      if (mounted) setState(() { _categories = data; _catsLoading = false; });
-    } catch (_) {
-      if (mounted) setState(() => _catsLoading = false);
-    }
-  }
-
   Future<void> _loadArtisans() async {
+    setState(() => _artisansLoading = true);
     try {
-      final data = await _artisanRepo.getArtisans();
+      final data = await _artisanRepo.getArtisans(
+        search: _searchQuery,
+        city: _selectedCity,
+      );
       if (mounted) setState(() { _artisans = data; _artisansLoading = false; });
     } catch (_) {
       if (mounted) setState(() => _artisansLoading = false);
@@ -116,17 +100,6 @@ class _ArtisanHomeScreenState extends State<ArtisanHomeScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       const SizedBox(height: 22),
-
-                      // Categories
-                      _SectionHeader(title: 'Catégories de services', onMore: () {}),
-                      const SizedBox(height: 16),
-                      _catsLoading
-                          ? const SizedBox(height: 80,
-                              child: Center(child: CircularProgressIndicator(
-                                  color: AppColors.primary, strokeWidth: 2)))
-                          : _ServiceCategories(categories: _categories),
-
-                      const SizedBox(height: 28),
 
                       // Promo card
                       const Padding(
@@ -281,7 +254,80 @@ class _ArtisanHomeScreenState extends State<ArtisanHomeScreen> {
                     ]),
                   ],
                 ),
-                const _SearchRow(),
+                // Search pills
+                Row(
+                  children: [
+                    GestureDetector(
+                      onTap: () => _showSearchDialog(context),
+                      child: Container(
+                        width: 216, height: 48,
+                        padding: const EdgeInsets.fromLTRB(16, 12, 7, 12),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withValues(alpha: 0.8),
+                          borderRadius: BorderRadius.circular(100),
+                        ),
+                        child: Row(children: [
+                          Expanded(
+                            child: Text(
+                              _searchQuery ?? 'Quelle service recherc…',
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(
+                                fontFamily: 'Public Sans', fontSize: 14,
+                                fontWeight: FontWeight.w400,
+                                color: _searchQuery != null
+                                    ? Colors.black : const Color(0xFF494949),
+                                letterSpacing: -0.14,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 4),
+                          Container(
+                            width: 36, height: 36,
+                            decoration: const BoxDecoration(
+                                color: Color(0xFF393C40), shape: BoxShape.circle),
+                            child: const Icon(Icons.manage_search,
+                                color: Colors.white, size: 18),
+                          ),
+                        ]),
+                      ),
+                    ),
+                    const SizedBox(width: 7),
+                    GestureDetector(
+                      onTap: () => _showCityPicker(context),
+                      child: Container(
+                        width: 112, height: 48,
+                        padding: const EdgeInsets.fromLTRB(16, 12, 7, 12),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(100),
+                        ),
+                        child: Row(children: [
+                          Expanded(
+                            child: Text(
+                              _selectedCity ?? 'Ville…',
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(
+                                fontFamily: 'Public Sans', fontSize: 14,
+                                fontWeight: FontWeight.w400,
+                                color: _selectedCity != null
+                                    ? Colors.black : const Color(0xFF494949),
+                                letterSpacing: -0.14,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 4),
+                          Container(
+                            width: 36, height: 36,
+                            decoration: const BoxDecoration(
+                                color: Color(0xFF393C40), shape: BoxShape.circle),
+                            child: const Icon(Icons.keyboard_arrow_down_rounded,
+                                color: Colors.white, size: 18),
+                          ),
+                        ]),
+                      ),
+                    ),
+                  ],
+                ),
               ],
             ),
           ),
@@ -289,6 +335,192 @@ class _ArtisanHomeScreenState extends State<ArtisanHomeScreen> {
       ),
     );
   }
+
+  // ── Search dialog ──────────────────────────────────────────────────────────
+  void _showSearchDialog(BuildContext context) {
+    final ctrl = TextEditingController(text: _searchQuery);
+    showDialog(
+      context: context,
+      builder: (ctx) => Dialog(
+        insetPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 80),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        child: Padding(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text('Rechercher un service',
+                style: TextStyle(fontFamily: 'Public Sans',
+                    fontWeight: FontWeight.w700, fontSize: 16,
+                    color: Color(0xFF314158))),
+              const SizedBox(height: 16),
+              TextField(
+                controller: ctrl,
+                autofocus: true,
+                style: const TextStyle(fontFamily: 'Public Sans', fontSize: 14),
+                decoration: InputDecoration(
+                  hintText: 'Ex: Plomberie, Électricité…',
+                  hintStyle: const TextStyle(color: Color(0xFF9CA3AF)),
+                  prefixIcon: const Icon(Icons.search, color: AppColors.primary),
+                  filled: true,
+                  fillColor: const Color(0xFFF9FAFB),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: const BorderSide(color: Color(0xFFE5E7EB))),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: const BorderSide(color: Color(0xFFE5E7EB))),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: const BorderSide(color: AppColors.primary, width: 1.5)),
+                ),
+                onSubmitted: (val) {
+                  Navigator.pop(ctx);
+                  setState(() => _searchQuery = val.trim().isEmpty ? null : val.trim());
+                  _loadArtisans();
+                },
+              ),
+              const SizedBox(height: 16),
+              Row(
+                children: [
+                  if (_searchQuery != null)
+                    Expanded(
+                      child: OutlinedButton(
+                        onPressed: () {
+                          Navigator.pop(ctx);
+                          setState(() => _searchQuery = null);
+                          _loadArtisans();
+                        },
+                        style: OutlinedButton.styleFrom(
+                          side: const BorderSide(color: Color(0xFFE5E7EB)),
+                          shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(10))),
+                        child: const Text('Effacer',
+                          style: TextStyle(fontFamily: 'Public Sans',
+                              fontSize: 13, color: Color(0xFF62748E))),
+                      ),
+                    ),
+                  if (_searchQuery != null) const SizedBox(width: 10),
+                  Expanded(
+                    child: ElevatedButton(
+                      onPressed: () {
+                        Navigator.pop(ctx);
+                        final val = ctrl.text.trim();
+                        setState(() => _searchQuery = val.isEmpty ? null : val);
+                        _loadArtisans();
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.primary, elevation: 0,
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10))),
+                      child: const Text('Rechercher',
+                        style: TextStyle(fontFamily: 'Public Sans',
+                            fontSize: 13, color: Colors.white)),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  // ── City picker ────────────────────────────────────────────────────────────
+  void _showCityPicker(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (_) => Container(
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        ),
+        padding: const EdgeInsets.fromLTRB(20, 16, 20, 32),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 40, height: 4,
+              decoration: BoxDecoration(color: const Color(0xFFD1D5DC),
+                  borderRadius: BorderRadius.circular(2)),
+            ),
+            const SizedBox(height: 16),
+            const Text('Choisir une ville',
+              style: TextStyle(fontFamily: 'Public Sans',
+                  fontWeight: FontWeight.w700, fontSize: 16,
+                  color: Color(0xFF314158))),
+            const SizedBox(height: 16),
+            _CityOption(
+              label: 'Toutes les villes',
+              selected: _selectedCity == null,
+              onTap: () {
+                Navigator.pop(context);
+                setState(() => _selectedCity = null);
+                _loadArtisans();
+              },
+            ),
+            SizedBox(
+              height: 300,
+              child: ListView.builder(
+                itemCount: _cities.length,
+                itemBuilder: (_, i) => _CityOption(
+                  label: _cities[i],
+                  selected: _selectedCity == _cities[i],
+                  onTap: () {
+                    Navigator.pop(context);
+                    setState(() => _selectedCity = _cities[i]);
+                    _loadArtisans();
+                  },
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ── City option for bottom sheet ──────────────────────────────────────────────
+class _CityOption extends StatelessWidget {
+  final String label;
+  final bool selected;
+  final VoidCallback onTap;
+  const _CityOption({required this.label, required this.selected,
+      required this.onTap});
+
+  @override
+  Widget build(BuildContext context) => GestureDetector(
+    onTap: onTap,
+    child: Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
+      margin: const EdgeInsets.only(bottom: 6),
+      decoration: BoxDecoration(
+        color: selected ? AppColors.primary.withValues(alpha: 0.08) : Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: selected ? AppColors.primary : const Color(0xFFE5E7EB)),
+      ),
+      child: Row(
+        children: [
+          Icon(Icons.location_on_outlined, size: 18,
+              color: selected ? AppColors.primary : const Color(0xFF9CA3AF)),
+          const SizedBox(width: 10),
+          Expanded(child: Text(label,
+            style: TextStyle(
+              fontFamily: 'Public Sans', fontSize: 14,
+              fontWeight: selected ? FontWeight.w600 : FontWeight.w400,
+              color: selected ? AppColors.primary : const Color(0xFF314158),
+            ))),
+          if (selected)
+            const Icon(Icons.check_circle, color: AppColors.primary, size: 20),
+        ],
+      ),
+    ),
+  );
 }
 
 // ── Bottom nav bar ─────────────────────────────────────────────────────────────
@@ -377,54 +609,6 @@ class ArtisanBottomNavBar extends StatelessWidget {
   }
 }
 
-// ── Search row ────────────────────────────────────────────────────────────────
-class _SearchRow extends StatelessWidget {
-  const _SearchRow();
-
-  @override
-  Widget build(BuildContext context) => const Row(
-    children: [
-      _SearchPill(hint: 'Quelle service recherc…', width: 216,
-          translucent: true, icon: Icons.manage_search),
-      SizedBox(width: 7),
-      _SearchPill(hint: 'Ville…', width: 112,
-          translucent: false, icon: Icons.keyboard_arrow_down_rounded),
-    ],
-  );
-}
-
-class _SearchPill extends StatelessWidget {
-  final String hint;
-  final double width;
-  final bool translucent;
-  final IconData icon;
-  const _SearchPill({required this.hint, required this.width,
-      required this.translucent, required this.icon});
-
-  @override
-  Widget build(BuildContext context) => Container(
-    width: width, height: 48,
-    padding: const EdgeInsets.fromLTRB(16, 12, 7, 12),
-    decoration: BoxDecoration(
-      color: translucent ? Colors.white.withValues(alpha: 0.8) : Colors.white,
-      borderRadius: BorderRadius.circular(100),
-    ),
-    child: Row(children: [
-      Expanded(child: Text(hint, overflow: TextOverflow.ellipsis,
-        style: const TextStyle(fontFamily: 'Public Sans', fontSize: 14,
-            fontWeight: FontWeight.w400, color: Color(0xFF494949),
-            letterSpacing: -0.14))),
-      const SizedBox(width: 4),
-      Container(
-        width: 36, height: 36,
-        decoration: const BoxDecoration(
-            color: Color(0xFF393C40), shape: BoxShape.circle),
-        child: Icon(icon, color: Colors.white, size: 18),
-      ),
-    ]),
-  );
-}
-
 // ── Section header ────────────────────────────────────────────────────────────
 class _SectionHeader extends StatelessWidget {
   final String title;
@@ -466,62 +650,6 @@ class _SectionHeader extends StatelessWidget {
   );
 }
 
-// ── Service categories ────────────────────────────────────────────────────────
-class _ServiceCategories extends StatelessWidget {
-  final List<ServiceCategory> categories;
-  const _ServiceCategories({required this.categories});
-
-  @override
-  Widget build(BuildContext context) {
-    if (categories.isEmpty) return const SizedBox(height: 70);
-    return SizedBox(
-      height: 80,
-      child: ListView.separated(
-        scrollDirection: Axis.horizontal,
-        padding: const EdgeInsets.only(left: 29, right: 16),
-        itemCount: categories.length,
-        separatorBuilder: (_, __) => const SizedBox(width: 26),
-        itemBuilder: (_, i) => _CategoryChip(cat: categories[i]),
-      ),
-    );
-  }
-}
-
-class _CategoryChip extends StatelessWidget {
-  final ServiceCategory cat;
-  const _CategoryChip({required this.cat});
-
-  @override
-  Widget build(BuildContext context) => GestureDetector(
-    onTap: () => context.push('/client/service-types', extra: {
-      'categoryId': cat.id, 'category': cat.name,
-    }),
-    child: Column(
-      mainAxisSize: MainAxisSize.min,
-      crossAxisAlignment: CrossAxisAlignment.center,
-      children: [
-        Container(
-          width: 48, height: 48,
-          decoration: BoxDecoration(
-            color: _catCircleColor(cat.name),
-            borderRadius: BorderRadius.circular(26),
-          ),
-          child: Icon(_catIcon(cat.name), color: Colors.white, size: 24),
-        ),
-        const SizedBox(height: 2),
-        SizedBox(
-          width: 61,
-          child: Text(cat.name, textAlign: TextAlign.center,
-            maxLines: 2, overflow: TextOverflow.ellipsis,
-            style: const TextStyle(fontFamily: 'Inter', fontSize: 12,
-                fontWeight: FontWeight.w400, letterSpacing: -0.150391,
-                color: Color(0xFF314158), height: 1.17)),
-        ),
-      ],
-    ),
-  );
-}
-
 // ── Promo card ────────────────────────────────────────────────────────────────
 class _PromoCard extends StatelessWidget {
   const _PromoCard();
@@ -541,9 +669,14 @@ class _PromoCard extends StatelessWidget {
         clipBehavior: Clip.none,
         children: [
           Positioned(
-            top: imgOver + backShift, left: 6, right: 0, bottom: 0,
-            child: Container(decoration: BoxDecoration(
-                color: orange, borderRadius: BorderRadius.circular(radius))),
+            top: imgOver, left: 0, right: 0, bottom: 0,
+            child: Transform.rotate(
+              angle: 0.035, // ~2 degrees clockwise — left side lifts up
+              alignment: Alignment.bottomRight,
+              child: Container(decoration: BoxDecoration(
+                  color: orange.withValues(alpha: 0.55),
+                  borderRadius: BorderRadius.circular(radius))),
+            ),
           ),
           Positioned(
             top: imgOver, left: 0, right: 0, bottom: backShift,

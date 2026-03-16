@@ -423,4 +423,20 @@ async function submit() {
 .modal-fade-leave-to { opacity: 0; }
 .modal-fade-enter-from .rm-card,
 .modal-fade-leave-to .rm-card { transform: scale(0.95) translateY(8px); opacity: 0; }
+
+/* ── Responsive ──────────────────────────────────────────────────────── */
+@media (max-width: 480px) {
+  .rm-overlay { padding: 12px; }
+  .rm-card { border-radius: 14px; }
+  .rm-header { padding: 14px 16px; }
+  .rm-icon-wrap { width: 34px; height: 34px; }
+  .rm-title { font-size: 14px; }
+  .rm-body { padding: 16px; gap: 12px; }
+  .rm-textarea { font-size: 13px; }
+  .rm-dropzone { padding: 14px; min-height: 90px; }
+  .rm-dropzone-hint { font-size: 12px; }
+  .rm-preview-item { width: 60px; height: 60px; }
+  .rm-preview-add { width: 60px; height: 60px; font-size: 20px; }
+  .rm-submit-btn { height: 44px; font-size: 14px; border-radius: 10px; }
+}
 </style>

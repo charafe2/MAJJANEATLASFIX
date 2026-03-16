@@ -5,6 +5,7 @@ use App\Http\Controllers\Auth\AuthController;
 use App\Http\Controllers\Client\ServiceRequestController;
 use App\Http\Controllers\Artisan\ServiceRequestController as ArtisanServiceRequestController;
 use App\Http\Controllers\Artisan\BoostController;
+use App\Http\Controllers\Artisan\SubscriptionController;
 use App\Http\Controllers\Messaging\ConversationController;
 use App\Http\Controllers\Messaging\MessageController;
 use App\Http\Controllers\AgendaController;
@@ -14,6 +15,7 @@ use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\ReviewController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\PaymentController;
+use App\Http\Controllers\TestimonialController;
 
 /*
 |--------------------------------------------------------------------------
@@ -23,6 +25,7 @@ use App\Http\Controllers\PaymentController;
 Route::get('public/categories',       [ArtisanBrowseController::class, 'categories']);
 Route::get('public/artisans',         [ArtisanBrowseController::class, 'artisans']);
 Route::get('public/artisans/{artisan}', [ArtisanBrowseController::class, 'show']);
+Route::get('public/testimonials',     [TestimonialController::class, 'index']);
 Route::get('referral/{code}',      [AuthController::class, 'validateReferral']);
 
 /*
@@ -83,6 +86,11 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get  ('boost/packages', [BoostController::class, 'packages']);
         Route::post ('boost/activate', [BoostController::class, 'activate']);
         Route::post ('boost/buy',      [BoostController::class, 'buy']);
+
+        // Subscription sub-routes
+        Route::get  ('subscription/tiers', [SubscriptionController::class, 'tiers']);
+        Route::get  ('subscription',       [SubscriptionController::class, 'status']);
+        Route::post ('subscription/subscribe', [SubscriptionController::class, 'subscribe']);
 
         Route::get  ('service-requests',                         [ArtisanServiceRequestController::class, 'index']);
         Route::get  ('service-requests/{serviceRequest}',        [ArtisanServiceRequestController::class, 'show']);

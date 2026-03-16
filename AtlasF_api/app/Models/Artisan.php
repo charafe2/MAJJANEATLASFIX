@@ -165,4 +165,57 @@ class Artisan extends Model
     {
         return $this->hasMany(Conversation::class);
     }
+
+    // ── Tier helpers ────────────────────────────────────────────────────
+
+    /**
+     * Get the effective subscription tier (falls back to "basic" tier).
+     */
+    public function getEffectiveTier(): SubscriptionTier
+    {
+        return $this->currentTier ?? SubscriptionTier::where('name', 'basic')->first();
+    }
+
+    /**
+     * Number of offers submitted in the current calendar month.
+     */
+    public function offersThisMonth(): int
+    {
+        return $this->offers()
+            ->whereMonth('created_at', now()->month)
+            ->whereYear('created_at', now()->year)
+            ->count();
+    }
+
+    /**
+     * How many offers remain this month based on tier limits.
+     * Returns -1 for unlimited.
+     */
+    public function remainingOffers(): int
+    {
+        $tier = $this->getEffectiveTier();
+
+        if ($tier->isUnlimited()) {
+            return -1;
+        }
+
+        return max(0, $tier->max_offers_per_month - $this->offersThisMonth());
+    }
+
+    /**
+     * Can this artisan submit another offer this month?
+     */
+    public function canSubmitOffer(): bool
+    {
+        $remaining = $this->remainingOffers();
+        return $remaining === -1 || $remaining > 0;
+    }
+
+    /**
+     * Does this artisan have a currently active boost?
+     */
+    public function isBoosted(): bool
+    {
+        return $this->activeBoost()->exists();
+    }
 }

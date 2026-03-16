@@ -94,8 +94,17 @@
           :class="{
             'offer-accepted': item.offer.status === 'accepted',
             'offer-rejected': item.offer.status === 'rejected',
+            'offer-boosted': item.offer.has_active_boost,
           }"
         >
+          <!-- Boost badge -->
+          <div v-if="item.offer.has_active_boost" class="boost-badge">
+            <svg width="12" height="12" viewBox="0 0 16 16" fill="none">
+              <path d="M8 1l1.5 3.5H14l-3 2.5 1.2 3.5L8 8.2 3.8 10.5 5 7 2 4.5h4.5z" fill="#FC5A15"/>
+            </svg>
+            Mis en avant
+          </div>
+
           <!-- Artisan row -->
           <div class="artisan-row">
             <!-- Avatar -->
@@ -337,6 +346,12 @@ const filteredOffers = computed(() => {
   if (c) {
     items = items.filter(i => (i.req.city || '').toLowerCase().includes(c))
   }
+  // Boosted offers appear first
+  items = [...items].sort((a, b) => {
+    const aBoosted = a.offer.has_active_boost ? 1 : 0
+    const bBoosted = b.offer.has_active_boost ? 1 : 0
+    return bBoosted - aBoosted
+  })
   return items
 })
 
@@ -672,6 +687,26 @@ function showToast(message, type = 'success') {
 
 .offer-card:hover {
   box-shadow: 0px 4px 16px rgba(252,90,21,0.15);
+}
+
+.offer-boosted {
+  border-color: #FC5A15;
+  border-width: 1.5px;
+  background: linear-gradient(180deg, #FFF8F5 0%, #FFFFFF 30%);
+}
+
+.boost-badge {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background: #FFF5F0;
+  color: #FC5A15;
+  font-family: 'Public Sans', sans-serif;
+  font-weight: 600;
+  font-size: 9px;
+  padding: 3px 10px;
+  border-radius: 20px;
+  width: fit-content;
 }
 
 .offer-accepted {
@@ -1087,4 +1122,630 @@ function showToast(message, type = 'success') {
 
 .toast-enter-active, .toast-leave-active { transition: opacity 0.3s, transform 0.3s; }
 .toast-enter-from, .toast-leave-to { opacity: 0; transform: translateX(-50%) translateY(16px); }
+
+/* ── Responsive: Tablet (768px+) ─────────────────────────────────────────── */
+@media (min-width: 768px) {
+  .page {
+    max-width: 720px;
+  }
+
+  .top-section {
+    padding: 56px 40px 24px;
+    gap: 20px;
+    border-radius: 0 0 28px 28px;
+  }
+
+  .topbar {
+    gap: 16px;
+  }
+
+  .logo-text {
+    font-size: 22px;
+  }
+
+  .logo-img {
+    height: 34px;
+  }
+
+  .back-btn {
+    width: 42px;
+    height: 42px;
+  }
+
+  .icon-btn {
+    width: 46px;
+    height: 46px;
+  }
+
+  .search-bar {
+    padding: 12px 12px 12px 18px;
+    height: 52px;
+    gap: 10px;
+  }
+
+  .search-input {
+    font-size: 15px;
+  }
+  .search-input::placeholder {
+    font-size: 14px;
+  }
+
+  .city-bar {
+    min-width: 140px;
+    height: 52px;
+    padding: 12px 10px 12px 18px;
+  }
+
+  .city-input {
+    width: 80px;
+    font-size: 15px;
+  }
+
+  .filter-bar {
+    padding: 16px 40px;
+    margin: 20px 20px 0;
+  }
+
+  .filter-pill-btn {
+    font-size: 15px;
+    padding: 10px 28px;
+  }
+
+  .content {
+    padding: 20px 20px 0;
+  }
+
+  .offers-list {
+    gap: 18px;
+  }
+
+  .offer-card {
+    padding: 16px 20px 4px;
+    border-radius: 12px;
+    gap: 14px;
+  }
+
+  .artisan-row {
+    gap: 14px;
+  }
+
+  .avatar {
+    width: 68px;
+    height: 68px;
+    font-size: 18px;
+  }
+
+  .artisan-name {
+    font-size: 14px;
+  }
+
+  .artisan-specialty {
+    font-size: 11px;
+  }
+
+  .rating-badge {
+    font-size: 11px;
+    padding: 3px 8px;
+  }
+
+  .review-count {
+    font-size: 10px;
+  }
+
+  .profil-badge {
+    font-size: 11px;
+    padding: 6px 14px;
+  }
+
+  .response-time {
+    font-size: 10px;
+  }
+
+  .price-box {
+    padding: 14px 18px;
+    border-radius: 10px;
+  }
+
+  .price-label {
+    font-size: 10px;
+  }
+
+  .price-amount {
+    font-size: 22px;
+  }
+
+  .currency {
+    font-size: 16px;
+  }
+
+  .duration-value {
+    font-size: 14px;
+  }
+
+  .status-badge {
+    font-size: 14px;
+    padding: 8px;
+  }
+
+  .cta-row {
+    gap: 24px;
+    padding-bottom: 14px;
+  }
+
+  .btn-reject,
+  .btn-accept {
+    height: 40px;
+    font-size: 13px;
+  }
+
+  .state-msg {
+    font-size: 17px;
+    padding: 80px 32px;
+  }
+
+  .empty-state {
+    font-size: 16px;
+    padding: 80px 32px;
+  }
+
+  /* Modal */
+  .addr-modal {
+    max-width: 480px;
+  }
+
+  .addr-header {
+    padding: 22px 24px;
+  }
+
+  .addr-title {
+    font-size: 18px;
+  }
+
+  .addr-sub {
+    font-size: 13px;
+  }
+
+  .addr-body {
+    padding: 24px;
+    gap: 16px;
+  }
+
+  .addr-notice {
+    font-size: 14px;
+    padding: 14px 16px;
+  }
+
+  .addr-input {
+    padding: 12px 16px;
+    font-size: 15px;
+  }
+
+  .addr-footer {
+    padding: 18px 24px;
+    gap: 12px;
+  }
+
+  .addr-btn-cancel,
+  .addr-btn-confirm {
+    font-size: 15px;
+    padding: 12px;
+  }
+
+  .toast {
+    font-size: 15px;
+    padding: 14px 28px;
+  }
+}
+
+/* ── Responsive: Small mobile (max 640px) ────────────────────────────────── */
+@media (max-width: 640px) {
+  .page {
+    max-width: 100%;
+  }
+
+  .top-section {
+    padding: 48px 20px 18px;
+    gap: 14px;
+  }
+
+  .search-row {
+    gap: 8px;
+  }
+
+  .search-bar {
+    padding: 8px 6px 8px 12px;
+    height: 44px;
+    gap: 6px;
+  }
+
+  .search-input {
+    font-size: 12px;
+  }
+  .search-input::placeholder {
+    font-size: 11px;
+  }
+
+  .search-action-btn {
+    width: 32px;
+    height: 32px;
+  }
+
+  .city-bar {
+    min-width: 88px;
+    height: 44px;
+    padding: 8px 6px 8px 12px;
+  }
+
+  .city-input {
+    width: 42px;
+    font-size: 12px;
+  }
+
+  .city-chevron {
+    width: 32px;
+    height: 32px;
+  }
+
+  .filter-bar {
+    padding: 12px 20px;
+    margin: 14px 10px 0;
+  }
+
+  .filter-pill-btn {
+    font-size: 13px;
+    padding: 7px 20px;
+  }
+
+  .content {
+    padding: 14px 10px 0;
+  }
+
+  .offer-card {
+    padding: 10px 12px 0.5px;
+    gap: 10px;
+  }
+
+  .artisan-row {
+    gap: 8px;
+  }
+
+  .avatar {
+    width: 54px;
+    height: 54px;
+    font-size: 14px;
+  }
+
+  .online-dot {
+    width: 12px;
+    height: 12px;
+  }
+
+  .price-box {
+    padding: 8px 10px;
+  }
+
+  .price-amount {
+    font-size: 16px;
+  }
+
+  .currency {
+    font-size: 12px;
+  }
+
+  .cta-row {
+    gap: 14px;
+    padding-bottom: 8px;
+  }
+
+  .btn-reject,
+  .btn-accept {
+    height: 33px;
+    font-size: 9px;
+  }
+
+  /* Modal */
+  .addr-overlay {
+    padding: 12px;
+  }
+
+  .addr-modal {
+    max-width: 100%;
+  }
+
+  .addr-header {
+    padding: 14px 16px;
+  }
+
+  .addr-title {
+    font-size: 14px;
+  }
+
+  .addr-sub {
+    font-size: 11px;
+  }
+
+  .addr-icon-wrap {
+    width: 34px;
+    height: 34px;
+  }
+
+  .addr-body {
+    padding: 16px;
+    gap: 12px;
+  }
+
+  .addr-notice {
+    font-size: 12px;
+    padding: 10px 12px;
+  }
+
+  .addr-input {
+    font-size: 13px;
+    padding: 9px 12px;
+  }
+
+  .addr-footer {
+    padding: 14px 16px;
+  }
+
+  .addr-btn-cancel,
+  .addr-btn-confirm {
+    font-size: 13px;
+    padding: 10px;
+  }
+
+  .toast {
+    font-size: 13px;
+    padding: 10px 20px;
+    bottom: 80px;
+  }
+}
+
+/* ── Responsive: Extra small mobile (max 480px) ─────────────────────────── */
+@media (max-width: 480px) {
+  .top-section {
+    padding: 44px 14px 16px;
+    gap: 12px;
+    border-radius: 0 0 16px 16px;
+  }
+
+  .topbar {
+    gap: 8px;
+  }
+
+  .back-btn {
+    width: 32px;
+    height: 32px;
+  }
+
+  .logo-text {
+    font-size: 16px;
+  }
+
+  .logo-img {
+    height: 24px;
+  }
+
+  .icon-btn {
+    width: 36px;
+    height: 36px;
+  }
+
+  .search-row {
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .search-bar {
+    width: 100%;
+    height: 42px;
+  }
+
+  .city-bar {
+    width: 100%;
+    min-width: unset;
+    height: 42px;
+  }
+
+  .city-input {
+    width: auto;
+    flex: 1;
+  }
+
+  .filter-bar {
+    padding: 10px 14px;
+    margin: 12px 8px 0;
+    gap: 8px;
+  }
+
+  .filter-pill-btn {
+    font-size: 12px;
+    padding: 6px 16px;
+  }
+
+  .content {
+    padding: 12px 8px 0;
+  }
+
+  .offers-list {
+    gap: 10px;
+  }
+
+  .offer-card {
+    padding: 8px 10px 0.5px;
+    gap: 8px;
+    border-radius: 8px;
+  }
+
+  .artisan-row {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .avatar {
+    width: 48px;
+    height: 48px;
+    font-size: 13px;
+  }
+
+  .online-dot {
+    width: 10px;
+    height: 10px;
+  }
+
+  .artisan-name {
+    font-size: 10px;
+  }
+
+  .artisan-specialty {
+    font-size: 8px;
+  }
+
+  .rating-badge {
+    font-size: 8px;
+    padding: 1.5px 5px;
+  }
+
+  .review-count {
+    font-size: 7px;
+  }
+
+  .profil-badge {
+    font-size: 7.5px;
+    padding: 3px 8px;
+  }
+
+  .response-time {
+    font-size: 7px;
+  }
+
+  .price-box {
+    padding: 7px 8px;
+    border-radius: 7px;
+  }
+
+  .price-label {
+    font-size: 7px;
+  }
+
+  .price-amount {
+    font-size: 15px;
+  }
+
+  .currency {
+    font-size: 11px;
+  }
+
+  .duration-value {
+    font-size: 10px;
+  }
+
+  .status-badge {
+    font-size: 11px;
+    padding: 5px;
+    border-radius: 6px;
+  }
+
+  .cta-row {
+    gap: 10px;
+    padding-bottom: 7px;
+  }
+
+  .btn-reject,
+  .btn-accept {
+    height: 30px;
+    font-size: 9px;
+    border-radius: 16px;
+  }
+
+  .state-msg {
+    padding: 40px 16px;
+    font-size: 13px;
+  }
+
+  .empty-state {
+    padding: 40px 16px;
+    font-size: 13px;
+  }
+
+  /* Modal */
+  .addr-overlay {
+    padding: 8px;
+    align-items: flex-end;
+  }
+
+  .addr-modal {
+    border-radius: 16px 16px 0 0;
+    max-width: 100%;
+  }
+
+  .addr-header {
+    padding: 12px 14px;
+  }
+
+  .addr-header-left {
+    gap: 8px;
+  }
+
+  .addr-icon-wrap {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+  }
+
+  .addr-title {
+    font-size: 13px;
+  }
+
+  .addr-sub {
+    font-size: 10px;
+  }
+
+  .addr-close-btn {
+    width: 28px;
+    height: 28px;
+  }
+
+  .addr-body {
+    padding: 14px;
+    gap: 10px;
+  }
+
+  .addr-notice {
+    font-size: 11px;
+    padding: 8px 10px;
+    border-radius: 8px;
+  }
+
+  .addr-label {
+    font-size: 12px;
+  }
+
+  .addr-input {
+    font-size: 13px;
+    padding: 8px 10px;
+    border-radius: 8px;
+  }
+
+  .addr-footer {
+    padding: 12px 14px;
+    gap: 8px;
+  }
+
+  .addr-btn-cancel,
+  .addr-btn-confirm {
+    font-size: 12px;
+    padding: 9px;
+    border-radius: 8px;
+  }
+
+  .toast {
+    font-size: 12px;
+    padding: 10px 16px;
+    bottom: 75px;
+    max-width: calc(100vw - 32px);
+    white-space: normal;
+    text-align: center;
+  }
+}
 </style>

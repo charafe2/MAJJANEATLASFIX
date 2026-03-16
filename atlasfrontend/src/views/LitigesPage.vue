@@ -249,4 +249,310 @@ export default {
 
 <style scoped>
 @import '../assets/css/litiges.css';
+
+/* ─── Tablet: 768px ────────────────────────────────── */
+@media (max-width: 768px) {
+  .page-header {
+    padding: 32px 16px 28px;
+  }
+
+  .page-header-inner {
+    gap: 12px;
+  }
+
+  .header-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
+  }
+
+  .header-icon svg {
+    width: 24px;
+    height: 24px;
+  }
+
+  .header-text h1 {
+    font-size: 26px;
+    line-height: 32px;
+  }
+
+  .header-text .subtitle {
+    font-size: 14px;
+    line-height: 20px;
+  }
+
+  .litiges-content {
+    gap: 20px;
+    padding-bottom: 60px;
+  }
+
+  .info-card,
+  .warning-card {
+    padding: 20px 20px 20px 24px;
+  }
+
+  .info-card-body h2,
+  .warning-card-body h2,
+  .section-header h2 {
+    font-size: 20px;
+    line-height: 28px;
+  }
+
+  .list-card {
+    padding: 20px;
+  }
+
+  .step-card {
+    padding: 20px 20px 20px 24px;
+  }
+
+  .step-body h3 {
+    font-size: 18px;
+    line-height: 26px;
+  }
+
+  .process-steps {
+    gap: 20px;
+  }
+}
+
+/* ─── Small tablet / large mobile: 640px ───────────── */
+@media (max-width: 640px) {
+  .page-header {
+    padding: 28px 12px 24px;
+  }
+
+  .header-text h1 {
+    font-size: 22px;
+    line-height: 28px;
+  }
+
+  .litiges-content {
+    padding: 0 12px 50px;
+    gap: 18px;
+  }
+
+  .info-card,
+  .warning-card {
+    flex-direction: column;
+    padding: 18px 16px;
+    gap: 12px;
+  }
+
+  .info-card-icon,
+  .warning-card-icon {
+    width: 40px;
+    height: 40px;
+  }
+
+  .info-card-icon svg,
+  .warning-card-icon svg {
+    width: 20px;
+    height: 20px;
+  }
+
+  .info-card-body,
+  .warning-card-body {
+    gap: 10px;
+  }
+
+  .info-card-body p,
+  .warning-card-body p {
+    font-size: 14px;
+    line-height: 22px;
+  }
+
+  .section-header {
+    margin-bottom: 16px;
+    gap: 10px;
+  }
+
+  .section-icon {
+    width: 40px;
+    height: 40px;
+  }
+
+  .section-icon svg {
+    width: 20px;
+    height: 20px;
+  }
+
+  .section-header h2 {
+    font-size: 18px;
+    line-height: 26px;
+  }
+
+  .list-card {
+    padding: 16px;
+  }
+
+  .bullet-list {
+    gap: 10px;
+  }
+
+  .bullet-list li {
+    font-size: 14px;
+    line-height: 22px;
+    gap: 14px;
+  }
+
+  .step-card {
+    flex-direction: column;
+    padding: 18px 16px;
+    gap: 12px;
+  }
+
+  .step-number {
+    width: 36px;
+    height: 36px;
+    font-size: 16px;
+  }
+
+  .step-body {
+    gap: 12px;
+  }
+
+  .step-body h3 {
+    font-size: 16px;
+    line-height: 24px;
+  }
+
+  .step-body .step-intro {
+    font-size: 14px;
+    line-height: 22px;
+  }
+
+  .icon-list li {
+    font-size: 14px;
+    line-height: 22px;
+    gap: 10px;
+  }
+
+  .icon-list li svg {
+    width: 18px;
+    height: 18px;
+  }
+
+  .note-box {
+    padding: 14px;
+    font-size: 14px;
+    line-height: 22px;
+  }
+
+  .process-steps {
+    gap: 16px;
+  }
+}
+
+/* ─── Mobile: 480px ────────────────────────────────── */
+@media (max-width: 480px) {
+  .page-header {
+    padding: 24px 10px 20px;
+  }
+
+  .page-header-inner {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+
+  .header-icon {
+    width: 44px;
+    height: 44px;
+    border-radius: 10px;
+  }
+
+  .header-icon svg {
+    width: 22px;
+    height: 22px;
+  }
+
+  .header-text h1 {
+    font-size: 20px;
+    line-height: 26px;
+  }
+
+  .header-text .subtitle {
+    font-size: 13px;
+    line-height: 18px;
+  }
+
+  .litiges-content {
+    padding: 0 10px 40px;
+    gap: 16px;
+  }
+
+  .info-card,
+  .warning-card {
+    padding: 16px 14px;
+    border-radius: 8px;
+    gap: 10px;
+  }
+
+  .info-card-body h2,
+  .warning-card-body h2 {
+    font-size: 17px;
+    line-height: 24px;
+  }
+
+  .info-card-body p,
+  .warning-card-body p {
+    font-size: 13px;
+    line-height: 20px;
+  }
+
+  .section-header {
+    margin-bottom: 14px;
+  }
+
+  .section-header h2 {
+    font-size: 17px;
+    line-height: 24px;
+  }
+
+  .list-card {
+    padding: 14px;
+    border-radius: 8px;
+  }
+
+  .list-intro {
+    font-size: 14px;
+    margin-bottom: 12px;
+  }
+
+  .bullet-list li {
+    font-size: 13px;
+    line-height: 20px;
+    gap: 12px;
+  }
+
+  .step-card {
+    padding: 16px 14px;
+    border-radius: 0px 8px 8px 0px;
+    gap: 10px;
+  }
+
+  .step-number {
+    width: 32px;
+    height: 32px;
+    font-size: 14px;
+  }
+
+  .step-body h3 {
+    font-size: 15px;
+    line-height: 22px;
+  }
+
+  .icon-list li {
+    font-size: 13px;
+    line-height: 20px;
+  }
+
+  .note-box {
+    padding: 12px;
+    font-size: 13px;
+    line-height: 20px;
+    border-radius: 8px;
+  }
+}
 </style>

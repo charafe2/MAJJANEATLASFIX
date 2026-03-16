@@ -309,4 +309,17 @@ async function submit() {
 .modal-fade-leave-to { opacity: 0; }
 .modal-fade-enter-from .crm-card,
 .modal-fade-leave-to .crm-card { transform: scale(0.95) translateY(8px); opacity: 0; }
+
+/* ── Responsive ──────────────────────────────────────────────────────── */
+@media (max-width: 480px) {
+  .crm-overlay { padding: 12px; }
+  .crm-card { border-radius: 14px; }
+  .crm-header { padding: 14px 16px; }
+  .crm-icon-wrap { width: 34px; height: 34px; }
+  .crm-title { font-size: 14px; }
+  .crm-body { padding: 16px; gap: 12px; }
+  .crm-select { font-size: 13px; padding: 8px 12px; }
+  .crm-textarea { font-size: 13px; }
+  .crm-submit-btn { height: 44px; font-size: 14px; border-radius: 10px; }
+}
 </style>

@@ -51,49 +51,33 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 
-const testimonials = [
-  {
-    name: 'Karim Benali',
-    role: 'Client',
-    text: "J'ai trouvé un excellent plombier en moins de 10 minutes. Le service était rapide, propre et professionnel. Je recommande vivement AtlasFix à tous.",
-  },
-  {
-    name: 'Fatima Zahra',
-    role: 'Cliente',
-    text: "Très bonne expérience ! L'artisan est arrivé à l'heure, a bien expliqué le problème et le prix était transparent. Pas de mauvaises surprises.",
-  },
-  {
-    name: 'Youssef Alami',
-    role: 'Client',
-    text: "Plateforme très simple à utiliser. J'ai comparé trois devis et choisi le meilleur. Le paiement en ligne est sécurisé et le suivi est top.",
-  },
-  {
-    name: 'Nadia Chraibi',
-    role: 'Cliente',
-    text: "Artisan ponctuel et très compétent. Le travail de peinture est impeccable. Je referai appel à AtlasFix sans hésitation pour mes prochains travaux.",
-  },
-  {
-    name: 'Omar Tazi',
-    role: 'Client',
-    text: "Excellent service de bout en bout. La réservation est simple, l'artisan vérifié et le résultat parfait. Une vraie plateforme de confiance.",
-  },
-]
-
+const testimonials = ref([])
 const current = ref(0)
 
+onMounted(async () => {
+  try {
+    const res = await fetch('/api/public/testimonials')
+    const json = await res.json()
+    testimonials.value = json.data ?? []
+  } catch {
+    // keep empty
+  }
+})
+
 const visible = computed(() => {
-  const total = testimonials.length
-  return [0, 1, 2].map(offset => testimonials[(current.value + offset) % total])
+  const total = testimonials.value.length
+  if (total === 0) return []
+  return [0, 1, 2].map(offset => testimonials.value[(current.value + offset) % total])
 })
 
 const prev = () => {
-  current.value = (current.value - 1 + testimonials.length) % testimonials.length
+  current.value = (current.value - 1 + testimonials.value.length) % testimonials.value.length
 }
 
 const next = () => {
-  current.value = (current.value + 1) % testimonials.length
+  current.value = (current.value + 1) % testimonials.value.length
 }
 </script>
 

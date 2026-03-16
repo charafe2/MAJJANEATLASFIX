@@ -78,14 +78,15 @@ class PaymentStatsController extends Controller
         $status = ($sr->status ?? '') === 'completed' ? 'completed' : 'pending';
 
         return [
-            'id'       => 'offer-' . $offer->id,
-            'client'   => $name,
-            'initials' => strtoupper(mb_substr($name, 0, 1)),
-            'service'  => $sr->title ?? $sr->serviceType?->name ?? 'Service',
-            'amount'   => (float) ($offer->proposed_price ?? 0),
-            'method'   => null,
-            'date'     => optional($sr->updated_at)->format('d/m/Y') ?? '—',
-            'status'   => $status,
+            'id'                 => 'offer-' . $offer->id,
+            'service_request_id' => $offer->service_request_id,
+            'client'             => $name,
+            'initials'           => strtoupper(mb_substr($name, 0, 1)),
+            'service'            => $sr->title ?? $sr->serviceType?->name ?? 'Service',
+            'amount'             => (float) ($offer->proposed_price ?? 0),
+            'method'             => null,
+            'date'               => optional($sr->updated_at)->format('d/m/Y') ?? '—',
+            'status'             => $status,
         ];
     }
 

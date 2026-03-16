@@ -53,6 +53,9 @@ class _ClientHomeScreenState extends State<ClientHomeScreen> {
   bool _catsLoading     = true;
   bool _artisansLoading = true;
 
+  String? _searchQuery;
+  String? _selectedCity;
+
   @override
   void initState() {
     super.initState();
@@ -70,8 +73,12 @@ class _ClientHomeScreenState extends State<ClientHomeScreen> {
   }
 
   Future<void> _loadArtisans() async {
+    setState(() => _artisansLoading = true);
     try {
-      final data = await _artisanRepo.getArtisans();
+      final data = await _artisanRepo.getArtisans(
+        search: _searchQuery,
+        city: _selectedCity,
+      );
       if (mounted) setState(() { _artisans = data; _artisansLoading = false; });
     } catch (_) {
       if (mounted) setState(() => _artisansLoading = false);
@@ -105,7 +112,7 @@ class _ClientHomeScreenState extends State<ClientHomeScreen> {
           Column(
             children: [
               // ── Orange header ──────────────────────────────────────
-              _HomeHeader(),
+              _buildHeader(context),
 
               // ── Scrollable body ────────────────────────────────────
               Expanded(
@@ -248,15 +255,10 @@ class _ClientHomeScreenState extends State<ClientHomeScreen> {
       ),
     );
   }
-}
 
-// ── Orange header ─────────────────────────────────────────────────────────────
-// CSS: width 393px, height 205px, bg #FC5A15, border-radius: 0 0 20 20
-class _HomeHeader extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
+  // ── Header ──────────────────────────────────────────────────────────────────
+  Widget _buildHeader(BuildContext context) {
     return Container(
-      // Full screen width, fixed 205px height
       width: double.infinity,
       decoration: const BoxDecoration(
         color: Color(0xFFFC5A15),
@@ -268,41 +270,119 @@ class _HomeHeader extends StatelessWidget {
       child: SafeArea(
         bottom: false,
         child: SizedBox(
-          // CSS: total 205px. SafeArea top (≈47px on iPhone) consumed above.
-          // Remaining content inside safe area ≈ 158px, padded 20px bottom → 138px.
           height: 158,
           child: Padding(
-            // horizontal: 29px = (393-335)/2
             padding: const EdgeInsets.fromLTRB(29, 0, 29, 20),
             child: Column(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                // ── Row 1: logo + icon buttons ─────────────────────
-                // CSS: Frame 1597881083, top:69px from screen ≈ 22px from SafeArea
                 const SizedBox(height: 22),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    // Logo
                     const AtlasLogo(),
-                    // Icon buttons — CSS: gap:15px
                     Row(children: [
-                      _HeaderIconBtn(
-                        icon: Icons.calendar_today_outlined,
+                      GestureDetector(
                         onTap: () => context.push('/client/agenda'),
+                        child: Container(
+                          width: 40, height: 40,
+                          decoration: const BoxDecoration(
+                              color: Colors.white, shape: BoxShape.circle),
+                          child: const Icon(Icons.calendar_today_outlined,
+                              color: Color(0xFF393C40), size: 20),
+                        ),
                       ),
                       const SizedBox(width: 15),
-                      _HeaderIconBtn(
-                        icon: Icons.notifications_none_rounded,
+                      GestureDetector(
                         onTap: () => context.push('/client/notifications'),
+                        child: Container(
+                          width: 40, height: 40,
+                          decoration: const BoxDecoration(
+                              color: Colors.white, shape: BoxShape.circle),
+                          child: const Icon(Icons.notifications_none_rounded,
+                              color: Color(0xFF393C40), size: 20),
+                        ),
                       ),
                     ]),
                   ],
                 ),
 
-                // ── Row 2: search pills ────────────────────────────
-                // CSS: top:130px from screen ≈ bottom of header area
-                const _SearchRow(),
+                // Search pills
+                Row(
+                  children: [
+                    // Service search pill
+                    GestureDetector(
+                      onTap: () => _showSearchDialog(context),
+                      child: Container(
+                        width: 216, height: 48,
+                        padding: const EdgeInsets.fromLTRB(16, 12, 7, 12),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withValues(alpha: 0.8),
+                          borderRadius: BorderRadius.circular(100),
+                        ),
+                        child: Row(children: [
+                          Expanded(
+                            child: Text(
+                              _searchQuery ?? 'Quelle service recherc…',
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(
+                                fontFamily: 'Public Sans', fontSize: 14,
+                                fontWeight: FontWeight.w400,
+                                color: _searchQuery != null
+                                    ? Colors.black : const Color(0xFF494949),
+                                letterSpacing: -0.14,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 4),
+                          Container(
+                            width: 36, height: 36,
+                            decoration: const BoxDecoration(
+                                color: Color(0xFF393C40), shape: BoxShape.circle),
+                            child: const Icon(Icons.manage_search,
+                                color: Colors.white, size: 18),
+                          ),
+                        ]),
+                      ),
+                    ),
+                    const SizedBox(width: 7),
+                    // City picker pill
+                    GestureDetector(
+                      onTap: () => _showCityPicker(context),
+                      child: Container(
+                        width: 112, height: 48,
+                        padding: const EdgeInsets.fromLTRB(16, 12, 7, 12),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(100),
+                        ),
+                        child: Row(children: [
+                          Expanded(
+                            child: Text(
+                              _selectedCity ?? 'Ville…',
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(
+                                fontFamily: 'Public Sans', fontSize: 14,
+                                fontWeight: FontWeight.w400,
+                                color: _selectedCity != null
+                                    ? Colors.black : const Color(0xFF494949),
+                                letterSpacing: -0.14,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 4),
+                          Container(
+                            width: 36, height: 36,
+                            decoration: const BoxDecoration(
+                                color: Color(0xFF393C40), shape: BoxShape.circle),
+                            child: const Icon(Icons.keyboard_arrow_down_rounded,
+                                color: Colors.white, size: 18),
+                          ),
+                        ]),
+                      ),
+                    ),
+                  ],
+                ),
               ],
             ),
           ),
@@ -310,112 +390,198 @@ class _HomeHeader extends StatelessWidget {
       ),
     );
   }
+
+  // ── Search dialog ──────────────────────────────────────────────────────────
+  void _showSearchDialog(BuildContext context) {
+    final ctrl = TextEditingController(text: _searchQuery);
+    showDialog(
+      context: context,
+      builder: (ctx) => Dialog(
+        insetPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 80),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        child: Padding(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text('Rechercher un service',
+                style: TextStyle(fontFamily: 'Public Sans',
+                    fontWeight: FontWeight.w700, fontSize: 16,
+                    color: Color(0xFF314158))),
+              const SizedBox(height: 16),
+              TextField(
+                controller: ctrl,
+                autofocus: true,
+                style: const TextStyle(fontFamily: 'Public Sans', fontSize: 14),
+                decoration: InputDecoration(
+                  hintText: 'Ex: Plomberie, Électricité…',
+                  hintStyle: const TextStyle(color: Color(0xFF9CA3AF)),
+                  prefixIcon: const Icon(Icons.search, color: AppColors.primary),
+                  filled: true,
+                  fillColor: const Color(0xFFF9FAFB),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: const BorderSide(color: Color(0xFFE5E7EB))),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: const BorderSide(color: Color(0xFFE5E7EB))),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: const BorderSide(color: AppColors.primary, width: 1.5)),
+                ),
+                onSubmitted: (val) {
+                  Navigator.pop(ctx);
+                  setState(() => _searchQuery = val.trim().isEmpty ? null : val.trim());
+                  _loadArtisans();
+                },
+              ),
+              const SizedBox(height: 16),
+              Row(
+                children: [
+                  if (_searchQuery != null)
+                    Expanded(
+                      child: OutlinedButton(
+                        onPressed: () {
+                          Navigator.pop(ctx);
+                          setState(() => _searchQuery = null);
+                          _loadArtisans();
+                        },
+                        style: OutlinedButton.styleFrom(
+                          side: const BorderSide(color: Color(0xFFE5E7EB)),
+                          shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(10))),
+                        child: const Text('Effacer',
+                          style: TextStyle(fontFamily: 'Public Sans',
+                              fontSize: 13, color: Color(0xFF62748E))),
+                      ),
+                    ),
+                  if (_searchQuery != null) const SizedBox(width: 10),
+                  Expanded(
+                    child: ElevatedButton(
+                      onPressed: () {
+                        Navigator.pop(ctx);
+                        final val = ctrl.text.trim();
+                        setState(() => _searchQuery = val.isEmpty ? null : val);
+                        _loadArtisans();
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.primary, elevation: 0,
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10))),
+                      child: const Text('Rechercher',
+                        style: TextStyle(fontFamily: 'Public Sans',
+                            fontSize: 13, color: Colors.white)),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  // ── City picker ────────────────────────────────────────────────────────────
+  static const _cities = [
+    'Casablanca', 'Rabat', 'Marrakech', 'Fès', 'Tanger',
+    'Agadir', 'Meknès', 'Oujda', 'Kenitra', 'Tétouan', 'Salé', 'Temara',
+  ];
+
+  void _showCityPicker(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (_) => Container(
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        ),
+        padding: const EdgeInsets.fromLTRB(20, 16, 20, 32),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 40, height: 4,
+              decoration: BoxDecoration(color: const Color(0xFFD1D5DC),
+                  borderRadius: BorderRadius.circular(2)),
+            ),
+            const SizedBox(height: 16),
+            const Text('Choisir une ville',
+              style: TextStyle(fontFamily: 'Public Sans',
+                  fontWeight: FontWeight.w700, fontSize: 16,
+                  color: Color(0xFF314158))),
+            const SizedBox(height: 16),
+            // "All cities" option
+            _CityOption(
+              label: 'Toutes les villes',
+              selected: _selectedCity == null,
+              onTap: () {
+                Navigator.pop(context);
+                setState(() => _selectedCity = null);
+                _loadArtisans();
+              },
+            ),
+            // City list
+            SizedBox(
+              height: 300,
+              child: ListView.builder(
+                itemCount: _cities.length,
+                itemBuilder: (_, i) => _CityOption(
+                  label: _cities[i],
+                  selected: _selectedCity == _cities[i],
+                  onTap: () {
+                    Navigator.pop(context);
+                    setState(() => _selectedCity = _cities[i]);
+                    _loadArtisans();
+                  },
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 }
 
-
-// Header icon buttons
-// CSS: Frame 1597881071 — 40x40, bg #FFFFFF, border-radius 125px, icon #393C40
-class _HeaderIconBtn extends StatelessWidget {
-  final IconData icon;
-  final VoidCallback? onTap;
-  const _HeaderIconBtn({required this.icon, this.onTap});
+// ── City option for bottom sheet ──────────────────────────────────────────────
+class _CityOption extends StatelessWidget {
+  final String label;
+  final bool selected;
+  final VoidCallback onTap;
+  const _CityOption({required this.label, required this.selected,
+      required this.onTap});
 
   @override
   Widget build(BuildContext context) => GestureDetector(
     onTap: onTap,
     child: Container(
-      width: 40,
-      height: 40,
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
+      margin: const EdgeInsets.only(bottom: 6),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(125),
+        color: selected ? AppColors.primary.withValues(alpha: 0.08) : Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: selected ? AppColors.primary : const Color(0xFFE5E7EB)),
       ),
-      child: Icon(icon, color: const Color(0xFF393C40), size: 20),
+      child: Row(
+        children: [
+          Icon(Icons.location_on_outlined, size: 18,
+              color: selected ? AppColors.primary : const Color(0xFF9CA3AF)),
+          const SizedBox(width: 10),
+          Expanded(child: Text(label,
+            style: TextStyle(
+              fontFamily: 'Public Sans', fontSize: 14,
+              fontWeight: selected ? FontWeight.w600 : FontWeight.w400,
+              color: selected ? AppColors.primary : const Color(0xFF314158),
+            ))),
+          if (selected)
+            const Icon(Icons.check_circle, color: AppColors.primary, size: 20),
+        ],
+      ),
     ),
-  );
-}
-
-// Search row — two pills side by side, total width 335px
-// CSS: left pill 216px (translucent), right pill 112px (solid), gap 7px
-class _SearchRow extends StatelessWidget {
-  const _SearchRow();
-
-  @override
-  Widget build(BuildContext context) => const Row(
-    children: [
-      // Pill 1 — CSS: 216x48, bg rgba(255,255,255,0.8), radius 100px
-      _SearchPill(
-        hint: 'Quelle service recherc…',
-        width: 216,
-        translucent: true,
-        icon: Icons.manage_search,
-      ),
-      SizedBox(width: 7), // gap = 335 - 216 - 112
-      // Pill 2 — CSS: 112x48, bg #FFFFFF, radius 100px
-      _SearchPill(
-        hint: 'Ville…',
-        width: 112,
-        translucent: false,
-        icon: Icons.keyboard_arrow_down_rounded,
-      ),
-    ],
-  );
-}
-
-// Search pill
-// CSS: h:48, padding: 12px 7px 12px 16px, radius 100px
-// Inner dark button: 36x36, bg #393C40, shape circle
-class _SearchPill extends StatelessWidget {
-  final String hint;
-  final double width;
-  final bool translucent;
-  final IconData icon;
-  const _SearchPill({
-    required this.hint,
-    required this.width,
-    required this.translucent,
-    required this.icon,
-  });
-
-  @override
-  Widget build(BuildContext context) => Container(
-    width: width,
-    height: 48,
-    // CSS: padding: 12 7 12 16
-    padding: const EdgeInsets.fromLTRB(16, 12, 7, 12),
-    decoration: BoxDecoration(
-      color: translucent
-          ? Colors.white.withValues(alpha: 0.8) // rgba(255,255,255,0.8)
-          : Colors.white,
-      borderRadius: BorderRadius.circular(100),
-    ),
-    child: Row(children: [
-      // Hint text — CSS: Public Sans 400 14px #494949 ls:-0.01em
-      Expanded(
-        child: Text(
-          hint,
-          overflow: TextOverflow.ellipsis,
-          style: const TextStyle(
-            fontFamily: 'Public Sans',
-            fontSize: 14,
-            fontWeight: FontWeight.w400,
-            color: Color(0xFF494949),
-            letterSpacing: -0.14,
-          ),
-        ),
-      ),
-      const SizedBox(width: 4),
-      // Dark button — CSS: 36x36, bg #393C40, border-radius 1000px
-      Container(
-        width: 36,
-        height: 36,
-        decoration: const BoxDecoration(
-          color: Color(0xFF393C40),
-          shape: BoxShape.circle,
-        ),
-        child: Icon(icon, color: Colors.white, size: 18),
-      ),
-    ]),
   );
 }
 
@@ -613,16 +779,20 @@ class _PromoCard extends StatelessWidget {
       child: Stack(
         clipBehavior: Clip.none,
         children: [
-          // ── Back card — shifted 6px right+down, contained within parent ─
+          // ── Back card — tilted so top-left peeks above the front card ─
           Positioned(
-            top:    imgOver + backShift,
-            left:   6,
+            top:    imgOver,
+            left:   0,
             right:  0,
             bottom: 0,
-            child: Container(
-              decoration: BoxDecoration(
-                color:        orange,
-                borderRadius: BorderRadius.circular(radius),
+            child: Transform.rotate(
+              angle: 0.035, // ~2 degrees clockwise — left side lifts up
+              alignment: Alignment.bottomRight,
+              child: Container(
+                decoration: BoxDecoration(
+                  color:        orange.withValues(alpha: 0.55),
+                  borderRadius: BorderRadius.circular(radius),
+                ),
               ),
             ),
           ),

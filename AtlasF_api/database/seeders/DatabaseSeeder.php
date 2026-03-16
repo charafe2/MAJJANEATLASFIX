@@ -13,6 +13,8 @@ class DatabaseSeeder extends Seeder
             ServiceCategorySeeder::class,
             ServiceTypeSeeder::class,
             BoostPackageSeeder::class,
+            ArtisanSeeder::class,
+            TestimonialSeeder::class,
         ]);
     }
 }

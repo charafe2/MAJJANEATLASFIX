@@ -152,6 +152,10 @@ class AgendaController extends Controller
             'status'           => $a->status,          // scheduled / completed / cancelled
             'contact_name'     => $contactName,
             'contact_phone'    => $contactPhone,
+            'contact_avatar'   => null,
+            'price'            => null,
+            'rating'           => null,
+            'reviews_count'    => 0,
             'rdv_type'         => $a->rdv_type,
             'notes'            => $a->notes,
         ];
@@ -159,7 +163,9 @@ class AgendaController extends Controller
 
     private function formatFromOffer(ArtisanOffer $offer): array
     {
-        $sr = $offer->serviceRequest;
+        $sr     = $offer->serviceRequest;
+        $client = $sr->client;
+        $user   = $client?->user;
 
         return [
             'id'               => 'sr-' . $sr->id,
@@ -169,8 +175,12 @@ class AgendaController extends Controller
             'duration_minutes' => $offer->estimated_duration,
             'city'             => $sr->city,
             'status'           => $sr->status === 'completed' ? 'completed' : 'scheduled',
-            'contact_name'     => $sr->client?->user?->full_name,
-            'contact_phone'    => $sr->client?->user?->phone,
+            'contact_name'     => $user?->full_name,
+            'contact_phone'    => $user?->phone,
+            'contact_avatar'   => $user?->avatar_url,
+            'price'            => $offer->proposed_price,
+            'rating'           => null,
+            'reviews_count'    => 0,
             'rdv_type'         => $sr->service_mode ?? 'sur_place',
             'notes'            => $sr->notes,
         ];
@@ -178,7 +188,9 @@ class AgendaController extends Controller
 
     private function formatFromRequest(ServiceRequest $sr): array
     {
-        $offer = $sr->acceptedOffer;
+        $offer   = $sr->acceptedOffer;
+        $artisan = $offer?->artisan;
+        $user    = $artisan?->user;
 
         return [
             'id'               => 'sr-' . $sr->id,
@@ -188,8 +200,12 @@ class AgendaController extends Controller
             'duration_minutes' => $offer?->estimated_duration,
             'city'             => $sr->city,
             'status'           => $sr->status === 'completed' ? 'completed' : 'scheduled',
-            'contact_name'     => $offer?->artisan?->user?->full_name,
-            'contact_phone'    => $offer?->artisan?->user?->phone,
+            'contact_name'     => $user?->full_name,
+            'contact_phone'    => $user?->phone,
+            'contact_avatar'   => $user?->avatar_url,
+            'price'            => $offer?->proposed_price,
+            'rating'           => $artisan?->rating_average,
+            'reviews_count'    => $artisan?->total_reviews ?? 0,
             'rdv_type'         => $sr->service_mode ?? 'sur_place',
             'notes'            => $sr->notes,
         ];

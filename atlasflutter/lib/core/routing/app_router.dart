@@ -35,6 +35,7 @@ import '../../features/artisan/screens/artisan_profile_screen.dart';
 import '../../features/artisan/screens/artisan_info_screen.dart';
 import '../../features/artisan/screens/artisan_available_requests_screen.dart';
 import '../../features/artisan/screens/artisan_client_profile_screen.dart';
+import '../../features/artisan/screens/artisan_agenda_screen.dart';
 import '../../data/repositories/artisan_job_repository.dart';
 import '../../data/repositories/service_request_repository.dart';
 
@@ -225,6 +226,9 @@ final appRouter = GoRouter(
 
     GoRoute(path: '/artisan/available-requests',
       builder: (_, __) => const ArtisanAvailableRequestsScreen()),
+
+    GoRoute(path: '/artisan/agenda',
+      builder: (_, __) => const ArtisanAgendaScreen()),
 
     GoRoute(path: '/artisan/client-profile/:id',
       builder: (_, state) {

@@ -3,13 +3,34 @@
 namespace App\Http\Controllers;
 
 use App\Models\Artisan;
+use App\Models\ArtisanBoost;
 use App\Models\ServiceCategory;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 
 class ArtisanBrowseController extends Controller
 {
+    /**
+     * Generate a fallback avatar URL from initials.
+     */
+    private function fallbackAvatar(?string $name): string
+    {
+        $encoded = urlencode($name ?? 'A');
+        return "https://ui-avatars.com/api/?name={$encoded}&background=FC5A15&color=fff&size=256";
+    }
+
+    /**
+     * Resolve avatar URL: stored file → Storage::url, external → as-is, null → generated.
+     */
+    private function resolveAvatar(?string $avatarUrl, ?string $name): string
+    {
+        if ($avatarUrl && !str_starts_with($avatarUrl, 'http')) {
+            return Storage::url($avatarUrl);
+        }
+        return $avatarUrl ?? $this->fallbackAvatar($name);
+    }
     /**
      * Public list of active service categories.
      */
@@ -33,6 +54,8 @@ class ArtisanBrowseController extends Controller
             'portfolio',
             'certifications',
             'services.serviceCategory',
+            'activeBoost',
+            'currentTier',
             'reviews' => fn ($q) => $q->where('is_visible', true)->latest()->limit(10),
             'reviews.client.user',
         ]);
@@ -102,6 +125,8 @@ class ArtisanBrowseController extends Controller
                     'type'     => $s->service_type ?? null,
                 ]),
                 'reviews'          => $reviews,
+                'is_boosted'       => $artisan->activeBoost !== null,
+                'tier'             => $artisan->currentTier?->name ?? 'basic',
             ],
         ]);
     }
@@ -117,11 +142,19 @@ class ArtisanBrowseController extends Controller
      */
     public function artisans(Request $request): JsonResponse
     {
-        $query = Artisan::with('user')
+        $query = Artisan::with([
+                'user',
+                'primaryCategory',
+                'activeBoost',
+                'currentTier',
+                'reviews' => fn ($q) => $q->where('is_visible', true)->latest()->limit(1),
+                'reviews.client.user',
+            ])
             ->where('is_available', true);
 
         if ($request->filled('category_id')) {
-            $query->where('service_category_id', $request->integer('category_id'));
+            $categoryId = $request->integer('category_id');
+            $query->where('service_category_id', $categoryId);
         }
 
         if ($request->filled('search')) {
@@ -131,15 +164,35 @@ class ArtisanBrowseController extends Controller
                   ->orWhere('city', 'like', "%{$search}%")
                   ->orWhereHas('user', function ($uq) use ($search) {
                       $uq->where('full_name', 'like', "%{$search}%");
+                  })
+                  ->orWhereHas('primaryCategory', function ($cq) use ($search) {
+                      $cq->where('name', 'like', "%{$search}%");
                   });
             });
         }
 
+        if ($request->filled('city')) {
+            $query->where('city', $request->city);
+        }
+
+        // Boosted artisans first, then by rating
+        $query->orderByDesc(
+            ArtisanBoost::select(DB::raw('1'))
+                ->whereColumn('artisan_boosts.artisan_id', 'artisans.id')
+                ->where('artisan_boosts.is_active', true)
+                ->where('artisan_boosts.end_date', '>=', now())
+                ->limit(1)
+        )->orderByDesc('rating_average');
+
         $perPage  = min($request->integer('per_page', 9), 50);
-        $artisans = $query->orderByDesc('rating_average')->paginate($perPage);
+        $artisans = $query->paginate($perPage);
 
         $data = $artisans->map(function (Artisan $artisan) {
-            $user = $artisan->user;
+            $user       = $artisan->user;
+            $lastReview = $artisan->reviews->first();
+            $reviewer   = $lastReview?->client?->user;
+            $isBoosted  = $artisan->activeBoost !== null;
+
             return [
                 'id'               => $artisan->id,
                 'name'             => $user?->full_name ?? 'Artisan',
@@ -148,10 +201,19 @@ class ArtisanBrowseController extends Controller
                     : $user?->avatar_url,
                 'city'             => $artisan->city ?? 'Maroc',
                 'bio'              => $artisan->bio ?? 'Artisan professionnel à votre service.',
-                'rating'           => number_format((float) ($artisan->rating_average ?? 0), 1) . '/5',
+                'specialty'        => $artisan->primaryCategory?->name ?? 'Artisan',
+                'rating'           => number_format((float) ($artisan->rating_average ?? 0), 1),
                 'reviews'          => (int) ($artisan->total_reviews ?? 0),
                 'verified'         => (bool) $artisan->is_verified,
                 'experience_years' => $artisan->experience_years,
+                'is_boosted'       => $isBoosted,
+                'tier'             => $artisan->currentTier?->name ?? 'basic',
+                'last_review'      => $lastReview ? [
+                    'reviewer' => $reviewer?->full_name ?? 'Client',
+                    'rating'   => $lastReview->rating,
+                    'comment'  => $lastReview->comment ?? '',
+                    'date'     => $lastReview->created_at?->translatedFormat('l \à H\h') ?? '',
+                ] : null,
             ];
         });
 

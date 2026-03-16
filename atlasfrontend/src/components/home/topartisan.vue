@@ -21,11 +21,19 @@
 
         <!-- Cards -->
         <div class="ta-track">
-          <div v-for="(artisan, i) in visible" :key="i" class="ta-card">
+          <div v-for="(artisan, i) in visible" :key="i" class="ta-card" :class="{ 'ta-card-boosted': artisan.is_boosted }">
+
+            <!-- Boost badge -->
+            <div v-if="artisan.is_boosted" class="ta-boost-badge">
+              <svg viewBox="0 0 16 16" fill="none" width="12" height="12">
+                <path d="M8 1l1.5 3.5H14l-3 2.5 1.2 3.5L8 8.2 3.8 10.5 5 7 2 4.5h4.5z" fill="#FC5A15"/>
+              </svg>
+              Mis en avant
+            </div>
 
             <!-- Top: avatar + info -->
             <div class="ta-card-top">
-              <img :src="artisan.avatar" :alt="artisan.name" class="ta-avatar" />
+              <img :src="avatarUrl(artisan)" :alt="artisan.name" class="ta-avatar" />
               <div class="ta-info">
                 <div class="ta-name-row">
                   <span class="ta-name">{{ artisan.name }}</span>
@@ -36,7 +44,7 @@
                   </svg>
                 </div>
                 <div class="ta-meta">
-                  <span class="ta-specialty">{{ artisan.specialty }}</span>
+                  <span class="ta-specialty">{{ artisan.specialty ?? 'Artisan' }}</span>
                   <!-- Location -->
                   <div class="ta-location">
                     <svg viewBox="0 0 14 18" fill="none">
@@ -51,6 +59,7 @@
                       <path d="M7 1l1.5 4H13l-3.5 2.5 1.3 4L7 9 3.2 11.5l1.3-4L1 5h4.5L7 1z"/>
                     </svg>
                     <span>{{ artisan.rating }}/5 ({{ artisan.reviews }} avis)</span>
+
                   </div>
                 </div>
               </div>
@@ -59,20 +68,23 @@
             <!-- About -->
             <div class="ta-about">
               <span class="ta-about-title">À propos</span>
-              <p class="ta-about-text">{{ artisan.about }}</p>
+              <p class="ta-about-text">{{ artisan.bio }}</p>
             </div>
 
             <!-- Last review -->
-            <div class="ta-review">
-              <span class="ta-review-header">{{ artisan.reviewTitle }}</span>
-              <span class="ta-review-date">{{ artisan.reviewDate }}</span>
-              <span class="ta-review-text">{{ artisan.reviewText }}</span>
+            <div v-if="artisan.last_review" class="ta-review">
+              <span class="ta-review-header">Dernier avis de {{ artisan.last_review.reviewer }} {{ artisan.last_review.rating }}/5</span>
+              <span class="ta-review-date">{{ artisan.last_review.date }}</span>
+              <span class="ta-review-text">{{ artisan.last_review.comment }}</span>
+            </div>
+            <div v-else class="ta-review">
+              <span class="ta-review-header">Pas encore d'avis</span>
             </div>
 
             <!-- Buttons -->
             <div class="ta-btns">
-              <button class="ta-btn-profile">Voir le profil</button>
-              <button class="ta-btn-contact">
+              <button class="ta-btn-profile" @click="router.push(`/artisans/profile/${artisan.id}`)">Voir le profil</button>
+              <button class="ta-btn-contact" @click="router.push(`/artisans/profile/${artisan.id}`)">
                 <svg viewBox="0 0 14 14" fill="none">
                   <rect x="1" y="1" width="12" height="12" rx="2" stroke="white" stroke-width="1.18"/>
                   <path d="M4 5h6M4 8h4" stroke="white" stroke-width="1.18" stroke-linecap="round"/>
@@ -102,6 +114,7 @@
           :class="{ 'ta-dot-active': i === current }"
           @click="current = i"
         ></span>
+
       </div>
 
     </div>
@@ -109,79 +122,35 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
 
-const artisans = [
-  {
-    name: 'Karim Benali',
-    specialty: 'Spécialiste en Rénovation de Maison',
-    city: 'Casablanca',
-    rating: '4.8',
-    reviews: 89,
-    avatar: 'https://randomuser.me/api/portraits/men/32.jpg',
-    about: "J'offre des services professionnels de rénovation pour vous accompagner dans tous vos projets d'amélioration de l'habitat, des petites réparations aux rénovations complètes. Un travail de qualité, garanti avec une grande attention aux détails.",
-    reviewTitle: 'Dernier avis de Michael 5/5',
-    reviewDate: 'Mardi à 14h',
-    reviewText: 'Excellent travail',
-  },
-  {
-    name: 'Youssef Alami',
-    specialty: 'Expert en Plomberie',
-    city: 'Rabat',
-    rating: '4.9',
-    reviews: 124,
-    avatar: 'https://randomuser.me/api/portraits/men/44.jpg',
-    about: "Plombier professionnel avec plus de 10 ans d'expérience. Intervention rapide pour toutes urgences, installation et réparation de toutes canalisations. Devis gratuit et transparent.",
-    reviewTitle: 'Dernier avis de Sara 5/5',
-    reviewDate: 'Lundi à 10h',
-    reviewText: 'Très professionnel',
-  },
-  {
-    name: 'Omar Tazi',
-    specialty: 'Électricien Certifié',
-    city: 'Marrakech',
-    rating: '4.7',
-    reviews: 67,
-    avatar: 'https://randomuser.me/api/portraits/men/55.jpg',
-    about: "Électricien certifié spécialisé dans l'installation électrique résidentielle et commerciale. Mise aux normes, dépannage rapide, installation de tableaux électriques et domotique.",
-    reviewTitle: 'Dernier avis de Ahmed 5/5',
-    reviewDate: 'Mercredi à 9h',
-    reviewText: 'Travail soigné',
-  },
-  {
-    name: 'Hassan Idrissi',
-    specialty: 'Peintre Décorateur',
-    city: 'Fès',
-    rating: '4.6',
-    reviews: 43,
-    avatar: 'https://randomuser.me/api/portraits/men/67.jpg',
-    about: "Peintre décorateur avec une expertise en revêtements intérieurs et extérieurs. Maîtrise des techniques modernes et traditionnelles pour sublimer vos espaces.",
-    reviewTitle: 'Dernier avis de Nadia 5/5',
-    reviewDate: 'Jeudi à 16h',
-    reviewText: 'Magnifique résultat',
-  },
-  {
-    name: 'Rachid Moussaoui',
-    specialty: 'Menuisier Ébéniste',
-    city: 'Tanger',
-    rating: '4.9',
-    reviews: 98,
-    avatar: 'https://randomuser.me/api/portraits/men/78.jpg',
-    about: "Menuisier ébéniste passionné, création de meubles sur mesure, pose de parquet, installation de cuisines et de dressings. Bois massif et matériaux nobles.",
-    reviewTitle: 'Dernier avis de Leila 5/5',
-    reviewDate: 'Vendredi à 11h',
-    reviewText: 'Chef d\'œuvre !',
-  },
-]
+const router   = useRouter()
+const artisans = ref([])
+const current  = ref(0)
 
-const current = ref(0)
-
-const visible = computed(() => {
-  return [0, 1, 2].map(offset => artisans[(current.value + offset) % artisans.length])
+onMounted(async () => {
+  try {
+    const res  = await fetch('/api/public/artisans?per_page=6')
+    const json = await res.json()
+    artisans.value = json.data ?? []
+  } catch {
+    // keep empty
+  }
 })
 
-const prev = () => { current.value = (current.value - 1 + artisans.length) % artisans.length }
-const next = () => { current.value = (current.value + 1) % artisans.length }
+function avatarUrl(a) {
+  return a.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(a.name)}&background=FC5A15&color=fff&size=96`
+}
+
+const visible = computed(() => {
+  const total = artisans.value.length
+  if (total === 0) return []
+  return [0, 1, 2].map(offset => artisans.value[(current.value + offset) % total])
+})
+
+const prev = () => { current.value = (current.value - 1 + artisans.value.length) % artisans.value.length }
+const next = () => { current.value = (current.value + 1) % artisans.value.length }
 </script>
 
 <style scoped>
@@ -275,6 +244,26 @@ const next = () => { current.value = (current.value + 1) % artisans.length }
   display: flex;
   flex-direction: column;
   gap: 20px;
+  position: relative;
+}
+
+.ta-card-boosted {
+  border: 1.5px solid #FC5A15;
+  box-shadow: 0px 6px 14.3px -1px rgba(252,90,21,0.12), 0px 1px 8.6px 3px rgba(252,90,21,0.1);
+}
+
+.ta-boost-badge {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background: #FFF5F0;
+  color: #FC5A15;
+  font-family: 'Poppins', sans-serif;
+  font-weight: 500;
+  font-size: 10px;
+  padding: 3px 10px;
+  border-radius: 20px;
+  width: fit-content;
 }
 
 /* Top row */

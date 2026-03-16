@@ -96,9 +96,9 @@ const team = [
   content: '';
   position: absolute;
   inset: -5%;
-  background: url('@/assets/images/Handy.jpg') center center / cover no-repeat;
-  filter: blur(18px);
-  opacity: 0.25;
+  background: url('../../assets/images/handyman.jpg') center center / cover no-repeat;
+  filter: blur(10px) grayscale(15%);
+  opacity: 0.60;
   z-index: 0;
   pointer-events: none;
 }
@@ -109,7 +109,7 @@ const team = [
   position: absolute;
   inset: 0;
   background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.82) 0%, rgba(255, 255, 255, 0.92) 100%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.70) 0%, rgba(255, 255, 255, 0.78) 100%),
     linear-gradient(111.07deg, rgba(252, 90, 21, 0.024) 0.25%, rgba(252, 90, 21, 0.048) 99.75%),
     linear-gradient(238.17deg, rgba(30, 64, 175, 0.104) 11.35%, rgba(240, 177, 0, 0.052) 88.65%);
   z-index: 1;
@@ -164,5 +164,68 @@ const team = [
 @keyframes fadeUp {
   from { opacity: 0; transform: translateY(20px); }
   to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ── TABLET (max-width: 900px) ──────────────────────────── */
+@media (max-width: 900px) {
+  .hero {
+    min-height: 520px;
+  }
+
+  .hero-inner {
+    max-width: 600px;
+    padding: 90px 20px 60px;
+  }
+
+  .hero-tag {
+    font-size: 17px;
+    padding: 10px 24px;
+    margin-bottom: 24px;
+  }
+
+  .hero-title {
+    font-size: clamp(22px, 3vw, 32px);
+    margin-bottom: 20px;
+  }
+
+  .hero-desc {
+    font-size: 14px;
+    line-height: 1.7;
+    max-width: 100%;
+  }
+}
+
+/* ── MOBILE (max-width: 640px) ──────────────────────────── */
+@media (max-width: 640px) {
+  .hero {
+    min-height: 420px;
+  }
+
+  .hero-inner {
+    max-width: 100%;
+    padding: 70px 16px 48px;
+  }
+
+  .hero-tag {
+    font-size: 15px;
+    padding: 8px 20px;
+    margin-bottom: 20px;
+    border-radius: 10px;
+  }
+
+  .hero-title {
+    font-size: clamp(20px, 5vw, 26px);
+    margin-bottom: 16px;
+    line-height: 1.35;
+  }
+
+  .hero-title br {
+    display: none;
+  }
+
+  .hero-desc {
+    font-size: 13px;
+    line-height: 1.65;
+  }
 }
 </style>

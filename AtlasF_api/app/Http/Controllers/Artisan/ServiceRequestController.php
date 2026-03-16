@@ -107,6 +107,18 @@ class ServiceRequestController extends Controller
             return response()->json(['error' => 'You have already submitted an offer for this request.'], 422);
         }
 
+        // Enforce subscription tier offer limits
+        if (!$artisan->canSubmitOffer()) {
+            $tier = $artisan->getEffectiveTier();
+            return response()->json([
+                'error' => "Vous avez atteint la limite de {$tier->max_offers_per_month} offres/mois de votre plan {$tier->name}. Passez à un plan supérieur pour envoyer plus d'offres.",
+                'limit_reached' => true,
+                'current_tier'  => $tier->name,
+                'max_offers'    => $tier->max_offers_per_month,
+                'offers_used'   => $artisan->offersThisMonth(),
+            ], 403);
+        }
+
         $data = $request->validate([
             'proposed_price'     => 'required|numeric|min:0',
             'estimated_duration' => 'required|integer|min:1',

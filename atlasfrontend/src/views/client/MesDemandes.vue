@@ -1233,4 +1233,22 @@ function showToast(message, type = 'success') {
   transition: background .15s;
 }
 .addr-btn-confirm:hover { background: #e04e0d; }
+
+@media (max-width: 480px) {
+  .card-header { padding: 14px 16px; }
+  .card-title { font-size: 16px; }
+  .card-details { padding: 0 16px 16px; }
+  .btn-orange { padding: 10px 18px; font-size: 14px; }
+  .price-amount { font-size: 18px; }
+  .no-offers { padding: 24px; }
+  .toast { font-size: 13px; padding: 10px 20px; }
+  .addr-overlay { padding: 10px; }
+  .addr-modal { border-radius: 12px; }
+  .addr-header { padding: 14px 16px; }
+  .addr-title { font-size: 14px; }
+  .addr-body { padding: 14px; gap: 10px; }
+  .addr-input-row { flex-direction: column; }
+  .addr-map { height: 170px; }
+  .addr-footer { padding: 12px 14px; }
+}
 </style>

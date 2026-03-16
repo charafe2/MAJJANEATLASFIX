@@ -280,7 +280,7 @@ function statusLabel(status) {
 // ── Navigation ────────────────────────────────────────────────────────────
 function goToDetail(payment) {
   const base = user.value?.account_type === 'artisan' ? '/artisan/demandes' : '/client/demandes'
-  const id = String(payment.id).replace(/^sr-/i, '')
+  const id = payment.service_request_id ?? String(payment.id).replace(/^sr-/i, '')
   router.push(`${base}/${id}`)
 }
 

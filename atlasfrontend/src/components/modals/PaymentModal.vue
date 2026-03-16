@@ -414,4 +414,19 @@ async function submit() {
 .modal-fade-leave-to { opacity: 0; }
 .modal-fade-enter-from .pm-card,
 .modal-fade-leave-to .pm-card { transform: scale(0.95) translateY(8px); opacity: 0; }
+
+/* ── Responsive ──────────────────────────────────────────────────────── */
+@media (max-width: 480px) {
+  .pm-overlay { padding: 12px; }
+  .pm-card { border-radius: 14px; }
+  .pm-header { padding: 14px 16px; }
+  .pm-icon-wrap { width: 34px; height: 34px; }
+  .pm-title { font-size: 14px; }
+  .pm-body { padding: 16px; gap: 12px; }
+  .pm-input { height: 42px; font-size: 13px; }
+  .pm-row { gap: 8px; }
+  .pm-pay-btn { height: 44px; font-size: 14px; border-radius: 10px; }
+  .pm-notice { padding: 8px 10px; font-size: 11px; }
+  .pm-amount-val { font-size: 14px; }
+}
 </style>

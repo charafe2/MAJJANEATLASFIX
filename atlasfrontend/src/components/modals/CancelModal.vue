@@ -419,4 +419,23 @@ async function submit() {
 .modal-fade-leave-to { opacity: 0; }
 .modal-fade-enter-from .cm-card,
 .modal-fade-leave-to .cm-card { transform: scale(0.95) translateY(8px); opacity: 0; }
+
+/* ── Responsive ──────────────────────────────────────────────────────── */
+@media (max-width: 480px) {
+  .cm-overlay { padding: 12px; }
+  .cm-card { border-radius: 14px; }
+  .cm-header { padding: 14px 16px; }
+  .cm-icon-wrap { width: 34px; height: 34px; }
+  .cm-title { font-size: 14px; }
+  .cm-subtitle { font-size: 11px; }
+  .cm-body { padding: 16px; gap: 12px; }
+  .cm-warn-box { padding: 10px 12px; }
+  .cm-warn-text { font-size: 12px; }
+  .cm-policy { padding: 10px 12px; }
+  .cm-policy-list { padding-left: 14px; }
+  .cm-policy-list li { font-size: 11.5px; }
+  .cm-textarea { font-size: 13px; }
+  .cm-footer { gap: 8px; }
+  .cm-btn-keep, .cm-btn-cancel { height: 42px; font-size: 13px; }
+}
 </style>

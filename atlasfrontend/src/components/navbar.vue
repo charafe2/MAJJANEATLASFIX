@@ -795,6 +795,14 @@ onUnmounted(() => {
 .mobile-menu-leave-to { opacity: 0; transform: translateY(-8px); }
 
 /* ── RESPONSIVE ───────────────────────────────────────────── */
+@media (max-width: 1100px) {
+  .navbar { padding: 16px 40px; }
+  .wrapper { gap: 24px; }
+  .nav-box { max-width: 400px; }
+  .nav-item { font-size: 14px; padding: 8px 6px; }
+  .account-label { display: none; }
+}
+
 @media (max-width: 900px) {
   .navbar { padding: 16px 24px; height: auto; min-height: 70px; }
   .wrapper { gap: 0; height: auto; }

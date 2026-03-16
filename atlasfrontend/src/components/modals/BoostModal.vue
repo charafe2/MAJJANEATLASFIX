@@ -621,4 +621,23 @@ async function submitPayment() {
 .bm-fade-leave-to { opacity: 0; }
 .bm-fade-enter-from .bm-card,
 .bm-fade-leave-to .bm-card { transform: scale(0.95) translateY(10px); opacity: 0; }
+
+/* ── Responsive ──────────────────────────────────────────────────────── */
+@media (max-width: 480px) {
+  .bm-overlay { padding: 12px; }
+  .bm-card { border-radius: 14px; }
+  .bm-header { padding: 14px 16px; }
+  .bm-icon-wrap { width: 34px; height: 34px; }
+  .bm-title { font-size: 14px; }
+  .bm-body { padding: 16px 16px 20px; gap: 12px; }
+  .bm-intro-text { font-size: 12px; }
+  .bm-pkg-row { padding: 10px 12px; border-radius: 12px; }
+  .bm-pkg-icon { width: 32px; height: 32px; }
+  .bm-pkg-name { font-size: 13px; }
+  .bm-pkg-price { font-size: 13px; }
+  .bm-input { font-size: 13px; padding: 8px 10px; }
+  .bm-row { gap: 8px; }
+  .bm-btn-primary { height: 44px; font-size: 14px; border-radius: 12px; }
+  .bm-summary-box { padding: 8px 12px; font-size: 13px; }
+}
 </style>

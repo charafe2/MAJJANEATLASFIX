@@ -143,7 +143,7 @@ class _ArtisanOffersScreenState extends State<ArtisanOffersScreen> {
                   const AtlasLogo(),
                   Row(children: [
                     GestureDetector(
-                      onTap: () => context.push('/client/agenda'),
+                      onTap: () => context.push('/artisan/agenda'),
                       child: Container(
                         width: 40, height: 40,
                         decoration: const BoxDecoration(

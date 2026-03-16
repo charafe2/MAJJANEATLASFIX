@@ -14,6 +14,10 @@ class Appointment {
   final String  status;       // scheduled | completed | cancelled
   final String? contactName;
   final String? contactPhone;
+  final String? contactAvatar;
+  final double? price;
+  final double? rating;
+  final int     reviewsCount;
   final String? rdvType;
   final String? notes;
 
@@ -21,6 +25,7 @@ class Appointment {
     required this.id, required this.type, required this.title,
     required this.scheduledAt, this.durationMinutes, this.city,
     required this.status, this.contactName, this.contactPhone,
+    this.contactAvatar, this.price, this.rating, this.reviewsCount = 0,
     this.rdvType, this.notes,
   });
 
@@ -37,16 +42,20 @@ class Appointment {
     status:          j['status'] as String? ?? 'scheduled',
     contactName:     j['contact_name'] as String?,
     contactPhone:    j['contact_phone'] as String?,
+    contactAvatar:   j['contact_avatar'] as String?,
+    price:           double.tryParse('${j['price'] ?? ''}'),
+    rating:          double.tryParse('${j['rating'] ?? ''}'),
+    reviewsCount:    j['reviews_count'] as int? ?? 0,
     rdvType:         j['rdv_type'] as String?,
     notes:           j['notes'] as String?,
   );
 
   String get durationLabel {
-    if (durationMinutes == null || durationMinutes == 0) return '';
+    if (durationMinutes == null || durationMinutes == 0) return 'None';
     final h = durationMinutes! ~/ 60;
     final m = durationMinutes! % 60;
     if (h == 0) return '${m}min';
-    return m > 0 ? '${h}h${m.toString().padLeft(2, '0')}' : '${h}h';
+    return m > 0 ? '$h-${h+1} heures' : '$h heures';
   }
 }
 
