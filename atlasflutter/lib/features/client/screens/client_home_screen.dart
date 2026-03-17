@@ -54,7 +54,6 @@ class _ClientHomeScreenState extends State<ClientHomeScreen> {
   bool _artisansLoading = true;
 
   String? _searchQuery;
-  String? _selectedCity;
 
   @override
   void initState() {
@@ -77,11 +76,11 @@ class _ClientHomeScreenState extends State<ClientHomeScreen> {
     try {
       final data = await _artisanRepo.getArtisans(
         search: _searchQuery,
-        city: _selectedCity,
       );
       if (mounted) setState(() { _artisans = data; _artisansLoading = false; });
-    } catch (_) {
-      if (mounted) setState(() => _artisansLoading = false);
+    } catch (e) {
+      debugPrint('[ClientHome] _loadArtisans error: $e');
+      if (mounted) setState(() { _artisans = []; _artisansLoading = false; });
     }
   }
 
@@ -307,81 +306,43 @@ class _ClientHomeScreenState extends State<ClientHomeScreen> {
                   ],
                 ),
 
-                // Search pills
-                Row(
-                  children: [
-                    // Service search pill
-                    GestureDetector(
-                      onTap: () => _showSearchDialog(context),
-                      child: Container(
-                        width: 216, height: 48,
-                        padding: const EdgeInsets.fromLTRB(16, 12, 7, 12),
-                        decoration: BoxDecoration(
-                          color: Colors.white.withValues(alpha: 0.8),
-                          borderRadius: BorderRadius.circular(100),
-                        ),
-                        child: Row(children: [
-                          Expanded(
-                            child: Text(
-                              _searchQuery ?? 'Quelle service recherc…',
-                              overflow: TextOverflow.ellipsis,
-                              style: TextStyle(
-                                fontFamily: 'Public Sans', fontSize: 14,
-                                fontWeight: FontWeight.w400,
-                                color: _searchQuery != null
-                                    ? Colors.black : const Color(0xFF494949),
-                                letterSpacing: -0.14,
-                              ),
-                            ),
-                          ),
-                          const SizedBox(width: 4),
-                          Container(
-                            width: 36, height: 36,
-                            decoration: const BoxDecoration(
-                                color: Color(0xFF393C40), shape: BoxShape.circle),
-                            child: const Icon(Icons.manage_search,
-                                color: Colors.white, size: 18),
-                          ),
-                        ]),
-                      ),
+                // Search bar (full width)
+                GestureDetector(
+                  onTap: () => _showSearchDialog(context),
+                  child: Container(
+                    height: 48,
+                    padding: const EdgeInsets.fromLTRB(16, 0, 6, 0),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.8),
+                      borderRadius: BorderRadius.circular(100),
                     ),
-                    const SizedBox(width: 7),
-                    // City picker pill
-                    GestureDetector(
-                      onTap: () => _showCityPicker(context),
-                      child: Container(
-                        width: 112, height: 48,
-                        padding: const EdgeInsets.fromLTRB(16, 12, 7, 12),
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(100),
+                    child: Row(children: [
+                      const Icon(Icons.search_rounded,
+                          color: Color(0xFF393C40), size: 20),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          _searchQuery ?? 'Quelle service recherchez-vous ?',
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            fontFamily: 'Public Sans', fontSize: 14,
+                            fontWeight: FontWeight.w400,
+                            color: _searchQuery != null
+                                ? Colors.black : const Color(0xFF494949),
+                            letterSpacing: -0.14,
+                          ),
                         ),
-                        child: Row(children: [
-                          Expanded(
-                            child: Text(
-                              _selectedCity ?? 'Ville…',
-                              overflow: TextOverflow.ellipsis,
-                              style: TextStyle(
-                                fontFamily: 'Public Sans', fontSize: 14,
-                                fontWeight: FontWeight.w400,
-                                color: _selectedCity != null
-                                    ? Colors.black : const Color(0xFF494949),
-                                letterSpacing: -0.14,
-                              ),
-                            ),
-                          ),
-                          const SizedBox(width: 4),
-                          Container(
-                            width: 36, height: 36,
-                            decoration: const BoxDecoration(
-                                color: Color(0xFF393C40), shape: BoxShape.circle),
-                            child: const Icon(Icons.keyboard_arrow_down_rounded,
-                                color: Colors.white, size: 18),
-                          ),
-                        ]),
                       ),
-                    ),
-                  ],
+                      const SizedBox(width: 4),
+                      Container(
+                        width: 36, height: 36,
+                        decoration: const BoxDecoration(
+                            color: Color(0xFF393C40), shape: BoxShape.circle),
+                        child: const Icon(Icons.manage_search,
+                            color: Colors.white, size: 18),
+                      ),
+                    ]),
+                  ),
                 ),
               ],
             ),
@@ -482,107 +443,6 @@ class _ClientHomeScreenState extends State<ClientHomeScreen> {
     );
   }
 
-  // ── City picker ────────────────────────────────────────────────────────────
-  static const _cities = [
-    'Casablanca', 'Rabat', 'Marrakech', 'Fès', 'Tanger',
-    'Agadir', 'Meknès', 'Oujda', 'Kenitra', 'Tétouan', 'Salé', 'Temara',
-  ];
-
-  void _showCityPicker(BuildContext context) {
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: Colors.transparent,
-      builder: (_) => Container(
-        decoration: const BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-        ),
-        padding: const EdgeInsets.fromLTRB(20, 16, 20, 32),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              width: 40, height: 4,
-              decoration: BoxDecoration(color: const Color(0xFFD1D5DC),
-                  borderRadius: BorderRadius.circular(2)),
-            ),
-            const SizedBox(height: 16),
-            const Text('Choisir une ville',
-              style: TextStyle(fontFamily: 'Public Sans',
-                  fontWeight: FontWeight.w700, fontSize: 16,
-                  color: Color(0xFF314158))),
-            const SizedBox(height: 16),
-            // "All cities" option
-            _CityOption(
-              label: 'Toutes les villes',
-              selected: _selectedCity == null,
-              onTap: () {
-                Navigator.pop(context);
-                setState(() => _selectedCity = null);
-                _loadArtisans();
-              },
-            ),
-            // City list
-            SizedBox(
-              height: 300,
-              child: ListView.builder(
-                itemCount: _cities.length,
-                itemBuilder: (_, i) => _CityOption(
-                  label: _cities[i],
-                  selected: _selectedCity == _cities[i],
-                  onTap: () {
-                    Navigator.pop(context);
-                    setState(() => _selectedCity = _cities[i]);
-                    _loadArtisans();
-                  },
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-// ── City option for bottom sheet ──────────────────────────────────────────────
-class _CityOption extends StatelessWidget {
-  final String label;
-  final bool selected;
-  final VoidCallback onTap;
-  const _CityOption({required this.label, required this.selected,
-      required this.onTap});
-
-  @override
-  Widget build(BuildContext context) => GestureDetector(
-    onTap: onTap,
-    child: Container(
-      width: double.infinity,
-      padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
-      margin: const EdgeInsets.only(bottom: 6),
-      decoration: BoxDecoration(
-        color: selected ? AppColors.primary.withValues(alpha: 0.08) : Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: selected ? AppColors.primary : const Color(0xFFE5E7EB)),
-      ),
-      child: Row(
-        children: [
-          Icon(Icons.location_on_outlined, size: 18,
-              color: selected ? AppColors.primary : const Color(0xFF9CA3AF)),
-          const SizedBox(width: 10),
-          Expanded(child: Text(label,
-            style: TextStyle(
-              fontFamily: 'Public Sans', fontSize: 14,
-              fontWeight: selected ? FontWeight.w600 : FontWeight.w400,
-              color: selected ? AppColors.primary : const Color(0xFF314158),
-            ))),
-          if (selected)
-            const Icon(Icons.check_circle, color: AppColors.primary, size: 20),
-        ],
-      ),
-    ),
-  );
 }
 
 // ── Section header ────────────────────────────────────────────────────────────

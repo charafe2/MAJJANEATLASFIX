@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
+import '../../../core/constants/api_constants.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/widgets/atlas_logo.dart';
+import '../../../data/repositories/artisan_job_repository.dart';
 import '../../../data/repositories/artisan_repository.dart';
 import '../../../data/repositories/conversation_repository.dart';
 
@@ -46,12 +49,6 @@ class _ArtisanHomeScreenState extends State<ArtisanHomeScreen> {
   bool _artisansLoading = true;
 
   String? _searchQuery;
-  String? _selectedCity;
-
-  static const _cities = [
-    'Casablanca', 'Rabat', 'Marrakech', 'Fès', 'Tanger',
-    'Agadir', 'Meknès', 'Oujda', 'Kenitra', 'Tétouan', 'Salé', 'Temara',
-  ];
 
   @override
   void initState() {
@@ -64,11 +61,11 @@ class _ArtisanHomeScreenState extends State<ArtisanHomeScreen> {
     try {
       final data = await _artisanRepo.getArtisans(
         search: _searchQuery,
-        city: _selectedCity,
       );
       if (mounted) setState(() { _artisans = data; _artisansLoading = false; });
-    } catch (_) {
-      if (mounted) setState(() => _artisansLoading = false);
+    } catch (e) {
+      debugPrint('[ArtisanHome] _loadArtisans error: $e');
+      if (mounted) setState(() { _artisans = []; _artisansLoading = false; });
     }
   }
 
@@ -255,78 +252,42 @@ class _ArtisanHomeScreenState extends State<ArtisanHomeScreen> {
                   ],
                 ),
                 // Search pills
-                Row(
-                  children: [
-                    GestureDetector(
-                      onTap: () => _showSearchDialog(context),
-                      child: Container(
-                        width: 216, height: 48,
-                        padding: const EdgeInsets.fromLTRB(16, 12, 7, 12),
-                        decoration: BoxDecoration(
-                          color: Colors.white.withValues(alpha: 0.8),
-                          borderRadius: BorderRadius.circular(100),
-                        ),
-                        child: Row(children: [
-                          Expanded(
-                            child: Text(
-                              _searchQuery ?? 'Quelle service recherc…',
-                              overflow: TextOverflow.ellipsis,
-                              style: TextStyle(
-                                fontFamily: 'Public Sans', fontSize: 14,
-                                fontWeight: FontWeight.w400,
-                                color: _searchQuery != null
-                                    ? Colors.black : const Color(0xFF494949),
-                                letterSpacing: -0.14,
-                              ),
-                            ),
-                          ),
-                          const SizedBox(width: 4),
-                          Container(
-                            width: 36, height: 36,
-                            decoration: const BoxDecoration(
-                                color: Color(0xFF393C40), shape: BoxShape.circle),
-                            child: const Icon(Icons.manage_search,
-                                color: Colors.white, size: 18),
-                          ),
-                        ]),
-                      ),
+                GestureDetector(
+                  onTap: () => _showSearchDialog(context),
+                  child: Container(
+                    height: 48,
+                    padding: const EdgeInsets.fromLTRB(16, 0, 6, 0),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.8),
+                      borderRadius: BorderRadius.circular(100),
                     ),
-                    const SizedBox(width: 7),
-                    GestureDetector(
-                      onTap: () => _showCityPicker(context),
-                      child: Container(
-                        width: 112, height: 48,
-                        padding: const EdgeInsets.fromLTRB(16, 12, 7, 12),
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(100),
+                    child: Row(children: [
+                      const Icon(Icons.search_rounded,
+                          color: Color(0xFF393C40), size: 20),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          _searchQuery ?? 'Quelle service recherchez-vous ?',
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            fontFamily: 'Public Sans', fontSize: 14,
+                            fontWeight: FontWeight.w400,
+                            color: _searchQuery != null
+                                ? Colors.black : const Color(0xFF494949),
+                            letterSpacing: -0.14,
+                          ),
                         ),
-                        child: Row(children: [
-                          Expanded(
-                            child: Text(
-                              _selectedCity ?? 'Ville…',
-                              overflow: TextOverflow.ellipsis,
-                              style: TextStyle(
-                                fontFamily: 'Public Sans', fontSize: 14,
-                                fontWeight: FontWeight.w400,
-                                color: _selectedCity != null
-                                    ? Colors.black : const Color(0xFF494949),
-                                letterSpacing: -0.14,
-                              ),
-                            ),
-                          ),
-                          const SizedBox(width: 4),
-                          Container(
-                            width: 36, height: 36,
-                            decoration: const BoxDecoration(
-                                color: Color(0xFF393C40), shape: BoxShape.circle),
-                            child: const Icon(Icons.keyboard_arrow_down_rounded,
-                                color: Colors.white, size: 18),
-                          ),
-                        ]),
                       ),
-                    ),
-                  ],
+                      const SizedBox(width: 4),
+                      Container(
+                        width: 36, height: 36,
+                        decoration: const BoxDecoration(
+                            color: Color(0xFF393C40), shape: BoxShape.circle),
+                        child: const Icon(Icons.manage_search,
+                            color: Colors.white, size: 18),
+                      ),
+                    ]),
+                  ),
                 ),
               ],
             ),
@@ -427,100 +388,6 @@ class _ArtisanHomeScreenState extends State<ArtisanHomeScreen> {
     );
   }
 
-  // ── City picker ────────────────────────────────────────────────────────────
-  void _showCityPicker(BuildContext context) {
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: Colors.transparent,
-      builder: (_) => Container(
-        decoration: const BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-        ),
-        padding: const EdgeInsets.fromLTRB(20, 16, 20, 32),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              width: 40, height: 4,
-              decoration: BoxDecoration(color: const Color(0xFFD1D5DC),
-                  borderRadius: BorderRadius.circular(2)),
-            ),
-            const SizedBox(height: 16),
-            const Text('Choisir une ville',
-              style: TextStyle(fontFamily: 'Public Sans',
-                  fontWeight: FontWeight.w700, fontSize: 16,
-                  color: Color(0xFF314158))),
-            const SizedBox(height: 16),
-            _CityOption(
-              label: 'Toutes les villes',
-              selected: _selectedCity == null,
-              onTap: () {
-                Navigator.pop(context);
-                setState(() => _selectedCity = null);
-                _loadArtisans();
-              },
-            ),
-            SizedBox(
-              height: 300,
-              child: ListView.builder(
-                itemCount: _cities.length,
-                itemBuilder: (_, i) => _CityOption(
-                  label: _cities[i],
-                  selected: _selectedCity == _cities[i],
-                  onTap: () {
-                    Navigator.pop(context);
-                    setState(() => _selectedCity = _cities[i]);
-                    _loadArtisans();
-                  },
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-// ── City option for bottom sheet ──────────────────────────────────────────────
-class _CityOption extends StatelessWidget {
-  final String label;
-  final bool selected;
-  final VoidCallback onTap;
-  const _CityOption({required this.label, required this.selected,
-      required this.onTap});
-
-  @override
-  Widget build(BuildContext context) => GestureDetector(
-    onTap: onTap,
-    child: Container(
-      width: double.infinity,
-      padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
-      margin: const EdgeInsets.only(bottom: 6),
-      decoration: BoxDecoration(
-        color: selected ? AppColors.primary.withValues(alpha: 0.08) : Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: selected ? AppColors.primary : const Color(0xFFE5E7EB)),
-      ),
-      child: Row(
-        children: [
-          Icon(Icons.location_on_outlined, size: 18,
-              color: selected ? AppColors.primary : const Color(0xFF9CA3AF)),
-          const SizedBox(width: 10),
-          Expanded(child: Text(label,
-            style: TextStyle(
-              fontFamily: 'Public Sans', fontSize: 14,
-              fontWeight: selected ? FontWeight.w600 : FontWeight.w400,
-              color: selected ? AppColors.primary : const Color(0xFF314158),
-            ))),
-          if (selected)
-            const Icon(Icons.check_circle, color: AppColors.primary, size: 20),
-        ],
-      ),
-    ),
-  );
 }
 
 // ── Bottom nav bar ─────────────────────────────────────────────────────────────
@@ -532,7 +399,7 @@ class ArtisanBottomNavBar extends StatelessWidget {
   static const _imageAssets = [
     'assets/images/HomeIcone.png',
     'assets/images/ReservationIcone.png',
-    'assets/images/tools.png',   // center: available requests
+    'assets/images/pan.png',     // center: available requests
     'assets/images/ChatIcone.png',
     'assets/images/profileicone.png',
   ];
@@ -573,12 +440,8 @@ class ArtisanBottomNavBar extends StatelessWidget {
                   shape: BoxShape.circle,
                   border: active ? null : Border.all(color: Colors.white, width: 1),
                 ),
-                child: Center(
-                  child: ColorFiltered(
-                    colorFilter: const ColorFilter.mode(
-                        Colors.white, BlendMode.srcIn),
-                    child: Image.asset(_imageAssets[i], width: 22, height: 22),
-                  ),
+                child: const Center(
+                  child: Icon(Icons.handyman_rounded, color: Colors.white, size: 22),
                 ),
               ),
             );
@@ -1043,7 +906,7 @@ class _AddServiceCard extends StatelessWidget {
         SizedBox(
           width: double.infinity, height: 39,
           child: ElevatedButton.icon(
-            onPressed: () {},
+            onPressed: () => context.push('/artisan/add-service'),
             icon: const Icon(Icons.add_circle_outline_rounded,
                 color: Colors.white, size: 18),
             label: const Text('Ajouter un service', style: TextStyle(
@@ -1061,8 +924,38 @@ class _AddServiceCard extends StatelessWidget {
 }
 
 // ── "Programme de Parrainage" section ─────────────────────────────────────────
-class _ReferralSection extends StatelessWidget {
+class _ReferralSection extends StatefulWidget {
   const _ReferralSection();
+
+  @override
+  State<_ReferralSection> createState() => _ReferralSectionState();
+}
+
+class _ReferralSectionState extends State<_ReferralSection> {
+  final _repo = ArtisanJobRepository();
+  String? _referralCode;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadCode();
+  }
+
+  Future<void> _loadCode() async {
+    try {
+      final p = await _repo.getMyProfile();
+      if (mounted) setState(() => _referralCode = p.referralCode);
+    } catch (_) {}
+  }
+
+  void _openReferralSheet() {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => _ReferralSheet(referralCode: _referralCode),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -1084,9 +977,9 @@ class _ReferralSection extends StatelessWidget {
             border: Border.all(color: const Color(0xFFFFF085), width: 1),
             borderRadius: BorderRadius.circular(10),
           ),
-          child: Row(
+          child: const Row(
             crossAxisAlignment: CrossAxisAlignment.start,
-            children: const [
+            children: [
               Icon(Icons.bolt_rounded, color: Color(0xFFD08700), size: 20),
               SizedBox(width: 8),
               Expanded(child: Column(
@@ -1109,7 +1002,7 @@ class _ReferralSection extends StatelessWidget {
         SizedBox(
           width: double.infinity, height: 39,
           child: ElevatedButton.icon(
-            onPressed: () {},
+            onPressed: _openReferralSheet,
             icon: const Icon(Icons.share_outlined, color: Colors.white, size: 17),
             label: const Text('Générer mon lien de parrainage', style: TextStyle(
                 fontFamily: 'Public Sans', fontWeight: FontWeight.w500,
@@ -1119,6 +1012,173 @@ class _ReferralSection extends StatelessWidget {
           ),
         ),
       ],
+    );
+  }
+}
+
+// ── Referral bottom sheet ─────────────────────────────────────────────────────
+class _ReferralSheet extends StatefulWidget {
+  const _ReferralSheet({this.referralCode});
+  final String? referralCode;
+
+  @override
+  State<_ReferralSheet> createState() => _ReferralSheetState();
+}
+
+class _ReferralSheetState extends State<_ReferralSheet> {
+  bool _copied = false;
+
+  String get _referralLink {
+    final code = widget.referralCode ?? '';
+    if (code.isEmpty) return '';
+    return '${ApiConstants.webBaseUrl}/register/artisan?ref=$code';
+  }
+
+  Future<void> _copyLink() async {
+    final link = _referralLink;
+    if (link.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+        content: Text('Lien de parrainage non disponible.'),
+        backgroundColor: Colors.orange,
+      ));
+      return;
+    }
+    await Clipboard.setData(ClipboardData(text: link));
+    setState(() => _copied = true);
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+        content: Text('Lien copié dans le presse-papier !'),
+        backgroundColor: Color(0xFF22C55E),
+        duration: Duration(seconds: 2),
+      ));
+    }
+    await Future.delayed(const Duration(seconds: 3));
+    if (mounted) setState(() => _copied = false);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final hasCode = (widget.referralCode ?? '').isNotEmpty;
+    return Container(
+      margin: const EdgeInsets.fromLTRB(12, 0, 12, 12),
+      padding: const EdgeInsets.fromLTRB(24, 28, 24, 36),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(28),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Expanded(
+                child: Text('Programme de Parrainage',
+                  style: TextStyle(
+                    fontFamily: 'Public Sans',
+                    fontWeight: FontWeight.w700,
+                    fontSize: 22,
+                    color: Color(0xFF191C24),
+                  )),
+              ),
+              Container(
+                width: 40, height: 40,
+                decoration: BoxDecoration(
+                  color: const Color(0xFFFFF0E8),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: const Icon(Icons.card_giftcard_rounded,
+                  color: AppColors.primary, size: 22),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          const Text(
+            'Partagez AtlasFix avec vos amis et gagnez un boost gratuit pour chaque inscription !',
+            style: TextStyle(
+              fontFamily: 'Public Sans',
+              fontSize: 14,
+              color: Color(0xFF62748E),
+              height: 1.55,
+            )),
+          if (hasCode) ...[
+            const SizedBox(height: 16),
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+              decoration: BoxDecoration(
+                color: const Color(0xFFF5F5F5),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Text(
+                _referralLink,
+                style: const TextStyle(
+                  fontFamily: 'Public Sans',
+                  fontSize: 12,
+                  color: Color(0xFF555555),
+                ),
+              ),
+            ),
+          ],
+          const SizedBox(height: 20),
+          SizedBox(
+            width: double.infinity, height: 54,
+            child: ElevatedButton.icon(
+              onPressed: _copyLink,
+              icon: Icon(
+                _copied ? Icons.check_rounded : Icons.copy_rounded,
+                size: 18,
+              ),
+              label: Text(
+                _copied ? 'Lien copié !' : 'Générer mon lien de parrainage',
+                style: const TextStyle(
+                  fontFamily: 'Public Sans',
+                  fontWeight: FontWeight.w700,
+                  fontSize: 15,
+                  color: Colors.white,
+                )),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: _copied
+                    ? const Color(0xFF22C55E)
+                    : AppColors.primary,
+                elevation: 0,
+                shape: const StadiumBorder(),
+              ),
+            ),
+          ),
+          const SizedBox(height: 20),
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+            decoration: BoxDecoration(
+              color: const Color(0xFFFEFCE8),
+              border: Border.all(color: const Color(0xFFFFF085)),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: const Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Icon(Icons.bolt_rounded, color: Color(0xFFD08700), size: 20),
+                SizedBox(width: 8),
+                Expanded(child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('Gagnez 1 boost gratuit', style: TextStyle(
+                        fontFamily: 'Inter', fontWeight: FontWeight.w700,
+                        fontSize: 13, height: 1.33, color: Color(0xFF733E0A))),
+                    SizedBox(height: 4),
+                    Text(
+                      '(7 jours) pour chaque ami qui crée un compte artisan via votre lien !',
+                      style: TextStyle(fontFamily: 'Inter', fontWeight: FontWeight.w400,
+                          fontSize: 12, height: 1.33, color: Color(0xFF733E0A))),
+                  ],
+                )),
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

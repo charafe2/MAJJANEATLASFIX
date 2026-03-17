@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:image_picker/image_picker.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/auth_state.dart';
 import '../../../../core/widgets/atlas_logo.dart';
@@ -26,6 +27,8 @@ class _ClientProfileScreenState extends State<ClientProfileScreen> {
     _load();
   }
 
+  bool _uploadingAvatar = false;
+
   Future<void> _load() async {
     setState(() { _loading = true; _error = null; });
     try {
@@ -37,6 +40,38 @@ class _ClientProfileScreenState extends State<ClientProfileScreen> {
           _error   = ProfileRepository.errorMessage(e);
           _loading = false;
         });
+      }
+    }
+  }
+
+  Future<void> _pickAndUploadAvatar() async {
+    final picker = ImagePicker();
+    final picked = await picker.pickImage(
+      source: ImageSource.gallery,
+      maxWidth: 512,
+      maxHeight: 512,
+      imageQuality: 85,
+    );
+    if (picked == null) return;
+
+    setState(() => _uploadingAvatar = true);
+    try {
+      final bytes = await picked.readAsBytes();
+      final filename = picked.name;
+      final updated = await _repo.updateAvatarBytes(bytes, filename);
+      debugPrint('[AVATAR] new avatarUrl = ${updated.avatarUrl}');
+      imageCache.clear();
+      imageCache.clearLiveImages();
+      if (mounted) setState(() { _profile = updated; _uploadingAvatar = false; });
+    } catch (e) {
+      if (mounted) {
+        setState(() => _uploadingAvatar = false);
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text(ProfileRepository.errorMessage(e),
+            style: const TextStyle(fontFamily: 'Public Sans')),
+          backgroundColor: const Color(0xFFEF4444),
+          behavior: SnackBarBehavior.floating,
+        ));
       }
     }
   }
@@ -128,7 +163,11 @@ class _ClientProfileScreenState extends State<ClientProfileScreen> {
           // ── Floating avatar ──────────────────────────────────────
           Positioned(
             top: 150, left: 0, right: 0,
-            child: _Avatar(avatarUrl: _profile?.avatarUrl),
+            child: _Avatar(
+              avatarUrl: _profile?.avatarUrl,
+              uploading: _uploadingAvatar,
+              onTap: _pickAndUploadAvatar,
+            ),
           ),
 
           // ── Bottom navigation bar ────────────────────────────────
@@ -229,45 +268,53 @@ class _HeaderIconBtn extends StatelessWidget {
 
 class _Avatar extends StatelessWidget {
   final String? avatarUrl;
-  const _Avatar({this.avatarUrl});
+  final bool uploading;
+  final VoidCallback? onTap;
+  const _Avatar({this.avatarUrl, this.uploading = false, this.onTap});
 
   @override
   Widget build(BuildContext context) => Center(
-    child: SizedBox(
-      width: 128, height: 128,
-      child: Stack(
-        children: [
-          Container(
-            width: 128, height: 128,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: AppColors.primary.withValues(alpha: 0.15),
-              border: Border.all(color: Colors.white, width: 4),
-              boxShadow: const [
-                BoxShadow(color: Color(0x1A000000), blurRadius: 15, offset: Offset(0, 10)),
-                BoxShadow(color: Color(0x0A000000), blurRadius: 6,  offset: Offset(0, 4)),
-              ],
+    child: GestureDetector(
+      onTap: uploading ? null : onTap,
+      child: SizedBox(
+        width: 128, height: 128,
+        child: Stack(
+          children: [
+            Container(
+              width: 128, height: 128,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: AppColors.primary.withValues(alpha: 0.15),
+                border: Border.all(color: Colors.white, width: 4),
+                boxShadow: const [
+                  BoxShadow(color: Color(0x1A000000), blurRadius: 15, offset: Offset(0, 10)),
+                  BoxShadow(color: Color(0x0A000000), blurRadius: 6,  offset: Offset(0, 4)),
+                ],
+              ),
+              child: ClipOval(
+                child: uploading
+                    ? const Center(child: CircularProgressIndicator(
+                        color: AppColors.primary, strokeWidth: 2.5))
+                    : avatarUrl != null && avatarUrl!.isNotEmpty
+                        ? Image.network(
+                            avatarUrl!,
+                            fit: BoxFit.cover,
+                            errorBuilder: (_, __, ___) =>
+                                const Icon(Icons.person, size: 64, color: AppColors.primary),
+                          )
+                        : const Icon(Icons.person, size: 64, color: AppColors.primary),
+              ),
             ),
-            child: ClipOval(
-              child: avatarUrl != null && avatarUrl!.isNotEmpty
-                  ? Image.network(
-                      avatarUrl!,
-                      fit: BoxFit.cover,
-                      errorBuilder: (_, __, ___) =>
-                          Icon(Icons.person, size: 64, color: AppColors.primary),
-                    )
-                  : Icon(Icons.person, size: 64, color: AppColors.primary),
+            Positioned(
+              bottom: 0, right: 44,
+              child: Container(
+                width: 31, height: 31,
+                decoration: const BoxDecoration(color: Colors.white, shape: BoxShape.circle),
+                child: const Icon(Icons.edit, size: 14, color: AppColors.primary),
+              ),
             ),
-          ),
-          Positioned(
-            bottom: 0, right: 44,
-            child: Container(
-              width: 31, height: 31,
-              decoration: const BoxDecoration(color: Colors.white, shape: BoxShape.circle),
-              child: const Icon(Icons.edit, size: 14, color: AppColors.primary),
-            ),
-          ),
-        ],
+          ],
+        ),
       ),
     ),
   );

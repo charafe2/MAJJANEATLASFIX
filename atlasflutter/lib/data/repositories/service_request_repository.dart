@@ -71,7 +71,7 @@ class Offer {
       status:          j['status'] as String? ?? 'pending',
       respondedAt:     DateTime.tryParse(j['created_at'] as String? ?? '')
                        ?? DateTime.now(),
-      artisanAvatar:   _fullUrl(user['avatar_url'] as String?),
+      artisanAvatar:   user['resolved_avatar'] as String? ?? _fullUrl(user['avatar_url'] as String?),
     );
   }
 }

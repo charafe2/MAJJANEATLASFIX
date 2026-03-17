@@ -1,12 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show Clipboard, ClipboardData;
 import 'package:go_router/go_router.dart';
+import 'package:image_picker/image_picker.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/api_constants.dart';
 import '../../../core/widgets/atlas_logo.dart';
 import '../../../core/auth_state.dart';
 import '../../../core/storage/secure_storage.dart';
 import '../../../data/repositories/artisan_job_repository.dart';
+import '../../../data/repositories/profile_repository.dart';
 import 'artisan_home_screen.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -17,11 +19,13 @@ class ArtisanProfileScreen extends StatefulWidget {
 }
 
 class _ArtisanProfileScreenState extends State<ArtisanProfileScreen> {
-  final _repo = ArtisanJobRepository();
+  final _repo        = ArtisanJobRepository();
+  final _profileRepo = ProfileRepository();
 
   bool              _loading   = true;
   String?           _error;
   ArtisanMyProfile? _profile;
+  bool              _uploadingAvatar = false;
 
   String  _name      = '';
   String  _specialty = '';
@@ -79,6 +83,43 @@ class _ArtisanProfileScreenState extends State<ArtisanProfileScreen> {
       backgroundColor: Colors.transparent,
       builder: (_) => _ReferralSheet(referralCode: _profile?.referralCode),
     );
+  }
+
+  Future<void> _pickAndUploadAvatar() async {
+    final picker = ImagePicker();
+    final picked = await picker.pickImage(
+      source: ImageSource.gallery,
+      maxWidth: 512,
+      maxHeight: 512,
+      imageQuality: 85,
+    );
+    if (picked == null) return;
+
+    setState(() => _uploadingAvatar = true);
+    try {
+      final bytes = await picked.readAsBytes();
+      final filename = picked.name;
+      final updated = await _profileRepo.updateAvatarBytes(bytes, filename);
+      debugPrint('[AVATAR] new avatarUrl = ${updated.avatarUrl}');
+      imageCache.clear();
+      imageCache.clearLiveImages();
+      if (mounted) {
+        setState(() {
+          _avatarUrl = updated.avatarUrl;
+          _uploadingAvatar = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => _uploadingAvatar = false);
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text(ProfileRepository.errorMessage(e),
+            style: const TextStyle(fontFamily: 'Public Sans')),
+          backgroundColor: const Color(0xFFEF4444),
+          behavior: SnackBarBehavior.floating,
+        ));
+      }
+    }
   }
 
   @override
@@ -168,7 +209,7 @@ class _ArtisanProfileScreenState extends State<ArtisanProfileScreen> {
                             _ProfileMenuItem(
                               icon:  Icons.build_circle_outlined,
                               label: 'Mes services',
-                              onTap: () {},
+                              onTap: () => context.push('/artisan/my-services'),
                             ),
                             const SizedBox(height: 12),
                             _ProfileMenuItem(
@@ -190,7 +231,11 @@ class _ArtisanProfileScreenState extends State<ArtisanProfileScreen> {
           // ── Floating avatar ──────────────────────────────────────────
           Positioned(
             top: 152, left: 0, right: 0,
-            child: Center(child: _Avatar(avatarUrl: _avatarUrl)),
+            child: Center(child: _Avatar(
+              avatarUrl: _avatarUrl,
+              uploading: _uploadingAvatar,
+              onTap: _pickAndUploadAvatar,
+            )),
           ),
 
           // ── Bottom nav ───────────────────────────────────────────────
@@ -279,45 +324,53 @@ class _ArtisanProfileScreenState extends State<ArtisanProfileScreen> {
 // ── Floating avatar ───────────────────────────────────────────────────────────
 class _Avatar extends StatelessWidget {
   final String? avatarUrl;
-  const _Avatar({this.avatarUrl});
+  final bool uploading;
+  final VoidCallback? onTap;
+  const _Avatar({this.avatarUrl, this.uploading = false, this.onTap});
 
   @override
-  Widget build(BuildContext context) => Stack(
-    clipBehavior: Clip.none,
-    children: [
-      Container(
-        width: 96, height: 96,
-        decoration: BoxDecoration(
-          shape: BoxShape.circle,
-          color: const Color(0xFFFFE0D3),
-          border: Border.all(color: Colors.white, width: 4),
-          boxShadow: const [
-            BoxShadow(color: Color(0x22000000),
-              blurRadius: 14, offset: Offset(0, 6)),
-          ],
-        ),
-        child: ClipOval(
-          child: avatarUrl != null && avatarUrl!.isNotEmpty
-              ? Image.network(avatarUrl!, fit: BoxFit.cover,
-                  errorBuilder: (_, __, ___) =>
-                      const Icon(Icons.person, size: 50, color: AppColors.primary))
-              : const Icon(Icons.person, size: 50, color: AppColors.primary),
-        ),
-      ),
-      // Edit badge
-      Positioned(
-        bottom: 0, right: 0,
-        child: Container(
-          width: 28, height: 28,
+  Widget build(BuildContext context) => GestureDetector(
+    onTap: uploading ? null : onTap,
+    child: Stack(
+      clipBehavior: Clip.none,
+      children: [
+        Container(
+          width: 96, height: 96,
           decoration: BoxDecoration(
-            color: AppColors.primary,
             shape: BoxShape.circle,
-            border: Border.all(color: Colors.white, width: 2),
+            color: const Color(0xFFFFE0D3),
+            border: Border.all(color: Colors.white, width: 4),
+            boxShadow: const [
+              BoxShadow(color: Color(0x22000000),
+                blurRadius: 14, offset: Offset(0, 6)),
+            ],
           ),
-          child: const Icon(Icons.edit_outlined, size: 13, color: Colors.white),
+          child: ClipOval(
+            child: uploading
+                ? const Center(child: CircularProgressIndicator(
+                    color: AppColors.primary, strokeWidth: 2.5))
+                : avatarUrl != null && avatarUrl!.isNotEmpty
+                    ? Image.network(avatarUrl!, fit: BoxFit.cover,
+                        errorBuilder: (_, __, ___) =>
+                            const Icon(Icons.person, size: 50, color: AppColors.primary))
+                    : const Icon(Icons.person, size: 50, color: AppColors.primary),
+          ),
         ),
-      ),
-    ],
+        // Edit badge
+        Positioned(
+          bottom: 0, right: 0,
+          child: Container(
+            width: 28, height: 28,
+            decoration: BoxDecoration(
+              color: AppColors.primary,
+              shape: BoxShape.circle,
+              border: Border.all(color: Colors.white, width: 2),
+            ),
+            child: const Icon(Icons.edit_outlined, size: 13, color: Colors.white),
+          ),
+        ),
+      ],
+    ),
   );
 }
 

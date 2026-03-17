@@ -89,10 +89,15 @@ class AvailableRequest {
       offersCount:  j['offers_count'] as int? ?? 0,
       clientId:     client?['id']      as int?,
       clientName:   user?['full_name'] as String?,
-      clientAvatar: user?['avatar_url'] as String?,
+      clientAvatar: user?['resolved_avatar'] as String? ?? _fullUrl(user?['avatar_url'] as String?),
       clientCity:   user?['city']      as String?,
       photos: photosRaw.map((e) {
-        if (e is Map) return e['url'] as String? ?? '';
+        if (e is Map) {
+          final raw = e['photo_url'] as String? ?? e['url'] as String? ?? '';
+          if (raw.isEmpty) return '';
+          if (raw.startsWith('http')) return raw;
+          return '${ApiConstants.storageBaseUrl}$raw';
+        }
         return e.toString();
       }).toList(),
     );

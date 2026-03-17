@@ -13,25 +13,6 @@ use Illuminate\Support\Facades\Storage;
 class ArtisanBrowseController extends Controller
 {
     /**
-     * Generate a fallback avatar URL from initials.
-     */
-    private function fallbackAvatar(?string $name): string
-    {
-        $encoded = urlencode($name ?? 'A');
-        return "https://ui-avatars.com/api/?name={$encoded}&background=FC5A15&color=fff&size=256";
-    }
-
-    /**
-     * Resolve avatar URL: stored file → Storage::url, external → as-is, null → generated.
-     */
-    private function resolveAvatar(?string $avatarUrl, ?string $name): string
-    {
-        if ($avatarUrl && !str_starts_with($avatarUrl, 'http')) {
-            return Storage::url($avatarUrl);
-        }
-        return $avatarUrl ?? $this->fallbackAvatar($name);
-    }
-    /**
      * Public list of active service categories.
      */
     public function categories(): JsonResponse
@@ -82,9 +63,7 @@ class ArtisanBrowseController extends Controller
                 'created_at' => $r->created_at,
                 'client'     => [
                     'name'   => $clientUser?->full_name ?? 'Client',
-                    'avatar' => $clientUser?->avatar_url && !str_starts_with($clientUser->avatar_url, 'http')
-                        ? Storage::url($clientUser->avatar_url)
-                        : $clientUser?->avatar_url,
+                    'avatar' => $clientUser?->resolved_avatar,
                 ],
             ];
         });
@@ -93,9 +72,7 @@ class ArtisanBrowseController extends Controller
             'data' => [
                 'id'               => $artisan->id,
                 'name'             => $user?->full_name ?? 'Artisan',
-                'avatar'           => $user?->avatar_url && !str_starts_with($user->avatar_url, 'http')
-                    ? Storage::url($user->avatar_url)
-                    : $user?->avatar_url,
+                'avatar'           => $user?->resolved_avatar,
                 'city'             => $artisan->city ?? 'Maroc',
                 'bio'              => $artisan->bio ?? 'Artisan professionnel à votre service.',
                 'specialty'        => $artisan->primaryCategory?->name ?? 'Artisan',
@@ -196,13 +173,11 @@ class ArtisanBrowseController extends Controller
             return [
                 'id'               => $artisan->id,
                 'name'             => $user?->full_name ?? 'Artisan',
-                'avatar'           => $user?->avatar_url && !str_starts_with($user->avatar_url, 'http')
-                    ? Storage::url($user->avatar_url)
-                    : $user?->avatar_url,
+                'avatar'           => $user?->resolved_avatar,
                 'city'             => $artisan->city ?? 'Maroc',
                 'bio'              => $artisan->bio ?? 'Artisan professionnel à votre service.',
                 'specialty'        => $artisan->primaryCategory?->name ?? 'Artisan',
-                'rating'           => number_format((float) ($artisan->rating_average ?? 0), 1),
+                'rating'           => round((float) ($artisan->rating_average ?? 0), 1),
                 'reviews'          => (int) ($artisan->total_reviews ?? 0),
                 'verified'         => (bool) $artisan->is_verified,
                 'experience_years' => $artisan->experience_years,

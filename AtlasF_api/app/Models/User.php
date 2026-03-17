@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Foundation\Auth\User as Authenticatable;
+use Illuminate\Support\Facades\Storage;
 use Laravel\Sanctum\HasApiTokens;
 
 class User extends Authenticatable
@@ -40,6 +41,10 @@ class User extends Authenticatable
 
     protected $hidden = [
         'password',
+    ];
+
+    protected $appends = [
+        'resolved_avatar',
     ];
 
     protected $casts = [
@@ -152,5 +157,21 @@ class User extends Authenticatable
     public function getProfileAttribute()
     {
         return $this->account_type === 'client' ? $this->client : $this->artisan;
+    }
+
+    /**
+     * Resolved avatar: local file → Storage URL, external → as-is, null → generated from initials.
+     */
+    public function getResolvedAvatarAttribute(): string
+    {
+        if ($this->avatar_url) {
+            if (str_starts_with($this->avatar_url, 'http')) {
+                return $this->avatar_url;
+            }
+            // Serve via /api/file/ route so CORS middleware applies (needed for Flutter web)
+            return url("/api/file/{$this->avatar_url}");
+        }
+        $encoded = urlencode($this->full_name ?? 'A');
+        return "https://ui-avatars.com/api/?name={$encoded}&background=FC5A15&color=fff&size=256";
     }
 }

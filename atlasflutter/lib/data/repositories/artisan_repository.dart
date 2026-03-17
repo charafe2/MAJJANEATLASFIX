@@ -10,9 +10,10 @@ String? _fullUrl(String? url) {
   return '${ApiConstants.storageBaseUrl}$url';
 }
 
-// API returns rating as "4.5/5" — extract the numeric part
+// API returns rating as a number (e.g. 4.5) or string ("4.5" / "4.5/5")
 double _parseRating(dynamic raw) {
   if (raw == null) return 0.0;
+  if (raw is num) return raw.toDouble();
   final s = raw.toString().split('/').first.trim();
   return double.tryParse(s) ?? 0.0;
 }

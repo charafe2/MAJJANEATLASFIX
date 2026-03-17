@@ -30,6 +30,7 @@ class _ClientRequestOffersScreenState
   bool    _loading = true;
   String? _error;
   bool    _busy    = false;
+  String? _filterStatus; // null = all, 'pending', 'accepted', 'rejected'
 
   @override
   void initState() {
@@ -56,25 +57,12 @@ class _ClientRequestOffersScreenState
     }
   }
 
-  Future<void> _accept(Offer offer) async {
-    setState(() => _busy = true);
-    try {
-      await _repo.acceptOffer(_request!.id, offer.id);
-      await _load();
-      if (mounted) _snack('Offre acceptée ! L\'artisan sera notifié.', ok: true);
-    } catch (e) {
-      if (mounted) _snack(ServiceRequestRepository.errorMessage(e), ok: false);
-    } finally {
-      if (mounted) setState(() => _busy = false);
-    }
-  }
-
   Future<void> _reject(Offer offer) async {
     setState(() => _busy = true);
     try {
       await _repo.rejectOffer(_request!.id, offer.id);
       await _load();
-      if (mounted) _snack('Offre refusée.', ok: false);
+      if (mounted) _snack('Offre annulée.', ok: true);
     } catch (e) {
       if (mounted) _snack(ServiceRequestRepository.errorMessage(e), ok: false);
     } finally {
@@ -91,6 +79,7 @@ class _ClientRequestOffersScreenState
         context.push('/client/chat/${conv.id}', extra: {
           'name':      offer.artisanName,
           'role':      offer.artisanSpecialty,
+          'avatar':    offer.artisanAvatar,
           'profileId': conv.otherProfileId,
         });
       }
@@ -110,6 +99,38 @@ class _ClientRequestOffersScreenState
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         margin: const EdgeInsets.fromLTRB(20, 0, 20, 16),
       ));
+
+  List<Offer> get _filteredOffers {
+    final offers = _request?.offers ?? [];
+    if (_filterStatus == null) return offers;
+    return offers.where((o) => o.status == _filterStatus).toList();
+  }
+
+  Map<String, int> get _statusCounts {
+    final offers = _request?.offers ?? [];
+    return {
+      'all':      offers.length,
+      'pending':  offers.where((o) => o.status == 'pending').length,
+      'accepted': offers.where((o) => o.status == 'accepted').length,
+      'rejected': offers.where((o) => o.status == 'rejected').length,
+    };
+  }
+
+  void _showFilterSheet() {
+    final counts = _statusCounts;
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (_) => _FilterSheet(
+        currentFilter: _filterStatus,
+        counts: counts,
+        onApply: (status) {
+          setState(() => _filterStatus = status);
+          Navigator.pop(context);
+        },
+      ),
+    );
+  }
 
   // ── build ──────────────────────────────────────────────────────────────────
   @override
@@ -203,76 +224,41 @@ class _ClientRequestOffersScreenState
               ),
               const SizedBox(height: 16),
 
-              // Search row: two pills side by side
-              Row(children: [
-                // Left search pill
-                Expanded(
-                  child: Container(
-                    height: 48,
-                    padding: const EdgeInsets.only(left: 16, right: 6),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.8),
-                      borderRadius: BorderRadius.circular(100),
+              // Search bar (full width)
+              Container(
+                height: 48,
+                padding: const EdgeInsets.fromLTRB(16, 0, 6, 0),
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.8),
+                  borderRadius: BorderRadius.circular(100),
+                ),
+                child: Row(children: [
+                  const Icon(Icons.search_rounded,
+                      color: Color(0xFF393C40), size: 20),
+                  const SizedBox(width: 8),
+                  const Expanded(
+                    child: Text('Quelle demande recherchez-vous ?',
+                      style: TextStyle(
+                        fontFamily: 'Public Sans',
+                        fontSize: 14,
+                        letterSpacing: -0.01 * 14,
+                        color: Color(0xFF494949),
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
-                    child: Row(children: [
-                      const Expanded(
-                        child: Text('Quelle demande recher...',
-                          style: TextStyle(
-                            fontFamily: 'Public Sans',
-                            fontSize: 14,
-                            letterSpacing: -0.01 * 14,
-                            color: Color(0xFF494949),
-                          ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                      Container(
-                        width: 36, height: 36,
-                        decoration: const BoxDecoration(
-                          color: Color(0xFF393C40),
-                          shape: BoxShape.circle,
-                        ),
-                        child: const Icon(Icons.swap_vert_rounded,
-                            color: Colors.white, size: 18),
-                      ),
-                    ]),
                   ),
-                ),
-                const SizedBox(width: 8),
-
-                // Right city pill
-                Container(
-                  height: 48,
-                  padding: const EdgeInsets.only(left: 16, right: 6),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(100),
+                  Container(
+                    width: 36, height: 36,
+                    decoration: const BoxDecoration(
+                      color: Color(0xFF393C40),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(Icons.swap_vert_rounded,
+                        color: Colors.white, size: 18),
                   ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      const Text('Ville...',
-                        style: TextStyle(
-                          fontFamily: 'Public Sans',
-                          fontSize: 14,
-                          letterSpacing: -0.01 * 14,
-                          color: Color(0xFF494949),
-                        )),
-                      const SizedBox(width: 6),
-                      Container(
-                        width: 36, height: 36,
-                        decoration: const BoxDecoration(
-                          color: Color(0xFF393C40),
-                          shape: BoxShape.circle,
-                        ),
-                        child: const Icon(Icons.keyboard_arrow_down_rounded,
-                            color: Colors.white, size: 20),
-                      ),
-                    ],
-                  ),
-                ),
-              ]),
+                ]),
+              ),
             ],
           ),
         ),
@@ -284,43 +270,58 @@ class _ClientRequestOffersScreenState
   Widget _buildFilterRow() {
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
-      child: Container(
-        height: 48,
-        padding: const EdgeInsets.fromLTRB(16, 6, 6, 6),
-        decoration: BoxDecoration(
-          color: Colors.white.withValues(alpha: 0.8),
-          borderRadius: BorderRadius.circular(100),
-          boxShadow: const [
-            BoxShadow(
-              color: Color(0x1A000000),
-              blurRadius: 4,
-              offset: Offset(0, 2),
-            ),
-          ],
-        ),
-        child: Row(children: [
-          const Icon(Icons.tune_rounded, color: AppColors.primary, size: 22),
-          const SizedBox(width: 8),
-          Expanded(
-            child: Container(
-              decoration: BoxDecoration(
-                color: AppColors.primary,
-                borderRadius: BorderRadius.circular(1000),
+      child: GestureDetector(
+        onTap: _showFilterSheet,
+        child: Container(
+          height: 48,
+          padding: const EdgeInsets.fromLTRB(16, 6, 6, 6),
+          decoration: BoxDecoration(
+            color: Colors.white.withValues(alpha: 0.8),
+            borderRadius: BorderRadius.circular(100),
+            boxShadow: const [
+              BoxShadow(
+                color: Color(0x1A000000),
+                blurRadius: 4,
+                offset: Offset(0, 2),
               ),
-              alignment: Alignment.center,
-              child: const Text('Filtrer',
-                style: TextStyle(
-                  fontFamily: 'Public Sans',
-                  fontWeight: FontWeight.w400,
-                  fontSize: 14,
-                  letterSpacing: -0.01 * 14,
-                  color: Colors.white,
-                )),
-            ),
+            ],
           ),
-        ]),
+          child: Row(children: [
+            const Icon(Icons.tune_rounded, color: AppColors.primary, size: 22),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Container(
+                decoration: BoxDecoration(
+                  color: AppColors.primary,
+                  borderRadius: BorderRadius.circular(1000),
+                ),
+                alignment: Alignment.center,
+                child: Text(
+                  _filterStatus == null
+                      ? 'Filtrer'
+                      : 'Filtre: ${_statusLabel(_filterStatus!)}',
+                  style: const TextStyle(
+                    fontFamily: 'Public Sans',
+                    fontWeight: FontWeight.w400,
+                    fontSize: 14,
+                    letterSpacing: -0.01 * 14,
+                    color: Colors.white,
+                  )),
+              ),
+            ),
+          ]),
+        ),
       ),
     );
+  }
+
+  static String _statusLabel(String status) {
+    switch (status) {
+      case 'pending':  return 'En attente';
+      case 'accepted': return 'Accepté';
+      case 'rejected': return 'Refusé';
+      default:         return status;
+    }
   }
 
   // ── Description ────────────────────────────────────────────────────────────
@@ -379,17 +380,19 @@ class _ClientRequestOffersScreenState
       );
     }
 
-    final offers = _request?.offers ?? [];
+    final offers = _filteredOffers;
     if (offers.isEmpty) {
-      return const Center(
+      return Center(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(Icons.inbox_outlined, size: 56, color: Color(0xFFD1D5DC)),
-            SizedBox(height: 12),
+            const Icon(Icons.inbox_outlined, size: 56, color: Color(0xFFD1D5DC)),
+            const SizedBox(height: 12),
             Text(
-              'Aucune offre reçue pour le moment.',
-              style: TextStyle(
+              _filterStatus != null
+                  ? 'Aucune offre ${_statusLabel(_filterStatus!).toLowerCase()}.'
+                  : 'Aucune offre reçue pour le moment.',
+              style: const TextStyle(
                   fontFamily: 'Public Sans',
                   fontSize: 14,
                   color: Color(0xFF9CA3AF)),
@@ -409,9 +412,9 @@ class _ClientRequestOffersScreenState
         itemBuilder: (_, i) {
           final offer = offers[i];
           return _OfferCard(
-            offer:     offer,
-            onAccept:  offer.status == 'pending' ? () => _accept(offer) : null,
-            onReject:  offer.status == 'pending' ? () => _reject(offer) : null,
+            offer:   offer,
+            request: _request!,
+            onCancel:  offer.status == 'pending' ? () => _reject(offer) : null,
             onMessage: () => _message(offer),
             onProfile: offer.artisanId != null
                 ? () => context.push(
@@ -428,19 +431,179 @@ class _ClientRequestOffersScreenState
   }
 }
 
+// ── Filter bottom sheet ───────────────────────────────────────────────────────
+
+class _FilterSheet extends StatefulWidget {
+  final String? currentFilter;
+  final Map<String, int> counts;
+  final ValueChanged<String?> onApply;
+
+  const _FilterSheet({
+    required this.currentFilter,
+    required this.counts,
+    required this.onApply,
+  });
+
+  @override
+  State<_FilterSheet> createState() => _FilterSheetState();
+}
+
+class _FilterSheetState extends State<_FilterSheet> {
+  late String? _selected;
+
+  @override
+  void initState() {
+    super.initState();
+    _selected = widget.currentFilter;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.fromLTRB(12, 0, 12, 12),
+      padding: const EdgeInsets.fromLTRB(20, 24, 20, 28),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(24),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // All
+          _FilterOption(
+            icon: Icons.list_rounded,
+            iconColor: AppColors.primary,
+            label: 'Tous (${widget.counts['all'] ?? 0})',
+            selected: _selected == null,
+            onTap: () => setState(() => _selected = null),
+          ),
+          const SizedBox(height: 10),
+          // Pending
+          _FilterOption(
+            icon: Icons.access_time_rounded,
+            iconColor: const Color(0xFFD08700),
+            label: 'En attente (${widget.counts['pending'] ?? 0})',
+            selected: _selected == 'pending',
+            onTap: () => setState(() => _selected = 'pending'),
+          ),
+          const SizedBox(height: 10),
+          // Accepted
+          _FilterOption(
+            icon: Icons.check_circle_outline_rounded,
+            iconColor: const Color(0xFF16A34A),
+            label: 'Accepté (${widget.counts['accepted'] ?? 0})',
+            selected: _selected == 'accepted',
+            onTap: () => setState(() => _selected = 'accepted'),
+          ),
+          const SizedBox(height: 10),
+          // Rejected
+          _FilterOption(
+            icon: Icons.cancel_outlined,
+            iconColor: const Color(0xFFEF4444),
+            label: 'Refusé (${widget.counts['rejected'] ?? 0})',
+            selected: _selected == 'rejected',
+            onTap: () => setState(() => _selected = 'rejected'),
+          ),
+          const SizedBox(height: 20),
+          // Apply button
+          SizedBox(
+            width: double.infinity, height: 50,
+            child: ElevatedButton(
+              onPressed: () => widget.onApply(_selected),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primary,
+                elevation: 0,
+                shape: const StadiumBorder(),
+              ),
+              child: const Text('Appliquer',
+                style: TextStyle(fontFamily: 'Public Sans',
+                    fontWeight: FontWeight.w700, fontSize: 15,
+                    color: Colors.white)),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _FilterOption extends StatelessWidget {
+  final IconData icon;
+  final Color iconColor;
+  final String label;
+  final bool selected;
+  final VoidCallback onTap;
+
+  const _FilterOption({
+    required this.icon,
+    required this.iconColor,
+    required this.label,
+    required this.selected,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        height: 50,
+        padding: const EdgeInsets.symmetric(horizontal: 16),
+        decoration: BoxDecoration(
+          color: selected ? const Color(0xFFFFF7ED) : Colors.white,
+          border: Border.all(
+            color: selected ? AppColors.primary : const Color(0xFFE5E7EB),
+          ),
+          borderRadius: BorderRadius.circular(14),
+        ),
+        child: Row(
+          children: [
+            Icon(icon, color: iconColor, size: 20),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Text(label,
+                style: TextStyle(
+                  fontFamily: 'Public Sans',
+                  fontWeight: selected ? FontWeight.w600 : FontWeight.w400,
+                  fontSize: 14,
+                  color: const Color(0xFF314158),
+                )),
+            ),
+            // Radio circle
+            Container(
+              width: 22, height: 22,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                border: Border.all(
+                  color: selected ? AppColors.primary : const Color(0xFFD1D5DC),
+                  width: 2,
+                ),
+                color: selected ? AppColors.primary : Colors.transparent,
+              ),
+              child: selected
+                  ? const Icon(Icons.circle, color: Colors.white, size: 10)
+                  : null,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 // ── Offer card ─────────────────────────────────────────────────────────────────
 
 class _OfferCard extends StatelessWidget {
   final Offer          offer;
-  final VoidCallback?  onAccept;
-  final VoidCallback?  onReject;
+  final ServiceRequest request;
+  final VoidCallback?  onCancel;
   final VoidCallback?  onMessage;
   final VoidCallback?  onProfile;
 
   const _OfferCard({
     required this.offer,
-    this.onAccept,
-    this.onReject,
+    required this.request,
+    this.onCancel,
     this.onMessage,
     this.onProfile,
   });
@@ -453,7 +616,7 @@ class _OfferCard extends StatelessWidget {
     return Opacity(
       opacity: isRejected ? 0.5 : 1.0,
       child: Container(
-        padding: const EdgeInsets.fromLTRB(12, 12, 12, 10),
+        padding: const EdgeInsets.fromLTRB(12, 12, 12, 12),
         decoration: BoxDecoration(
           color: Colors.white,
           border: Border.all(color: AppColors.primary, width: 0.61),
@@ -469,28 +632,25 @@ class _OfferCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // ── Section 1: artisan info ──────────────────────────────────────
+            // ── Section 1: artisan info + status badge ────────────────────
             Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Avatar
                 _buildAvatar(),
                 const SizedBox(width: 10),
-                // Info column
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // Name + Profil button
+                      // Name + status badge
                       Row(
-                        crossAxisAlignment: CrossAxisAlignment.center,
                         children: [
                           Expanded(
                             child: Text(offer.artisanName,
                               style: const TextStyle(
                                 fontFamily: 'Public Sans',
-                                fontWeight: FontWeight.w400,
-                                fontSize: 13,
+                                fontWeight: FontWeight.w600,
+                                fontSize: 14,
                                 letterSpacing: -0.27,
                                 color: Color(0xFF314158),
                               ),
@@ -498,212 +658,278 @@ class _OfferCard extends StatelessWidget {
                               overflow: TextOverflow.ellipsis),
                           ),
                           const SizedBox(width: 6),
-                          if (onProfile != null)
-                            GestureDetector(
-                              onTap: onProfile,
-                              child: Container(
-                                padding: const EdgeInsets.symmetric(
-                                    horizontal: 10, vertical: 4),
-                                decoration: BoxDecoration(
-                                  color: const Color(0xFF393C40),
-                                  borderRadius: BorderRadius.circular(20),
-                                ),
-                                child: const Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    Icon(Icons.person_outline_rounded,
-                                        color: Colors.white, size: 11),
-                                    SizedBox(width: 3),
-                                    Text('Profil',
-                                      style: TextStyle(
-                                        fontFamily: 'Public Sans',
-                                        fontSize: 9,
-                                        letterSpacing: -0.09,
-                                        color: Colors.white,
-                                      )),
-                                  ],
-                                ),
-                              ),
-                            ),
+                          _statusBadge(),
                         ],
                       ),
                       const SizedBox(height: 2),
-                      // Specialty
-                      Text(offer.artisanSpecialty,
+                      // Date
+                      Text(
+                        'Complété le ${_fmtDate(offer.respondedAt)}',
+                        style: TextStyle(
+                          fontFamily: 'Public Sans',
+                          fontSize: 11,
+                          color: isAccepted
+                              ? const Color(0xFF16A34A)
+                              : const Color(0xFF62748E),
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      // Category + specialty
+                      Text(
+                        '${request.category} · ${offer.artisanSpecialty}',
                         style: const TextStyle(
                           fontFamily: 'Public Sans',
-                          fontSize: 9,
-                          letterSpacing: -0.09,
+                          fontSize: 11,
                           color: Color(0xFF62748E),
                         ),
                         maxLines: 1,
-                        overflow: TextOverflow.ellipsis),
-                      const SizedBox(height: 4),
-                      // Stars + review count + response time
-                      Row(
-                        children: [
-                          // Yellow star badge
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 5, vertical: 2),
-                            decoration: BoxDecoration(
-                              color: const Color(0xFFFEFCE8),
-                              borderRadius: BorderRadius.circular(6),
-                            ),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                const Icon(Icons.star_rounded,
-                                    color: Color(0xFFFDC700), size: 9),
-                                const SizedBox(width: 2),
-                                Text(offer.rating.toStringAsFixed(1),
-                                  style: const TextStyle(
-                                    fontFamily: 'Public Sans',
-                                    fontSize: 8,
-                                    letterSpacing: -0.09,
-                                    color: Color(0xFF314158),
-                                  )),
-                              ],
-                            ),
-                          ),
-                          const SizedBox(width: 4),
-                          Text('(${offer.reviews} avis)',
-                            style: const TextStyle(
-                              fontFamily: 'Public Sans',
-                              fontSize: 7,
-                              color: Color(0xFF62748E),
-                            )),
-                          const Spacer(),
-                          Text(_timeAgo(offer.respondedAt),
-                            style: const TextStyle(
-                              fontFamily: 'Public Sans',
-                              fontSize: 8,
-                              letterSpacing: -0.09,
-                              color: Color(0xFF62748E),
-                            )),
-                        ],
+                        overflow: TextOverflow.ellipsis,
                       ),
                     ],
                   ),
                 ),
               ],
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 10),
 
-            // ── Section 2: price + duration (salmon bg) ──────────────────────
-            Container(
-              padding: const EdgeInsets.fromLTRB(10, 10, 10, 10),
-              decoration: BoxDecoration(
-                color: const Color(0xFFFFEFE8),
-                borderRadius: BorderRadius.circular(8.58),
-              ),
-              child: Row(
-                children: [
-                  // Left: price
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text('Prix proposé',
-                          style: TextStyle(
-                            fontFamily: 'Public Sans',
-                            fontSize: 8,
-                            color: Color(0xFF62748E),
-                          )),
-                        const SizedBox(height: 2),
-                        Text('${offer.price.toStringAsFixed(0)} DH',
-                          style: const TextStyle(
-                            fontFamily: 'Public Sans',
-                            fontSize: 20,
-                            letterSpacing: 0.24,
-                            color: AppColors.primary,
-                          )),
-                      ],
-                    ),
+            // ── Section 2: description (peach bg) ────────────────────────
+            if (request.description.isNotEmpty)
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFFFEFE8),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Text(request.description,
+                  style: const TextStyle(
+                    fontFamily: 'Public Sans',
+                    fontSize: 12,
+                    height: 1.4,
+                    color: Color(0xFF314158),
                   ),
-                  // Right: duration
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.end,
-                    children: [
-                      const Text('Durée estimée',
-                        style: TextStyle(
-                          fontFamily: 'Public Sans',
-                          fontSize: 8,
-                          color: Color(0xFF62748E),
-                        )),
-                      const SizedBox(height: 2),
-                      Text(
-                        offer.duration > 0 ? _fmtDuration(offer.duration) : 'None',
-                        style: const TextStyle(
-                          fontFamily: 'Public Sans',
-                          fontSize: 13,
-                          letterSpacing: -0.27,
-                          color: Color(0xFF314158),
-                        )),
-                    ],
+                  maxLines: 3,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+            const SizedBox(height: 10),
+
+            // ── Section 3: date/time/duration/location ───────────────────
+            Row(
+              children: [
+                const Icon(Icons.calendar_today_outlined,
+                    size: 12, color: Color(0xFF62748E)),
+                const SizedBox(width: 4),
+                Text(_fmtDateTime(offer.respondedAt),
+                  style: const TextStyle(fontFamily: 'Public Sans',
+                      fontSize: 10, color: Color(0xFF62748E))),
+                const SizedBox(width: 12),
+                const Icon(Icons.access_time_rounded,
+                    size: 12, color: Color(0xFF62748E)),
+                const SizedBox(width: 4),
+                Text('Durée: ${_fmtDuration(offer.duration)}',
+                  style: const TextStyle(fontFamily: 'Public Sans',
+                      fontSize: 10, color: Color(0xFF62748E))),
+                if (request.city.isNotEmpty) ...[
+                  const SizedBox(width: 12),
+                  const Icon(Icons.location_on_outlined,
+                      size: 12, color: Color(0xFF62748E)),
+                  const SizedBox(width: 4),
+                  Flexible(
+                    child: Text(request.city,
+                      style: const TextStyle(fontFamily: 'Public Sans',
+                          fontSize: 10, color: Color(0xFF62748E)),
+                      maxLines: 1, overflow: TextOverflow.ellipsis),
                   ),
                 ],
-              ),
+              ],
             ),
             const SizedBox(height: 12),
 
-            // ── Section 3: action buttons ────────────────────────────────────
-            if (!isRejected)
-              Row(children: [
+            // ── Section 4: price + duration ──────────────────────────────
+            Row(
+              children: [
                 Expanded(
-                  child: SizedBox(
-                    height: 35,
-                    child: OutlinedButton(
-                      onPressed: onReject,
-                      style: OutlinedButton.styleFrom(
-                        side: const BorderSide(
-                            color: AppColors.primary, width: 0.41),
-                        shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(20)),
-                        padding: EdgeInsets.zero,
-                        shadowColor: const Color(0x1A000000),
-                        elevation: 1,
-                      ),
-                      child: const Text('Refuser l\'offre',
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text('Votre proposition',
                         style: TextStyle(
                           fontFamily: 'Public Sans',
                           fontSize: 10,
-                          letterSpacing: -0.19,
-                          color: AppColors.primary,
+                          color: Color(0xFF62748E),
                         )),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: SizedBox(
-                    height: 35,
-                    child: ElevatedButton(
-                      onPressed: onAccept,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: isAccepted
-                            ? const Color(0xFF16A34A)
-                            : AppColors.primary,
-                        elevation: 1,
-                        shadowColor: const Color(0x1A000000),
-                        shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(20)),
-                        padding: EdgeInsets.zero,
-                      ),
-                      child: Text(
-                        isAccepted ? 'Acceptée' : 'Accepter l\'offre',
+                      const SizedBox(height: 2),
+                      Text('${offer.price.toStringAsFixed(0)} DH',
                         style: const TextStyle(
                           fontFamily: 'Public Sans',
-                          fontSize: 10,
-                          letterSpacing: -0.19,
-                          color: Colors.white,
+                          fontWeight: FontWeight.w700,
+                          fontSize: 24,
+                          letterSpacing: 0.24,
+                          color: Color(0xFF16A34A),
                         )),
+                    ],
+                  ),
+                ),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    const Text('Durée estimée',
+                      style: TextStyle(
+                        fontFamily: 'Public Sans',
+                        fontSize: 10,
+                        color: Color(0xFF62748E),
+                      )),
+                    const SizedBox(height: 2),
+                    Text(
+                      offer.duration > 0 ? _fmtDuration(offer.duration) : '-',
+                      style: const TextStyle(
+                        fontFamily: 'Public Sans',
+                        fontWeight: FontWeight.w600,
+                        fontSize: 16,
+                        color: Color(0xFF314158),
+                      )),
+                  ],
+                ),
+              ],
+            ),
+            const SizedBox(height: 14),
+
+            // ── Section 5: 3 action buttons ──────────────────────────────
+            Row(children: [
+              // Annuler
+              Expanded(
+                child: SizedBox(
+                  height: 38,
+                  child: OutlinedButton.icon(
+                    onPressed: onCancel,
+                    icon: Icon(Icons.cancel_outlined,
+                        size: 14,
+                        color: onCancel != null
+                            ? const Color(0xFFEF4444) : const Color(0xFFD1D5DC)),
+                    label: Text('Annuler',
+                      style: TextStyle(
+                        fontFamily: 'Public Sans',
+                        fontSize: 11,
+                        fontWeight: FontWeight.w500,
+                        color: onCancel != null
+                            ? const Color(0xFFEF4444) : const Color(0xFFD1D5DC),
+                      )),
+                    style: OutlinedButton.styleFrom(
+                      side: BorderSide(
+                        color: onCancel != null
+                            ? const Color(0xFFEF4444) : const Color(0xFFE5E7EB),
+                        width: 1,
+                      ),
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(20)),
+                      padding: EdgeInsets.zero,
                     ),
                   ),
                 ),
-              ]),
+              ),
+              const SizedBox(width: 8),
+              // Contacter
+              Expanded(
+                child: SizedBox(
+                  height: 38,
+                  child: ElevatedButton.icon(
+                    onPressed: onMessage,
+                    icon: const Icon(Icons.chat_bubble_outline_rounded,
+                        size: 14, color: Colors.white),
+                    label: const Text('Contacter',
+                      style: TextStyle(
+                        fontFamily: 'Public Sans',
+                        fontSize: 11,
+                        fontWeight: FontWeight.w500,
+                        color: Colors.white,
+                      )),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.primary,
+                      elevation: 0,
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(20)),
+                      padding: EdgeInsets.zero,
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
+              // Profil
+              Expanded(
+                child: SizedBox(
+                  height: 38,
+                  child: ElevatedButton.icon(
+                    onPressed: onProfile,
+                    icon: const Icon(Icons.person_outline_rounded,
+                        size: 14, color: Colors.white),
+                    label: const Text('Profil',
+                      style: TextStyle(
+                        fontFamily: 'Public Sans',
+                        fontSize: 11,
+                        fontWeight: FontWeight.w500,
+                        color: Colors.white,
+                      )),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF393C40),
+                      elevation: 0,
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(20)),
+                      padding: EdgeInsets.zero,
+                    ),
+                  ),
+                ),
+              ),
+            ]),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _statusBadge() {
+    Color bg, fg;
+    IconData icon;
+    String text;
+    switch (offer.status) {
+      case 'accepted':
+        bg = const Color(0xFFDCFCE7);
+        fg = const Color(0xFF16A34A);
+        icon = Icons.check_circle_outline_rounded;
+        text = 'Confirmé';
+        break;
+      case 'rejected':
+        bg = const Color(0xFFFEE2E2);
+        fg = const Color(0xFFEF4444);
+        icon = Icons.cancel_outlined;
+        text = 'Refusé';
+        break;
+      default:
+        bg = const Color(0xFFFFF7ED);
+        fg = const Color(0xFFD08700);
+        icon = Icons.access_time_rounded;
+        text = 'En attente';
+    }
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+      decoration: BoxDecoration(
+        color: bg,
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 12, color: fg),
+          const SizedBox(width: 3),
+          Text(text,
+            style: TextStyle(
+              fontFamily: 'Public Sans',
+              fontWeight: FontWeight.w600,
+              fontSize: 10,
+              color: fg,
+            )),
+        ],
       ),
     );
   }
@@ -713,7 +939,7 @@ class _OfferCard extends StatelessWidget {
         ? ClipOval(
             child: Image.network(
               offer.artisanAvatar!,
-              width: 61, height: 61,
+              width: 56, height: 56,
               fit: BoxFit.cover,
               errorBuilder: (_, __, ___) => _initialsCircle(),
             ),
@@ -723,10 +949,10 @@ class _OfferCard extends StatelessWidget {
     return Stack(
       children: [
         Container(
-          width: 61, height: 61,
+          width: 56, height: 56,
           decoration: BoxDecoration(
             shape: BoxShape.circle,
-            border: Border.all(color: Colors.white, width: 1.91),
+            border: Border.all(color: Colors.white, width: 1.5),
             boxShadow: const [
               BoxShadow(
                 color: Color(0x1A000000),
@@ -738,14 +964,13 @@ class _OfferCard extends StatelessWidget {
           ),
           child: ClipOval(child: child),
         ),
-        // Online dot
         Positioned(
           bottom: 2, right: 2,
           child: Container(
             width: 14, height: 14,
             decoration: BoxDecoration(
               color: const Color(0xFF00C950),
-              border: Border.all(color: Colors.white, width: 0.66),
+              border: Border.all(color: Colors.white, width: 1.5),
               shape: BoxShape.circle,
             ),
           ),
@@ -755,7 +980,7 @@ class _OfferCard extends StatelessWidget {
   }
 
   Widget _initialsCircle() => Container(
-    width: 61, height: 61,
+    width: 56, height: 56,
     decoration: BoxDecoration(
       color: _avatarColor(offer.artisanName),
       shape: BoxShape.circle,
@@ -765,7 +990,7 @@ class _OfferCard extends StatelessWidget {
         style: const TextStyle(
           color: Colors.white,
           fontWeight: FontWeight.w600,
-          fontSize: 22,
+          fontSize: 20,
         )),
     ),
   );
@@ -795,12 +1020,12 @@ class _OfferCard extends StatelessWidget {
     return m > 0 ? '${h}h${m}min' : '${h}h';
   }
 
-  String _timeAgo(DateTime dt) {
-    final diff = DateTime.now().difference(dt);
-    if (diff.inMinutes < 1)  return 'À l\'instant';
-    if (diff.inMinutes < 60) return 'Il y a ${diff.inMinutes} min';
-    if (diff.inHours < 24)   return 'Il y a ${diff.inHours} heure${diff.inHours > 1 ? 's' : ''}';
-    return 'Il y a ${diff.inDays} jour${diff.inDays > 1 ? 's' : ''}';
+  String _fmtDate(DateTime dt) {
+    return '${dt.day.toString().padLeft(2, '0')}/${dt.month.toString().padLeft(2, '0')}/${dt.year}';
+  }
+
+  String _fmtDateTime(DateTime dt) {
+    return '${dt.year}-${dt.month.toString().padLeft(2, '0')}-${dt.day.toString().padLeft(2, '0')} à ${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}';
   }
 }
 

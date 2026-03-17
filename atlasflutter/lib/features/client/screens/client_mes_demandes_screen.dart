@@ -5,16 +5,6 @@ import '../../../../core/widgets/atlas_logo.dart';
 import '../../../../core/widgets/client_bottom_nav_bar.dart';
 import '../../../../data/repositories/service_request_repository.dart';
 
-// ── Filter tabs ───────────────────────────────────────────────────────────────
-
-const _kStatuses = [
-  _Tab('all',         'Tous'),
-  _Tab('open',        'En attente'),
-  _Tab('in_progress', 'Accepté'),
-  _Tab('cancelled',   'Annulé'),
-  _Tab('completed',   'Terminé'),
-];
-
 IconData _categoryIcon(String name) {
   final n = name.toLowerCase();
   if (n.contains('plomb'))    return Icons.water_drop_outlined;
@@ -55,8 +45,6 @@ class ClientMesDemandesScreen extends StatefulWidget {
 class _ClientMesDemandesScreenState extends State<ClientMesDemandesScreen> {
   final _repo = ServiceRequestRepository();
 
-  String _activeFilter = 'all';
-
   bool _isLoading = true;
   String? _error;
   List<ServiceRequest> _requests = [];
@@ -88,18 +76,7 @@ class _ClientMesDemandesScreenState extends State<ClientMesDemandesScreen> {
     }
   }
 
-  List<ServiceRequest> get _filtered {
-    if (_activeFilter == 'all') return _requests;
-    return _requests.where((r) => r.status == _activeFilter).toList();
-  }
-
-  Map<String, int> get _counts {
-    final m = <String, int>{'all': _requests.length};
-    for (final r in _requests) {
-      m[r.status] = (m[r.status] ?? 0) + 1;
-    }
-    return m;
-  }
+  List<ServiceRequest> get _filtered => _requests;
 
   @override
   Widget build(BuildContext context) {
@@ -125,7 +102,6 @@ class _ClientMesDemandesScreenState extends State<ClientMesDemandesScreen> {
             children: [
               _buildHeader(context),
               _buildTitleRow(),
-              _buildFilterBar(),
               Expanded(child: _buildBody()),
             ],
           ),
@@ -262,48 +238,6 @@ class _ClientMesDemandesScreenState extends State<ClientMesDemandesScreen> {
           const Icon(Icons.assignment_outlined,
               color: AppColors.primary, size: 28),
         ],
-      ),
-    );
-  }
-
-  // ── Filter tab bar ─────────────────────────────────────────────────────────
-  Widget _buildFilterBar() {
-    final counts = _counts;
-    final tabs = _kStatuses.where((t) => t.key == 'all' || (counts[t.key] ?? 0) > 0).toList();
-
-    return Container(
-      height: 52,
-      margin: const EdgeInsets.only(top: 12),
-      child: ListView.separated(
-        scrollDirection: Axis.horizontal,
-        padding: const EdgeInsets.symmetric(horizontal: 20),
-        itemCount: tabs.length,
-        separatorBuilder: (_, __) => const SizedBox(width: 8),
-        itemBuilder: (_, i) {
-          final tab    = tabs[i];
-          final active = _activeFilter == tab.key;
-          final count  = counts[tab.key] ?? 0;
-          return GestureDetector(
-            onTap: () => setState(() => _activeFilter = tab.key),
-            child: AnimatedContainer(
-              duration: const Duration(milliseconds: 200),
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              decoration: BoxDecoration(
-                color: active ? AppColors.primary : const Color(0xFFF3F4F6),
-                borderRadius: BorderRadius.circular(20),
-                boxShadow: active ? [const BoxShadow(
-                  color: Color(0x29FC5A15), blurRadius: 8, offset: Offset(0, 3),
-                )] : [],
-              ),
-              child: Text('${tab.label} ($count)',
-                style: TextStyle(
-                  fontFamily: 'Public Sans', fontSize: 13,
-                  fontWeight: FontWeight.w600,
-                  color: active ? Colors.white : const Color(0xFF62748E),
-                )),
-            ),
-          );
-        },
       ),
     );
   }
@@ -460,8 +394,7 @@ class _RequestCard extends StatelessWidget {
     final color      = _categoryColor(request.category);
     final offerCount = request.offers.length;
     final avatarUrls = request.offers
-        .where((o) => o.artisanAvatar != null && o.artisanAvatar!.isNotEmpty)
-        .map((o) => o.artisanAvatar!)
+        .map((o) => o.artisanAvatar ?? '')
         .take(3)
         .toList();
     final extraCount = (offerCount - 3).clamp(0, 99);
@@ -471,53 +404,55 @@ class _RequestCard extends StatelessWidget {
       child: Container(
         decoration: BoxDecoration(
           color: Colors.white,
-          border: Border.all(color: const Color(0xFFE5E7EB)),
           borderRadius: BorderRadius.circular(14),
           boxShadow: const [
-            BoxShadow(color: Color(0x0A000000), blurRadius: 6, offset: Offset(0, 2)),
+            BoxShadow(color: Color(0x14000000), blurRadius: 8, offset: Offset(0, 2)),
           ],
         ),
         child: Padding(
-          padding: const EdgeInsets.fromLTRB(17, 19, 17, 19),
+          padding: const EdgeInsets.fromLTRB(14, 16, 14, 16),
           child: Row(
             children: [
               // Colored rounded-square icon
               Container(
-                width: 51, height: 51,
+                width: 48, height: 48,
                 decoration: BoxDecoration(
                   color: color,
-                  borderRadius: BorderRadius.circular(15),
+                  borderRadius: BorderRadius.circular(14),
                 ),
                 child: Icon(_categoryIcon(request.category),
-                    color: Colors.white, size: 26),
+                    color: Colors.white, size: 24),
               ),
-              const SizedBox(width: 14),
+              const SizedBox(width: 12),
 
               // Category name
               Expanded(
-                child: Text(request.category,
-                  style: const TextStyle(fontFamily: 'Public Sans',
-                      fontWeight: FontWeight.w500, fontSize: 20,
-                      letterSpacing: -0.449, color: Color(0xFF314158)),
-                  maxLines: 2, overflow: TextOverflow.ellipsis),
-              ),
-              const SizedBox(width: 10),
-
-              // Response count + stacked avatars
-              if (offerCount > 0)
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.center,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('$offerCount réponse${offerCount > 1 ? 's' : ''}',
-                      style: const TextStyle(fontFamily: 'Inter', fontSize: 12,
-                          color: Color(0xFF314158))),
-                    const SizedBox(height: 4),
-                    _StackedAvatars(urls: avatarUrls, extra: extraCount),
+                    Text(request.category,
+                      style: const TextStyle(fontFamily: 'Public Sans',
+                          fontWeight: FontWeight.w600, fontSize: 16,
+                          letterSpacing: -0.3, color: Color(0xFF314158)),
+                      maxLines: 1, overflow: TextOverflow.ellipsis),
+                    if (offerCount > 0) ...[
+                      const SizedBox(height: 6),
+                      Row(
+                        children: [
+                          Text('$offerCount réponse${offerCount > 1 ? 's' : ''}',
+                            style: const TextStyle(fontFamily: 'Inter', fontSize: 11,
+                                color: Color(0xFF62748E))),
+                          const SizedBox(width: 8),
+                          _StackedAvatars(urls: avatarUrls, extra: extraCount),
+                        ],
+                      ),
+                    ],
                   ],
                 ),
-              const SizedBox(width: 10),
+              ),
+              const SizedBox(width: 8),
 
-              // Trash button — stops propagation with its own GestureDetector
+              // Trash button
               if (request.status == 'open' || request.status == 'in_progress')
                 GestureDetector(
                   onTap: onCancel,
@@ -544,37 +479,44 @@ class _RequestCard extends StatelessWidget {
 
 class _StackedAvatars extends StatelessWidget {
   final List<String> urls;
-  final int extra; // count beyond 3
+  final int extra;
 
   const _StackedAvatars({required this.urls, required this.extra});
 
-  static const _size   = 26.0;
-  static const _offset = 13.0; // overlap
+  static const _size   = 24.0;
+  static const _offset = 14.0;
 
   @override
   Widget build(BuildContext context) {
+    final visible = urls.where((u) => u.isNotEmpty).take(3).toList();
+    if (visible.isEmpty && extra <= 0) return const SizedBox.shrink();
+
     final items = <Widget>[];
-    for (int i = 0; i < urls.length; i++) {
+    for (int i = 0; i < visible.length; i++) {
       items.add(Positioned(
         left: i * _offset,
-        child: _circle(child: Image.network(urls[i], fit: BoxFit.cover,
-          errorBuilder: (_, __, ___) => _placeholder(i))),
+        child: _circle(
+          child: Image.network(visible[i], fit: BoxFit.cover,
+            errorBuilder: (_, __, ___) => _placeholder(i)),
+        ),
       ));
     }
     if (extra > 0) {
       items.add(Positioned(
-        left: urls.length * _offset,
+        left: visible.length * _offset,
         child: _circle(
-          color: const Color(0xFFFC5A15),
-          child: Text('+$extra',
-            style: const TextStyle(fontFamily: 'Montserrat',
-                fontWeight: FontWeight.w500, fontSize: 7,
-                color: Color(0xFFFC5A15))),
+          color: const Color(0xFFFFF0EB),
+          child: Center(
+            child: Text('+$extra',
+              style: const TextStyle(fontFamily: 'Inter',
+                  fontWeight: FontWeight.w600, fontSize: 8,
+                  color: Color(0xFFFC5A15))),
+          ),
         ),
       ));
     }
-    final totalWidth = _offset * (urls.length - 1) + _size
-        + (extra > 0 ? _offset : 0);
+    final count = visible.length + (extra > 0 ? 1 : 0);
+    final totalWidth = _offset * (count - 1) + _size;
     return SizedBox(
       width: totalWidth.clamp(_size, 200),
       height: _size,
@@ -587,14 +529,19 @@ class _StackedAvatars extends StatelessWidget {
     decoration: BoxDecoration(
       shape: BoxShape.circle,
       color: color ?? const Color(0xFFE5E7EB),
-      border: Border.all(color: Colors.white, width: 0.93),
+      border: Border.all(color: Colors.white, width: 1.5),
     ),
     child: ClipOval(child: child),
   );
 
   Widget _placeholder(int i) {
-    const colors = [Color(0xFF93C5FD), Color(0xFF6EE7B7), Color(0xFFFCA5A5)];
-    return Container(color: colors[i % colors.length]);
+    const colors = [Color(0xFFFC5A15), Color(0xFF3B82F6), Color(0xFF10B981)];
+    return Container(
+      color: colors[i % colors.length],
+      child: const Center(
+        child: Icon(Icons.person, color: Colors.white, size: 12),
+      ),
+    );
   }
 }
 
@@ -850,10 +797,3 @@ class _HeaderIconBtn extends StatelessWidget {
 }
 
 
-// ── Filter tab ─────────────────────────────────────────────────────────────────
-
-class _Tab {
-  final String key;
-  final String label;
-  const _Tab(this.key, this.label);
-}

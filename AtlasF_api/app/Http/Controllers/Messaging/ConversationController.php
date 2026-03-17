@@ -62,9 +62,7 @@ class ConversationController extends Controller
             return [
                 'id'               => $conv->id,
                 'other_name'       => $other?->full_name ?? 'Utilisateur',
-                'other_avatar'     => $other?->avatar_url && !str_starts_with($other->avatar_url, 'http')
-                    ? Storage::url($other->avatar_url)
-                    : $other?->avatar_url,
+                'other_avatar'     => $other?->resolved_avatar,
                 'other_role'       => $otherRole,
                 'other_profile_id' => $user->account_type === 'client' ? $conv->artisan_id : $conv->client_id,
                 'last_message'     => $latest?->message_type === 'image' ? '📷 Photo' : $latest?->content,
@@ -155,9 +153,7 @@ class ConversationController extends Controller
             'data' => [
                 'id'               => $conversation->id,
                 'other_name'       => $other?->full_name ?? 'Utilisateur',
-                'other_avatar'     => $other?->avatar_url && !str_starts_with($other->avatar_url, 'http')
-                    ? Storage::url($other->avatar_url)
-                    : $other?->avatar_url,
+                'other_avatar'     => $other?->resolved_avatar,
                 'other_role'       => $otherRole,
                 'other_profile_id' => $user->account_type === 'client' ? $conversation->artisan_id : $conversation->client_id,
                 'status'           => $conversation->status,

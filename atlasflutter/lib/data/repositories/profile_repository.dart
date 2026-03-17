@@ -75,7 +75,7 @@ class ProfileRepository {
     String? address,
     String? postalCode,
   }) async {
-    final res = await _dio.put(ApiConstants.me, data: {
+    final res = await _dio.post(ApiConstants.me, data: {
       if (name       != null) 'name':        name,
       if (phone      != null) 'phone':       phone,
       if (birthdate  != null) 'birthdate':   birthdate,
@@ -83,6 +83,16 @@ class ProfileRepository {
       if (address    != null) 'address':     address,
       if (postalCode != null) 'postal_code': postalCode,
     });
+    final data = (res.data['data'] ?? res.data) as Map<String, dynamic>;
+    return UserProfile.fromJson(data);
+  }
+
+  /// Upload a new avatar image. Accepts raw bytes for web compatibility.
+  Future<UserProfile> updateAvatarBytes(List<int> bytes, String filename) async {
+    final formData = FormData.fromMap({
+      'avatar': MultipartFile.fromBytes(bytes, filename: filename),
+    });
+    final res = await _dio.post(ApiConstants.me, data: formData);
     final data = (res.data['data'] ?? res.data) as Map<String, dynamic>;
     return UserProfile.fromJson(data);
   }

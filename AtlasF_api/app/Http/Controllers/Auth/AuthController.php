@@ -596,9 +596,7 @@ class AuthController extends Controller
                 'memberSince'       => $user->created_at
                     ? $user->created_at->locale('fr')->translatedFormat('F Y')
                     : null,
-                'avatar'            => $user->avatar_url && !str_starts_with($user->avatar_url, 'http')
-                    ? Storage::url($user->avatar_url)
-                    : $user->avatar_url,
+                'avatar'            => $user->resolved_avatar,
                 'city'              => $client?->city,
                 'activeRequests'    => 0,
                 'completedRequests' => (int) ($client?->total_requests ?? 0),
@@ -638,9 +636,7 @@ class AuthController extends Controller
             'memberSince'          => $user->created_at
                 ? $user->created_at->locale('fr')->translatedFormat('F Y')
                 : null,
-            'avatar'               => $user->avatar_url && !str_starts_with($user->avatar_url, 'http')
-                ? Storage::url($user->avatar_url)
-                : $user->avatar_url,
+            'avatar'               => $user->resolved_avatar,
             'city'                 => $artisan?->city,
             'account_type'         => $user->account_type,
             'business_name'        => $artisan?->business_name,
