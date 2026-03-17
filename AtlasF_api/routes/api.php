@@ -117,8 +117,9 @@ Route::middleware('auth:sanctum')->group(function () {
     });
 
     // Agenda endpoints
-    Route::get ('agenda', [AgendaController::class, 'index']);
-    Route::post('agenda', [AgendaController::class, 'store']);
+    Route::get   ('agenda',           [AgendaController::class, 'index']);
+    Route::post  ('agenda',           [AgendaController::class, 'store']);
+    Route::patch ('agenda/{id}/cancel', [AgendaController::class, 'cancel']);
 
     // Payment stats endpoint
     Route::get('payment-stats', [PaymentStatsController::class, 'index']);

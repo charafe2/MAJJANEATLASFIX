@@ -60,6 +60,58 @@ class _ArtisanAgendaScreenState extends State<ArtisanAgendaScreen> {
     });
   }
 
+  Future<void> _cancelAppointment(Appointment a) async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text('Annuler le rendez-vous ?',
+            style: TextStyle(fontFamily: 'Public Sans', fontSize: 16,
+                fontWeight: FontWeight.w600)),
+        content: const Text('Cette action est irréversible.',
+            style: TextStyle(fontFamily: 'Public Sans', fontSize: 14)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Non', style: TextStyle(color: Color(0xFF62748E))),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Oui, annuler',
+                style: TextStyle(color: Color(0xFFEF4444))),
+          ),
+        ],
+      ),
+    );
+    if (confirm != true) return;
+
+    try {
+      await _repo.cancelAppointment(a.id);
+      await _load();
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: const Text('Rendez-vous annulé.',
+              style: TextStyle(fontFamily: 'Public Sans', fontSize: 14)),
+          backgroundColor: const Color(0xFF16A34A),
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          margin: const EdgeInsets.fromLTRB(20, 0, 20, 16),
+        ));
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text(AgendaRepository.errorMessage(e),
+              style: const TextStyle(fontFamily: 'Public Sans', fontSize: 14)),
+          backgroundColor: const Color(0xFFEF4444),
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          margin: const EdgeInsets.fromLTRB(20, 0, 20, 16),
+        ));
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -114,7 +166,17 @@ class _ArtisanAgendaScreenState extends State<ArtisanAgendaScreen> {
                                 else
                                   ..._shown.map((a) => Padding(
                                     padding: const EdgeInsets.only(bottom: 16),
-                                    child: _AgendaCard(appointment: a),
+                                    child: _AgendaCard(
+                                      appointment: a,
+                                      onCancel: a.status == 'scheduled'
+                                          ? () => _cancelAppointment(a)
+                                          : null,
+                                      onProfile: a.contactId != null
+                                          ? () => context.push(
+                                              '/artisan/client-profile/${a.contactId}',
+                                              extra: {'name': a.contactName ?? 'Client'})
+                                          : null,
+                                    ),
                                   )),
                               ],
                             ),
@@ -402,7 +464,9 @@ class _FilterOption extends StatelessWidget {
 // ── Agenda appointment card ──────────────────────────────────────────────────
 class _AgendaCard extends StatelessWidget {
   final Appointment appointment;
-  const _AgendaCard({required this.appointment});
+  final VoidCallback? onCancel;
+  final VoidCallback? onProfile;
+  const _AgendaCard({required this.appointment, this.onCancel, this.onProfile});
 
   String _formatDate(DateTime dt) {
     final now = DateTime.now();
@@ -623,7 +687,7 @@ class _AgendaCard extends StatelessWidget {
                   child: SizedBox(
                     height: 38,
                     child: OutlinedButton(
-                      onPressed: () {},
+                      onPressed: onCancel,
                       style: OutlinedButton.styleFrom(
                         side: const BorderSide(color: AppColors.primary, width: 1.2),
                         shape: const StadiumBorder(),
@@ -645,7 +709,7 @@ class _AgendaCard extends StatelessWidget {
                   child: SizedBox(
                     height: 38,
                     child: ElevatedButton(
-                      onPressed: () {},
+                      onPressed: onProfile,
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppColors.primary,
                         elevation: 0,

@@ -142,6 +142,13 @@ class AgendaController extends Controller
             $contactPhone = $a->artisan?->user?->phone;
         }
 
+        $contactId = null;
+        if ($role === 'artisan') {
+            $contactId = $a->client?->user?->id;
+        } else {
+            $contactId = $a->artisan?->id;
+        }
+
         return [
             'id'               => $a->id,
             'type'             => 'manual',
@@ -153,6 +160,7 @@ class AgendaController extends Controller
             'contact_name'     => $contactName,
             'contact_phone'    => $contactPhone,
             'contact_avatar'   => null,
+            'contact_id'       => $contactId,
             'price'            => null,
             'rating'           => null,
             'reviews_count'    => 0,
@@ -178,6 +186,7 @@ class AgendaController extends Controller
             'contact_name'     => $user?->full_name,
             'contact_phone'    => $user?->phone,
             'contact_avatar'   => $user?->resolved_avatar,
+            'contact_id'       => $user?->id,
             'price'            => $offer->proposed_price,
             'rating'           => null,
             'reviews_count'    => 0,
@@ -203,11 +212,76 @@ class AgendaController extends Controller
             'contact_name'     => $user?->full_name,
             'contact_phone'    => $user?->phone,
             'contact_avatar'   => $user?->resolved_avatar,
+            'contact_id'       => $artisan?->id,
             'price'            => $offer?->proposed_price,
             'rating'           => $artisan?->rating_average,
             'reviews_count'    => $artisan?->total_reviews ?? 0,
             'rdv_type'         => $sr->service_mode ?? 'sur_place',
             'notes'            => $sr->notes,
         ];
+    }
+
+    // ── CANCEL: cancel a service request from agenda ─────────────────────
+
+    public function cancel(Request $request, string $id): JsonResponse
+    {
+        $user = $request->user();
+
+        // Manual appointment
+        if (is_numeric($id)) {
+            $appointment = Appointment::find($id);
+            if (!$appointment) {
+                return response()->json(['error' => 'Appointment not found.'], 404);
+            }
+
+            // Verify ownership
+            if ($user->account_type === 'artisan') {
+                if ($appointment->artisan_id !== $user->artisan?->id) {
+                    return response()->json(['error' => 'Not found.'], 404);
+                }
+            } else {
+                if ($appointment->client_id !== $user->client?->id) {
+                    return response()->json(['error' => 'Not found.'], 404);
+                }
+            }
+
+            $appointment->update(['status' => 'cancelled']);
+            return response()->json(['message' => 'Rendez-vous annulé.']);
+        }
+
+        // Service request item (id = "sr-{n}")
+        if (str_starts_with($id, 'sr-')) {
+            $srId = (int) substr($id, 3);
+            $sr   = ServiceRequest::find($srId);
+            if (!$sr) {
+                return response()->json(['error' => 'Service request not found.'], 404);
+            }
+
+            // Verify ownership
+            if ($user->account_type === 'client') {
+                if ($sr->client_id !== $user->client?->id) {
+                    return response()->json(['error' => 'Not found.'], 404);
+                }
+            } else {
+                // Artisan can also cancel if they have an accepted offer
+                $artisan = $user->artisan;
+                if (!$artisan) {
+                    return response()->json(['error' => 'Not found.'], 404);
+                }
+                $hasOffer = $sr->offers()->where('artisan_id', $artisan->id)->exists();
+                if (!$hasOffer) {
+                    return response()->json(['error' => 'Not found.'], 404);
+                }
+            }
+
+            if (!in_array($sr->status, ['open', 'in_progress'])) {
+                return response()->json(['error' => 'Ce rendez-vous ne peut pas être annulé.'], 422);
+            }
+
+            $sr->update(['status' => 'cancelled']);
+            return response()->json(['message' => 'Demande annulée.']);
+        }
+
+        return response()->json(['error' => 'Invalid ID.'], 400);
     }
 }

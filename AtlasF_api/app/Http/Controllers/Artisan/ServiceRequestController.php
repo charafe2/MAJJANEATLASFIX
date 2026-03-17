@@ -255,25 +255,48 @@ class ServiceRequestController extends Controller
         $completedCount = $client->serviceRequests()->where('status', 'completed')->count();
 
         $recentRequests = $client->serviceRequests()
-            ->with(['category', 'serviceType'])
+            ->with(['category', 'serviceType', 'acceptedOffer.artisan.user'])
             ->orderBy('created_at', 'desc')
             ->limit(10)
             ->get();
 
+        $clientUser = $client->user;
+
         return response()->json([
-            'data' => [
-                'id'                 => $client->id,
-                'name'               => $client->user->name,
-                'phone'              => $client->user->phone ?? null,
-                'email'              => $client->user->email,
-                'city'               => $client->city,
-                'total_requests'     => $client->total_requests,
-                'total_spent'        => $client->total_spent,
-                'reliability_score'  => $client->reliability_score,
+            'user' => [
+                'full_name'    => $clientUser->full_name,
+                'avatar_url'   => $clientUser->resolved_avatar,
+                'city'         => $client->city ?? $clientUser->city ?? '',
+                'phone'        => $clientUser->phone,
+                'email'        => $clientUser->email,
+                'created_at'   => $clientUser->created_at?->toIso8601String(),
+                'is_verified'  => (bool) ($clientUser->email_verified_at || $clientUser->phone_verified_at ?? false),
+            ],
+            'stats' => [
                 'active_requests'    => $activeCount,
                 'completed_requests' => $completedCount,
-                'recent_requests'    => $recentRequests,
+                'total_spent'        => (float) ($client->total_spent ?? 0),
+                'average_rating'     => 0,
+                'trust_score'        => (float) ($client->reliability_score ?? 0),
             ],
+            'history' => $recentRequests->map(function ($sr) {
+                $offer   = $sr->acceptedOffer;
+                $artisan = $offer?->artisan;
+                $aUser   = $artisan?->user;
+
+                return [
+                    'id'           => $sr->id,
+                    'description'  => $sr->description ?? $sr->title ?? 'Demande',
+                    'status'       => $sr->status,
+                    'created_at'   => $sr->created_at?->toIso8601String(),
+                    'rating'       => 0,
+                    'category'     => $sr->category ? ['name' => $sr->category->name] : null,
+                    'service_type' => $sr->serviceType ? ['name' => $sr->serviceType->name] : null,
+                    'artisan'      => $artisan ? [
+                        'user' => ['full_name' => $aUser?->full_name ?? 'Artisan'],
+                    ] : null,
+                ];
+            })->values(),
         ]);
     }
 }

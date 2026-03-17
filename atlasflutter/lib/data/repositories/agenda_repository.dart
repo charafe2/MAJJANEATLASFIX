@@ -15,6 +15,7 @@ class Appointment {
   final String? contactName;
   final String? contactPhone;
   final String? contactAvatar;
+  final int?    contactId;    // user ID (client) or artisan ID depending on role
   final double? price;
   final double? rating;
   final int     reviewsCount;
@@ -25,11 +26,19 @@ class Appointment {
     required this.id, required this.type, required this.title,
     required this.scheduledAt, this.durationMinutes, this.city,
     required this.status, this.contactName, this.contactPhone,
-    this.contactAvatar, this.price, this.rating, this.reviewsCount = 0,
-    this.rdvType, this.notes,
+    this.contactAvatar, this.contactId, this.price, this.rating,
+    this.reviewsCount = 0, this.rdvType, this.notes,
   });
 
   bool get isCompleted => status == 'completed';
+
+  /// Extract the service request ID from "sr-{n}" IDs
+  int? get serviceRequestId {
+    if (id.startsWith('sr-')) {
+      return int.tryParse(id.substring(3));
+    }
+    return null;
+  }
 
   factory Appointment.fromJson(Map<String, dynamic> j) => Appointment(
     id:              '${j['id']}',
@@ -43,6 +52,7 @@ class Appointment {
     contactName:     j['contact_name'] as String?,
     contactPhone:    j['contact_phone'] as String?,
     contactAvatar:   j['contact_avatar'] as String?,
+    contactId:       j['contact_id'] as int?,
     price:           double.tryParse('${j['price'] ?? ''}'),
     rating:          double.tryParse('${j['rating'] ?? ''}'),
     reviewsCount:    j['reviews_count'] as int? ?? 0,
@@ -70,6 +80,10 @@ class AgendaRepository {
     return raw
         .map((e) => Appointment.fromJson(e as Map<String, dynamic>))
         .toList();
+  }
+
+  Future<void> cancelAppointment(String id) async {
+    await _dio.patch('${ApiConstants.agenda}/$id/cancel');
   }
 
   Future<Appointment> createAppointment({

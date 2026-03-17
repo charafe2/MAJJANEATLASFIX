@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/netwrok/api_client.dart';
 import '../../../core/constants/api_constants.dart';
+import '../../../data/repositories/conversation_repository.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -28,8 +29,10 @@ class ArtisanClientProfileScreen extends StatefulWidget {
 class _ArtisanClientProfileScreenState
     extends State<ArtisanClientProfileScreen> {
 
+  final _convRepo = ConversationRepository();
   bool            _loading = true;
   _ClientProfile? _profile;
+  bool            _busy    = false;
 
   @override
   void initState() {
@@ -42,12 +45,18 @@ class _ArtisanClientProfileScreenState
     try {
       if (widget.clientId != null) {
         final res = await ApiClient.instance.get(
-          '/artisan/clients/${widget.clientId}/profile',
+          '/artisan/clients/${widget.clientId}',
         );
+        final body = res.data is Map<String, dynamic>
+            ? res.data as Map<String, dynamic>
+            : <String, dynamic>{};
+        // Handle both { data: { ... } } and { user: ..., stats: ..., history: ... }
+        final parsed = body.containsKey('data')
+            ? body['data'] as Map<String, dynamic>
+            : body;
         if (mounted) {
           setState(() {
-            _profile = _ClientProfile.fromJson(
-                res.data as Map<String, dynamic>);
+            _profile = _ClientProfile.fromJson(parsed);
             _loading = false;
           });
         }
@@ -56,6 +65,32 @@ class _ArtisanClientProfileScreenState
       }
     } catch (_) {
       if (mounted) setState(() => _loading = false);
+    }
+  }
+
+  Future<void> _openMessage() async {
+    if (widget.clientId == null) return;
+    setState(() => _busy = true);
+    try {
+      final conv = await _convRepo.getOrCreate(clientId: widget.clientId);
+      if (mounted) {
+        context.push('/artisan/chat/${conv.id}', extra: {
+          'name':      _name,
+          'avatar':    _avatar,
+          'profileId': conv.otherProfileId,
+        });
+      }
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+          content: Text('Impossible d\'ouvrir la conversation.',
+              style: TextStyle(fontFamily: 'Public Sans', fontSize: 14)),
+          backgroundColor: Color(0xFFEF4444),
+          behavior: SnackBarBehavior.floating,
+        ));
+      }
+    } finally {
+      if (mounted) setState(() => _busy = false);
     }
   }
 
@@ -123,170 +158,177 @@ class _ArtisanClientProfileScreenState
 
   // ── Header ─────────────────────────────────────────────────────────────────
   Widget _buildHeader(BuildContext context) {
-    return SizedBox(
-      height: 260,
-      child: Stack(
-        clipBehavior: Clip.none,
-        children: [
-          // Orange background
-          Container(
-            height: 200,
-            decoration: const BoxDecoration(
-              color: AppColors.primary,
-              borderRadius: BorderRadius.only(
-                bottomLeft:  Radius.circular(28),
-                bottomRight: Radius.circular(28),
-              ),
-            ),
-          ),
-
-          // Back button + 3-dot
-          Positioned(
-            top: 0, left: 0, right: 0,
-            child: SafeArea(
-              bottom: false,
-              child: Padding(
-                padding: const EdgeInsets.symmetric(
-                    horizontal: 20, vertical: 12),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    _CircleBtn(
-                      onTap: () => context.pop(),
-                      child: const Icon(Icons.arrow_back_ios_new_rounded,
-                        color: Colors.white, size: 16),
-                    ),
-                    _CircleBtn(
-                      onTap: () {},
-                      child: const Icon(Icons.more_vert_rounded,
-                        color: Colors.white, size: 20),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ),
-
-          // Avatar + name/info — centred
-          Positioned(
-            top: 60, left: 20, right: 20,
-            child: Column(
-              children: [
-                // Avatar with online dot
-                Stack(
-                  children: [
-                    Container(
-                      width: 88, height: 88,
-                      decoration: BoxDecoration(
+    return Container(
+      decoration: const BoxDecoration(
+        color: AppColors.primary,
+        borderRadius: BorderRadius.only(
+          bottomLeft:  Radius.circular(28),
+          bottomRight: Radius.circular(28),
+        ),
+      ),
+      child: SafeArea(
+        bottom: false,
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
+          child: Column(
+            children: [
+              // Back + 3-dot row
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  GestureDetector(
+                    onTap: () => context.pop(),
+                    child: Container(
+                      width: 38, height: 38,
+                      decoration: const BoxDecoration(
+                        color: Color(0xFF22C55E),
                         shape: BoxShape.circle,
-                        border: Border.all(color: Colors.white, width: 3),
                       ),
-                      child: ClipOval(child: _avatarWidget()),
+                      child: const Icon(Icons.arrow_back_ios_new_rounded,
+                          color: Colors.white, size: 16),
                     ),
-                    Positioned(
-                      bottom: 4, right: 4,
-                      child: Container(
-                        width: 16, height: 16,
-                        decoration: BoxDecoration(
-                          color: const Color(0xFF22C55E),
-                          shape: BoxShape.circle,
-                          border: Border.all(color: Colors.white, width: 2),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 10),
-
-                // Name
-                Text(_name,
-                  style: const TextStyle(
-                    fontFamily: 'Public Sans',
-                    fontWeight: FontWeight.w700,
-                    fontSize: 20,
-                    color: Colors.white,
-                  )),
-                const SizedBox(height: 4),
-
-                // Member since
-                if (_since.isNotEmpty) ...[
-                  Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      const Icon(Icons.calendar_today_outlined,
-                        color: Colors.white70, size: 12),
-                      const SizedBox(width: 4),
-                      Text('Membre depuis $_since',
-                        style: const TextStyle(
-                          fontFamily: 'Public Sans',
-                          fontSize: 12,
-                          color: Colors.white70,
-                        )),
-                    ],
                   ),
-                  const SizedBox(height: 8),
-                ],
-
-                // Verified badge + city
-                Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    if (_verified) ...[
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 10, vertical: 4),
-                        decoration: BoxDecoration(
-                          color: Colors.white.withValues(alpha: 0.15),
-                          border: Border.all(
-                              color: const Color(0xFF22C55E), width: 1),
-                          borderRadius: BorderRadius.circular(20),
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Container(
-                              width: 14, height: 14,
-                              decoration: const BoxDecoration(
-                                color: Color(0xFF22C55E),
-                                shape: BoxShape.circle,
-                              ),
-                              child: const Icon(Icons.check,
-                                color: Colors.white, size: 9),
-                            ),
-                            const SizedBox(width: 4),
-                            const Text('Profil vérifié',
-                              style: TextStyle(
-                                fontFamily: 'Public Sans',
-                                fontSize: 11,
-                                fontWeight: FontWeight.w600,
-                                color: Colors.white,
-                              )),
-                          ],
-                        ),
+                  GestureDetector(
+                    onTap: () {},
+                    child: Container(
+                      width: 38, height: 38,
+                      decoration: const BoxDecoration(
+                        color: Color(0xFF22C55E),
+                        shape: BoxShape.circle,
                       ),
-                      const SizedBox(width: 10),
-                    ],
-                    if (_city.isNotEmpty)
-                      Row(
+                      child: const Icon(Icons.more_vert_rounded,
+                          color: Colors.white, size: 20),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+
+              // Avatar with green border + online dot
+              Stack(
+                children: [
+                  Container(
+                    width: 92, height: 92,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      border: Border.all(
+                          color: const Color(0xFF22C55E), width: 3),
+                    ),
+                    child: ClipOval(child: _avatarWidget()),
+                  ),
+                  Positioned(
+                    bottom: 4, right: 4,
+                    child: Container(
+                      width: 16, height: 16,
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF22C55E),
+                        shape: BoxShape.circle,
+                        border: Border.all(color: Colors.white, width: 2),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 10),
+
+              // Name
+              Text(_name,
+                style: const TextStyle(
+                  fontFamily: 'Public Sans',
+                  fontWeight: FontWeight.w700,
+                  fontSize: 20,
+                  color: Colors.white,
+                )),
+              const SizedBox(height: 6),
+
+              // Member since + location on same line
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(Icons.calendar_today_outlined,
+                      color: Colors.white70, size: 12),
+                  const SizedBox(width: 4),
+                  Text(
+                    _since.isNotEmpty
+                        ? 'Membre depuis $_since'
+                        : 'Membre',
+                    style: const TextStyle(
+                      fontFamily: 'Public Sans',
+                      fontSize: 12,
+                      color: Colors.white70,
+                    )),
+                  if (_city.isNotEmpty) ...[
+                    const SizedBox(width: 12),
+                    const Icon(Icons.location_on_outlined,
+                        color: Colors.white70, size: 12),
+                    const SizedBox(width: 2),
+                    Text(_city,
+                      style: const TextStyle(
+                        fontFamily: 'Public Sans',
+                        fontSize: 12,
+                        color: Colors.white,
+                      )),
+                  ],
+                ],
+              ),
+              const SizedBox(height: 10),
+
+              // Badges row: Profil vérifié + Active
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  if (_verified)
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 10, vertical: 5),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF22C55E),
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: const Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          const Icon(Icons.location_on_outlined,
-                            color: Colors.white70, size: 13),
-                          const SizedBox(width: 2),
-                          Text(_city,
-                            style: const TextStyle(
+                          Icon(Icons.check_circle_rounded,
+                              color: Colors.white, size: 13),
+                          SizedBox(width: 4),
+                          Text('Profil vérifié',
+                            style: TextStyle(
                               fontFamily: 'Public Sans',
-                              fontSize: 12,
+                              fontSize: 11,
+                              fontWeight: FontWeight.w600,
                               color: Colors.white,
                             )),
                         ],
                       ),
-                  ],
-                ),
-              ],
-            ),
+                    ),
+                  if (_verified) const SizedBox(width: 8),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 10, vertical: 5),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.2),
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: const Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.circle, color: Color(0xFF22C55E), size: 8),
+                        SizedBox(width: 4),
+                        Text('Active',
+                          style: TextStyle(
+                            fontFamily: 'Public Sans',
+                            fontSize: 11,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.white,
+                          )),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }
@@ -379,7 +421,7 @@ class _ArtisanClientProfileScreenState
       child: Row(children: [
         Expanded(
           child: OutlinedButton.icon(
-            onPressed: () {},
+            onPressed: _busy ? null : _openMessage,
             icon: const Icon(Icons.chat_bubble_outline_rounded,
               color: AppColors.primary, size: 18),
             label: const Text('Message',
@@ -844,26 +886,6 @@ class _StarRating extends StatelessWidget {
       }),
     );
   }
-}
-
-// ── Circle Button ─────────────────────────────────────────────────────────────
-class _CircleBtn extends StatelessWidget {
-  final VoidCallback onTap;
-  final Widget child;
-  const _CircleBtn({required this.onTap, required this.child});
-
-  @override
-  Widget build(BuildContext context) => GestureDetector(
-    onTap: onTap,
-    child: Container(
-      width: 38, height: 38,
-      decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.25),
-        shape: BoxShape.circle,
-      ),
-      child: Center(child: child),
-    ),
-  );
 }
 
 // ── Data Models ───────────────────────────────────────────────────────────────
