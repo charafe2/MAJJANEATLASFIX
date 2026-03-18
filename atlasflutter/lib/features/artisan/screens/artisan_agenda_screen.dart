@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/api_constants.dart';
 import '../../../core/widgets/atlas_logo.dart';
+import '../../../core/widgets/cancel_request_sheet.dart';
 import '../../../data/repositories/agenda_repository.dart';
 import 'artisan_home_screen.dart';
 
@@ -61,27 +62,10 @@ class _ArtisanAgendaScreenState extends State<ArtisanAgendaScreen> {
   }
 
   Future<void> _cancelAppointment(Appointment a) async {
-    final confirm = await showDialog<bool>(
-      context: context,
-      builder: (_) => AlertDialog(
-        title: const Text('Annuler le rendez-vous ?',
-            style: TextStyle(fontFamily: 'Public Sans', fontSize: 16,
-                fontWeight: FontWeight.w600)),
-        content: const Text('Cette action est irréversible.',
-            style: TextStyle(fontFamily: 'Public Sans', fontSize: 14)),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('Non', style: TextStyle(color: Color(0xFF62748E))),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: const Text('Oui, annuler',
-                style: TextStyle(color: Color(0xFFEF4444))),
-          ),
-        ],
-      ),
+    final confirm = await showCancelRequestSheet(
+      context,
+      title: a.title,
+      subtitle: a.contactName,
     );
     if (confirm != true) return;
 
@@ -168,9 +152,7 @@ class _ArtisanAgendaScreenState extends State<ArtisanAgendaScreen> {
                                     padding: const EdgeInsets.only(bottom: 16),
                                     child: _AgendaCard(
                                       appointment: a,
-                                      onCancel: a.status == 'scheduled'
-                                          ? () => _cancelAppointment(a)
-                                          : null,
+                                      onCancel: () => _cancelAppointment(a),
                                       onProfile: a.contactId != null
                                           ? () => context.push(
                                               '/artisan/client-profile/${a.contactId}',

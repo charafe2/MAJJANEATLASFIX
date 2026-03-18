@@ -664,7 +664,15 @@ class AuthController extends Controller
                 ->count(),
             'service_category'     => $serviceCategory?->name,
             'subscription_tier'    => $artisan?->activeSubscription?->tier?->name ?? null,
-            'certifications'       => [],
+            'certifications'       => $artisan
+                ? $artisan->certifications()->get()->map(fn($c) => [
+                    'id'           => $c->id,
+                    'title'        => $c->title,
+                    'document_url' => $c->document_url ? Storage::url($c->document_url) : null,
+                    'is_verified'  => $c->is_verified,
+                    'created_at'   => $c->created_at?->format('Y'),
+                ])->values()->toArray()
+                : [],
             'services'             => $artisan
                 ? $artisan->services()->with('serviceCategory')->get()->map(fn($s) => [
                     'id'                  => $s->id,

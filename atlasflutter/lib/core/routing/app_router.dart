@@ -40,6 +40,7 @@ import '../../features/artisan/screens/artisan_add_service_screen.dart';
 import '../../features/artisan/screens/artisan_messages_screen.dart';
 import '../../features/artisan/screens/artisan_chat_screen.dart';
 import '../../features/artisan/screens/artisan_my_services_screen.dart';
+import '../../features/artisan/screens/artisan_service_detail_screen.dart';
 import '../../data/repositories/artisan_job_repository.dart';
 import '../../data/repositories/service_request_repository.dart';
 
@@ -52,7 +53,8 @@ const _protectedRoutes = [
   '/artisan/home', '/artisan/offers', '/artisan/profile', '/artisan/info',
   '/artisan/available-requests', '/artisan/request', '/artisan/messages',
   '/artisan/chat', '/artisan/agenda', '/artisan/client-profile',
-  '/artisan/add-service', '/artisan/my-services',
+  '/artisan/add-service', '/artisan/my-services', '/artisan/service-detail',
+  '/artisan/payments', '/artisan/request-view',
 ];
 
 bool _isProtected(String location) =>
@@ -240,6 +242,24 @@ final appRouter = GoRouter(
 
     GoRoute(path: '/artisan/my-services',
       builder: (_, __) => const ArtisanMyServicesScreen()),
+
+    GoRoute(path: '/artisan/service-detail/:categoryId',
+      builder: (_, state) {
+        final extra = state.extra as Map<String, dynamic>? ?? {};
+        return ArtisanServiceDetailScreen(
+          serviceCategoryId: int.tryParse(state.pathParameters['categoryId'] ?? '') ?? 0,
+          serviceName: extra['serviceName'] as String? ?? 'Service',
+        );
+      }),
+
+    GoRoute(path: '/artisan/payments',
+      builder: (_, __) => const ClientPaymentsScreen(isArtisan: true)),
+
+    GoRoute(path: '/artisan/request-view/:id',
+      builder: (_, state) => ClientRequestViewScreen(
+        requestId: int.tryParse(state.pathParameters['id'] ?? '') ?? 0,
+        isArtisan: true,
+      )),
 
     GoRoute(path: '/artisan/messages',
       builder: (_, __) => const ArtisanMessagesScreen()),

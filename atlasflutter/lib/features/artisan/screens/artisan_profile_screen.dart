@@ -215,7 +215,7 @@ class _ArtisanProfileScreenState extends State<ArtisanProfileScreen> {
                             _ProfileMenuItem(
                               icon:  Icons.account_balance_wallet_outlined,
                               label: 'Mes paiements',
-                              onTap: () {},
+                              onTap: () => context.push('/artisan/payments'),
                             ),
                             const SizedBox(height: 32),
 

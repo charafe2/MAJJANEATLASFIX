@@ -4,9 +4,11 @@ import '../../../../core/constants/app_colors.dart';
 import '../../../../core/widgets/atlas_logo.dart';
 import '../../../../core/widgets/client_bottom_nav_bar.dart';
 import '../../../../data/repositories/payment_repository.dart';
+import '../../artisan/screens/artisan_home_screen.dart';
 
 class ClientPaymentsScreen extends StatefulWidget {
-  const ClientPaymentsScreen({super.key});
+  final bool isArtisan;
+  const ClientPaymentsScreen({super.key, this.isArtisan = false});
 
   @override
   State<ClientPaymentsScreen> createState() => _ClientPaymentsScreenState();
@@ -17,10 +19,13 @@ class _ClientPaymentsScreenState extends State<ClientPaymentsScreen> {
   final _pageCtrl      = PageController();
 
   List<Payment> _payments  = [];
+  PaymentStats? _statsData;
   bool          _loading   = true;
   String?       _error;
   String        _filter    = 'all'; // all | completed | in_progress
   int           _cardPage  = 0;
+
+  bool get _isArtisan => widget.isArtisan;
 
   @override
   void initState() {
@@ -37,8 +42,12 @@ class _ClientPaymentsScreenState extends State<ClientPaymentsScreen> {
   Future<void> _load() async {
     setState(() { _loading = true; _error = null; });
     try {
-      final data = await _repo.getPayments();
-      if (mounted) setState(() { _payments = data; _loading = false; });
+      final result = await _repo.getPaymentStats();
+      if (mounted) setState(() {
+        _payments  = result.payments;
+        _statsData = result.stats;
+        _loading   = false;
+      });
     } catch (e) {
       if (mounted) setState(() {
         _error   = PaymentRepository.errorMessage(e);
@@ -53,7 +62,7 @@ class _ClientPaymentsScreenState extends State<ClientPaymentsScreen> {
     return _payments.where((p) => p.status != 'completed').toList();
   }
 
-  PaymentStats get _stats => PaymentStats.fromList(_payments);
+  PaymentStats get _stats => _statsData ?? PaymentStats.fromList(_payments);
 
   @override
   Widget build(BuildContext context) {
@@ -88,9 +97,13 @@ class _ClientPaymentsScreenState extends State<ClientPaymentsScreen> {
             ],
           ),
 
-          const Positioned(
+          Positioned(
             bottom: 28, left: 0, right: 0,
-            child: Center(child: ClientBottomNavBar(activeIndex: 4)),
+            child: Center(
+              child: _isArtisan
+                  ? const ArtisanBottomNavBar(activeIndex: 4)
+                  : const ClientBottomNavBar(activeIndex: 4),
+            ),
           ),
         ],
       ),
@@ -119,7 +132,8 @@ class _ClientPaymentsScreenState extends State<ClientPaymentsScreen> {
                   const AtlasLogo(),
                   Row(children: [
                     GestureDetector(
-                      onTap: () => context.push('/client/agenda'),
+                      onTap: () => context.push(
+                        _isArtisan ? '/artisan/agenda' : '/client/agenda'),
                       child: const _HeaderIconBtn(Icons.calendar_today_outlined),
                     ),
                     const SizedBox(width: 10),
@@ -182,19 +196,21 @@ class _ClientPaymentsScreenState extends State<ClientPaymentsScreen> {
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Expanded(
+                Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text('Tableau de bord des paiements',
+                      const Text('Tableau de bord des paiements',
                         style: TextStyle(
                           fontFamily: 'Public Sans', fontWeight: FontWeight.w700,
                           fontSize: 18, letterSpacing: -0.31, color: Color(0xFF191C24),
                         )),
-                      SizedBox(height: 4),
+                      const SizedBox(height: 4),
                       Text(
-                        'Suivez l\'historique de vos paiements pour les services demandés',
-                        style: TextStyle(
+                        _isArtisan
+                            ? 'Suivez l\'historique de vos revenus pour les services effectués'
+                            : 'Suivez l\'historique de vos paiements pour les services demandés',
+                        style: const TextStyle(
                           fontFamily: 'Public Sans', fontWeight: FontWeight.w400,
                           fontSize: 14, height: 1.5, letterSpacing: -0.01,
                           color: Color(0xFF494949),
@@ -220,7 +236,7 @@ class _ClientPaymentsScreenState extends State<ClientPaymentsScreen> {
               children: [
                 Padding(
                   padding: const EdgeInsets.only(left: 29, right: 8),
-                  child: _TotalCard(stats: stats),
+                  child: _TotalCard(stats: stats, isArtisan: _isArtisan),
                 ),
                 Padding(
                   padding: const EdgeInsets.only(left: 8, right: 8),
@@ -329,9 +345,13 @@ class _ClientPaymentsScreenState extends State<ClientPaymentsScreen> {
           else
             ...filtered.map((p) => _PaymentRow(
               payment: p,
-              onTap:   () => context.push(
-                '/client/request-view/${p.id}',
-              ),
+              onTap: () {
+                if (_isArtisan && p.serviceRequestId != null) {
+                  context.push('/artisan/request-view/${p.serviceRequestId}');
+                } else {
+                  context.push('/client/request-view/${p.id}');
+                }
+              },
             )),
 
           const SizedBox(height: 24),
@@ -476,7 +496,8 @@ class _ClientPaymentsScreenState extends State<ClientPaymentsScreen> {
 
 class _TotalCard extends StatelessWidget {
   final PaymentStats stats;
-  const _TotalCard({required this.stats});
+  final bool isArtisan;
+  const _TotalCard({required this.stats, this.isArtisan = false});
 
   @override
   Widget build(BuildContext context) {
@@ -528,7 +549,7 @@ class _TotalCard extends StatelessWidget {
             ],
           ),
           const Spacer(),
-          Text('Total dépensé',
+          Text(isArtisan ? 'Total gagné' : 'Total dépensé',
             style: TextStyle(
               fontFamily: 'Poppins', fontSize: 12,
               color: Colors.white.withValues(alpha: 0.8), letterSpacing: -0.12,

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/widgets/atlas_logo.dart';
+import '../../../../core/widgets/cancel_request_sheet.dart';
 import '../../../../core/widgets/client_bottom_nav_bar.dart';
 import '../../../../data/repositories/service_request_repository.dart';
 import '../../../../data/repositories/conversation_repository.dart';
@@ -58,6 +59,13 @@ class _ClientRequestOffersScreenState
   }
 
   Future<void> _reject(Offer offer) async {
+    final confirm = await showCancelRequestSheet(
+      context,
+      title: _request?.category ?? 'Offre',
+      subtitle: '${offer.artisanName} · ${offer.artisanSpecialty}',
+    );
+    if (confirm != true) return;
+
     setState(() => _busy = true);
     try {
       await _repo.rejectOffer(_request!.id, offer.id);

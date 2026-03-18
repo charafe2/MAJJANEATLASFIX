@@ -86,16 +86,26 @@ class ServiceRequest {
   final DateTime createdAt;
   final List<Offer> offers;
 
+  // Client info (populated when artisan views the request)
+  final String? clientName;
+  final String? clientAvatar;
+  final int?    clientId;
+
   const ServiceRequest({
     required this.id, required this.category, this.categoryId,
     required this.status, required this.city, required this.description,
     required this.createdAt, required this.offers,
+    this.clientName, this.clientAvatar, this.clientId,
   });
 
-  factory ServiceRequest.fromJson(Map<String, dynamic> j) {
+  factory ServiceRequest.fromJson(Map<String, dynamic> j, {Offer? extraOffer}) {
     final cat = j['category'] as Map<String, dynamic>?;
     final st  = j['service_type'] as Map<String, dynamic>?;
     final offersRaw = j['offers'] as List<dynamic>? ?? [];
+    final client = j['client'] as Map<String, dynamic>?;
+    final clientUser = client?['user'] as Map<String, dynamic>?;
+    final parsedOffers = offersRaw.map((o) => Offer.fromJson(o as Map<String, dynamic>)).toList();
+    if (extraOffer != null) parsedOffers.add(extraOffer);
     return ServiceRequest(
       id:          j['id'] as int,
       category:    cat?['name'] as String? ?? st?['name'] as String? ?? 'Demande',
@@ -105,7 +115,11 @@ class ServiceRequest {
       description: j['description'] as String? ?? '',
       createdAt:   DateTime.tryParse(j['created_at'] as String? ?? '')
                    ?? DateTime.now(),
-      offers:      offersRaw.map((o) => Offer.fromJson(o as Map<String, dynamic>)).toList(),
+      offers:      parsedOffers,
+      clientName:  clientUser?['full_name'] as String?,
+      clientAvatar: clientUser?['resolved_avatar'] as String?
+                    ?? _fullUrl(clientUser?['avatar_url'] as String?),
+      clientId:    client?['id'] as int?,
     );
   }
 }
@@ -141,6 +155,30 @@ class ServiceRequestRepository {
   Future<ServiceRequest> getRequest(int id) async {
     final res = await _dio.get('${ApiConstants.clientRequests}/$id');
     return ServiceRequest.fromJson((res.data['data'] ?? res.data) as Map<String, dynamic>);
+  }
+
+  /// Artisan fetching a service request they have an accepted offer on.
+  Future<ServiceRequest> getArtisanRequest(int id) async {
+    final res = await _dio.get('${ApiConstants.artisanRequests}/$id');
+    final data = res.data as Map<String, dynamic>;
+    final srJson = (data['data'] ?? data) as Map<String, dynamic>;
+    // Build an Offer from the separate 'offer' field
+    Offer? offer;
+    if (data['offer'] != null) {
+      final oj = data['offer'] as Map<String, dynamic>;
+      offer = Offer(
+        id:              oj['id'] as int? ?? 0,
+        artisanName:     '',
+        artisanSpecialty: '',
+        rating:          0,
+        reviews:         0,
+        price:           double.tryParse('${oj['proposed_price'] ?? 0}') ?? 0,
+        duration:        oj['estimated_duration'] as int? ?? 0,
+        status:          oj['status'] as String? ?? 'accepted',
+        respondedAt:     DateTime.tryParse(oj['created_at'] as String? ?? '') ?? DateTime.now(),
+      );
+    }
+    return ServiceRequest.fromJson(srJson, extraOffer: offer);
   }
 
   Future<ServiceRequest> createRequest({

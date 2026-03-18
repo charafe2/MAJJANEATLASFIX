@@ -279,7 +279,7 @@ class ArtisanJobRepository {
     String?         note,
   }) async {
     await _dio.post(
-      '${ApiConstants.artisanRequests}/$requestId/offer',
+      '${ApiConstants.artisanRequests}/$requestId/offers',
       data: {
         'proposed_price':      price,
         'estimated_duration':  estimatedDuration,

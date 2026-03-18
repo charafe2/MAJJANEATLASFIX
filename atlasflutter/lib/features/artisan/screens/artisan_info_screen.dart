@@ -80,12 +80,16 @@ class _ArtisanInfoScreenState extends State<ArtisanInfoScreen>
 
   Future<void> _loadServices() async {
     try {
-      final res = await _dio.get('/artisan/profile');
-      final data = (res.data['data'] ?? res.data) as Map<String, dynamic>;
-      final raw  = data['services'] as List<dynamic>? ?? [];
+      final res = await _dio.get('/me');
+      final data = (res.data is Map<String, dynamic>)
+          ? res.data as Map<String, dynamic>
+          : <String, dynamic>{};
+      final raw = data['services'] as List<dynamic>? ?? [];
       _services = raw.map((s) {
         final m = s as Map<String, dynamic>;
         return _ServiceItem(
+          id:                m['id'] as int? ?? 0,
+          serviceCategoryId: m['service_category_id'] as int? ?? 0,
           name:     m['category']  as String?
                  ?? m['name']      as String? ?? 'Service',
           type:     m['type']      as String? ?? '',
@@ -388,7 +392,13 @@ class _ArtisanInfoScreenState extends State<ArtisanInfoScreen>
           else
             ...List.generate(_services.length, (i) => Padding(
               padding: const EdgeInsets.only(bottom: 12),
-              child: _ServiceRow(item: _services[i]),
+              child: GestureDetector(
+                onTap: () => context.push(
+                  '/artisan/service-detail/${_services[i].serviceCategoryId}',
+                  extra: {'serviceName': _services[i].name},
+                ),
+                child: _ServiceRow(item: _services[i]),
+              ),
             )),
         ],
       ),
@@ -587,10 +597,18 @@ class _LabeledField extends StatelessWidget {
 
 // ── Service row ───────────────────────────────────────────────────────────────
 class _ServiceItem {
+  final int    id;
+  final int    serviceCategoryId;
   final String name;
   final String type;
   final int    iconCode;
-  const _ServiceItem({required this.name, required this.type, required this.iconCode});
+  const _ServiceItem({
+    required this.id,
+    required this.serviceCategoryId,
+    required this.name,
+    required this.type,
+    required this.iconCode,
+  });
 }
 
 class _ServiceRow extends StatelessWidget {

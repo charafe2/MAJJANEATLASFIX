@@ -854,18 +854,26 @@ class _AddServiceCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       width: double.infinity,
+      clipBehavior: Clip.antiAlias,
       decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          begin: Alignment.topLeft, end: Alignment.bottomRight,
-          colors: [Color(0xFFFFF3EE), Color(0xFFFFE0D3)],
-        ),
+        color: Colors.white,
         border: Border.all(color: AppColors.primary, width: 1),
         borderRadius: BorderRadius.circular(9.8),
         boxShadow: const [BoxShadow(color: Color(0x1A000000),
             blurRadius: 1.84, offset: Offset(0, 0.61))],
       ),
-      padding: const EdgeInsets.fromLTRB(15, 20, 15, 0),
-      child: Column(children: [
+      child: Stack(children: [
+        // Background tools image at very low opacity
+        Positioned.fill(
+          child: Opacity(
+            opacity: 0.06,
+            child: Image.asset('assets/images/tools.png',
+                fit: BoxFit.cover),
+          ),
+        ),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(15, 20, 15, 0),
+          child: Column(children: [
         Container(
           width: double.infinity,
           decoration: BoxDecoration(
@@ -918,8 +926,10 @@ class _AddServiceCard extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 16),
-      ]),
-    );
+           ]),        // Column children
+        ),           // Padding
+      ]),            // Stack children
+    );               // Container
   }
 }
 

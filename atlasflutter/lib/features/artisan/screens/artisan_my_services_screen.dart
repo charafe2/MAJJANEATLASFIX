@@ -360,7 +360,7 @@ class _BoostSheetState extends State<_BoostSheet> {
                 onTap: () => setState(() => _selectedIndex = i),
                 child: _BoostOption(
                   name: p['name'] as String? ?? '',
-                  price: (p['price'] as num?)?.toDouble() ?? 0,
+                  price: double.tryParse('${p['price'] ?? 0}') ?? 0,
                   selected: selected,
                 ),
               ),

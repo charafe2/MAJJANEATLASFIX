@@ -5,17 +5,20 @@ import '../../../../core/widgets/atlas_logo.dart';
 import '../../../../core/widgets/client_bottom_nav_bar.dart';
 import '../../../../data/repositories/service_request_repository.dart';
 import '../../../../data/repositories/conversation_repository.dart';
+import '../../artisan/screens/artisan_home_screen.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
 
 class ClientRequestViewScreen extends StatefulWidget {
   final int             requestId;
   final ServiceRequest? initialRequest;
+  final bool            isArtisan;
 
   const ClientRequestViewScreen({
     super.key,
     required this.requestId,
     this.initialRequest,
+    this.isArtisan = false,
   });
 
   @override
@@ -57,10 +60,14 @@ class _ClientRequestViewScreenState extends State<ClientRequestViewScreen> {
     super.dispose();
   }
 
+  bool get _isArtisan => widget.isArtisan;
+
   Future<void> _load() async {
     if (_request == null) setState(() { _loading = true; _error = null; });
     try {
-      final req = await _repo.getRequest(widget.requestId);
+      final req = _isArtisan
+          ? await _repo.getArtisanRequest(widget.requestId)
+          : await _repo.getRequest(widget.requestId);
       if (mounted) setState(() { _request = req; _loading = false; });
     } catch (e) {
       if (mounted) {
@@ -87,22 +94,43 @@ class _ClientRequestViewScreenState extends State<ClientRequestViewScreen> {
   }
 
   Future<void> _openChat() async {
-    final offer = _acceptedOffer;
-    if (offer == null || offer.artisanId == null) return;
-    setState(() => _busy = true);
-    try {
-      final conv = await _convRepo.getOrCreate(artisanId: offer.artisanId);
-      if (mounted) {
-        context.push('/client/chat/${conv.id}', extra: {
-          'name':      offer.artisanName,
-          'role':      offer.artisanSpecialty,
-          'profileId': conv.otherProfileId,
-        });
+    if (_isArtisan) {
+      // Artisan chatting with client
+      final req = _request;
+      if (req == null || req.clientId == null) return;
+      setState(() => _busy = true);
+      try {
+        final conv = await _convRepo.getOrCreate(clientId: req.clientId);
+        if (mounted) {
+          context.push('/artisan/chat/${conv.id}', extra: {
+            'name':      req.clientName ?? 'Client',
+            'profileId': conv.otherProfileId,
+          });
+        }
+      } catch (_) {
+        _snack('Impossible d\'ouvrir la conversation.', ok: false);
+      } finally {
+        if (mounted) setState(() => _busy = false);
       }
-    } catch (_) {
-      _snack('Impossible d\'ouvrir la conversation.', ok: false);
-    } finally {
-      if (mounted) setState(() => _busy = false);
+    } else {
+      // Client chatting with artisan
+      final offer = _acceptedOffer;
+      if (offer == null || offer.artisanId == null) return;
+      setState(() => _busy = true);
+      try {
+        final conv = await _convRepo.getOrCreate(artisanId: offer.artisanId);
+        if (mounted) {
+          context.push('/client/chat/${conv.id}', extra: {
+            'name':      offer.artisanName,
+            'role':      offer.artisanSpecialty,
+            'profileId': conv.otherProfileId,
+          });
+        }
+      } catch (_) {
+        _snack('Impossible d\'ouvrir la conversation.', ok: false);
+      } finally {
+        if (mounted) setState(() => _busy = false);
+      }
     }
   }
 
@@ -172,9 +200,13 @@ class _ClientRequestViewScreenState extends State<ClientRequestViewScreen> {
               ),
             ),
 
-          const Positioned(
+          Positioned(
             bottom: 28, left: 0, right: 0,
-            child: Center(child: ClientBottomNavBar(activeIndex: 1)),
+            child: Center(
+              child: _isArtisan
+                  ? const ArtisanBottomNavBar(activeIndex: 1)
+                  : const ClientBottomNavBar(activeIndex: 1),
+            ),
           ),
         ],
       ),
@@ -203,7 +235,9 @@ class _ClientRequestViewScreenState extends State<ClientRequestViewScreen> {
               Row(children: [
                 const AtlasLogo(),
                 const Spacer(),
-                _CircleBtn(icon: Icons.calendar_today_outlined, onTap: () {}),
+                _CircleBtn(icon: Icons.calendar_today_outlined,
+                    onTap: () => context.push(
+                        _isArtisan ? '/artisan/agenda' : '/client/agenda')),
                 const SizedBox(width: 8),
                 _CircleBtn(icon: Icons.notifications_outlined,
                     onTap: () => context.push('/client/notifications')),
@@ -364,171 +398,12 @@ class _ClientRequestViewScreenState extends State<ClientRequestViewScreen> {
           ),
           const SizedBox(height: 14),
 
-          // ── Artisan card ───────────────────────────────────────────────────
-          if (offer != null) ...[
-            _SectionCard(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  _CardHeader(
-                    icon: Icons.engineering_outlined,
-                    label: 'Artisan assigné',
-                  ),
-                  const SizedBox(height: 14),
-                  Row(
-                    children: [
-                      // Avatar
-                      _ArtisanAvatar(
-                          name: offer.artisanName,
-                          avatarUrl: offer.artisanAvatar),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(offer.artisanName,
-                              style: const TextStyle(
-                                fontFamily: 'Public Sans',
-                                fontWeight: FontWeight.w600,
-                                fontSize: 15,
-                                letterSpacing: -0.2,
-                                color: Color(0xFF191C24),
-                              )),
-                            const SizedBox(height: 2),
-                            if (offer.artisanSpecialty.isNotEmpty)
-                              Text(offer.artisanSpecialty,
-                                style: const TextStyle(
-                                  fontFamily: 'Public Sans', fontSize: 12,
-                                  color: Color(0xFF62748E))),
-                            const SizedBox(height: 4),
-                            Row(children: [
-                              const Icon(Icons.star_rounded,
-                                  color: Color(0xFFFDC700), size: 14),
-                              const SizedBox(width: 3),
-                              Text(offer.rating.toStringAsFixed(1),
-                                style: const TextStyle(
-                                  fontFamily: 'Public Sans', fontSize: 12,
-                                  color: Color(0xFF314158))),
-                              Text(' (${offer.reviews} avis)',
-                                style: const TextStyle(
-                                  fontFamily: 'Public Sans', fontSize: 11,
-                                  color: Color(0xFF9CA3AF))),
-                            ]),
-                          ],
-                        ),
-                      ),
-                      // View profile button
-                      if (offer.artisanId != null)
-                        GestureDetector(
-                          onTap: () => context.push(
-                            '/artisans/profile/${offer.artisanId}',
-                            extra: {
-                              'name': offer.artisanName,
-                              'role': offer.artisanSpecialty,
-                            }),
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 10, vertical: 6),
-                            decoration: BoxDecoration(
-                              color: const Color(0xFF393C40),
-                              borderRadius: BorderRadius.circular(20),
-                            ),
-                            child: const Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Icon(Icons.person_outline_rounded,
-                                    color: Colors.white, size: 13),
-                                SizedBox(width: 4),
-                                Text('Profil',
-                                  style: TextStyle(
-                                    fontFamily: 'Public Sans', fontSize: 11,
-                                    color: Colors.white)),
-                              ],
-                            ),
-                          ),
-                        ),
-                    ],
-                  ),
-                  const SizedBox(height: 14),
-
-                  // Price & duration bar
-                  Container(
-                    padding: const EdgeInsets.fromLTRB(14, 10, 14, 10),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFFFEFE8),
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: Row(
-                      children: [
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              const Text('Prix accepté',
-                                style: TextStyle(
-                                  fontFamily: 'Public Sans', fontSize: 11,
-                                  color: Color(0xFF62748E))),
-                              const SizedBox(height: 2),
-                              Text('${offer.price.toStringAsFixed(0)} DH',
-                                style: const TextStyle(
-                                  fontFamily: 'Public Sans',
-                                  fontWeight: FontWeight.w700,
-                                  fontSize: 22,
-                                  letterSpacing: 0.2,
-                                  color: AppColors.primary,
-                                )),
-                            ],
-                          ),
-                        ),
-                        if (offer.duration > 0)
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.end,
-                            children: [
-                              const Text('Durée estimée',
-                                style: TextStyle(
-                                  fontFamily: 'Public Sans', fontSize: 11,
-                                  color: Color(0xFF62748E))),
-                              const SizedBox(height: 2),
-                              Text(_fmtDuration(offer.duration),
-                                style: const TextStyle(
-                                  fontFamily: 'Public Sans',
-                                  fontWeight: FontWeight.w600,
-                                  fontSize: 15,
-                                  color: Color(0xFF314158),
-                                )),
-                            ],
-                          ),
-                      ],
-                    ),
-                  ),
-
-                  // Contact button
-                  const SizedBox(height: 12),
-                  SizedBox(
-                    width: double.infinity,
-                    height: 42,
-                    child: ElevatedButton.icon(
-                      onPressed: _openChat,
-                      icon: const Icon(Icons.chat_bubble_outline_rounded,
-                          size: 16),
-                      label: const Text('Contacter l\'artisan',
-                        style: TextStyle(
-                          fontFamily: 'Public Sans',
-                          fontWeight: FontWeight.w600,
-                          fontSize: 13,
-                        )),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.primary,
-                        foregroundColor: Colors.white,
-                        elevation: 0,
-                        shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(25)),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
+          // ── Person card (Artisan or Client) ──────────────────────────────
+          if (_isArtisan && req.clientName != null) ...[
+            _buildClientCard(req),
+            const SizedBox(height: 14),
+          ] else if (!_isArtisan && offer != null) ...[
+            _buildArtisanCard(offer),
             const SizedBox(height: 14),
           ],
 
@@ -787,6 +662,190 @@ class _ClientRequestViewScreenState extends State<ClientRequestViewScreen> {
     if (minutes < 60) return '${minutes}min';
     final h = minutes ~/ 60, m = minutes % 60;
     return m > 0 ? '${h}h${m}min' : '${h}h';
+  }
+
+  // ── Artisan card (client viewing) ──────────────────────────────────────
+  Widget _buildArtisanCard(Offer offer) {
+    return _SectionCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _CardHeader(icon: Icons.engineering_outlined, label: 'Artisan assigné'),
+          const SizedBox(height: 14),
+          Row(
+            children: [
+              _PersonAvatar(name: offer.artisanName, avatarUrl: offer.artisanAvatar),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(offer.artisanName,
+                      style: const TextStyle(
+                        fontFamily: 'Public Sans', fontWeight: FontWeight.w600,
+                        fontSize: 15, letterSpacing: -0.2, color: Color(0xFF191C24))),
+                    const SizedBox(height: 2),
+                    if (offer.artisanSpecialty.isNotEmpty)
+                      Text(offer.artisanSpecialty,
+                        style: const TextStyle(
+                          fontFamily: 'Public Sans', fontSize: 12, color: Color(0xFF62748E))),
+                    const SizedBox(height: 4),
+                    Row(children: [
+                      const Icon(Icons.star_rounded, color: Color(0xFFFDC700), size: 14),
+                      const SizedBox(width: 3),
+                      Text(offer.rating.toStringAsFixed(1),
+                        style: const TextStyle(fontFamily: 'Public Sans', fontSize: 12, color: Color(0xFF314158))),
+                      Text(' (${offer.reviews} avis)',
+                        style: const TextStyle(fontFamily: 'Public Sans', fontSize: 11, color: Color(0xFF9CA3AF))),
+                    ]),
+                  ],
+                ),
+              ),
+              if (offer.artisanId != null)
+                GestureDetector(
+                  onTap: () => context.push('/artisans/profile/${offer.artisanId}',
+                    extra: {'name': offer.artisanName, 'role': offer.artisanSpecialty}),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF393C40), borderRadius: BorderRadius.circular(20)),
+                    child: const Row(mainAxisSize: MainAxisSize.min, children: [
+                      Icon(Icons.person_outline_rounded, color: Colors.white, size: 13),
+                      SizedBox(width: 4),
+                      Text('Profil', style: TextStyle(fontFamily: 'Public Sans', fontSize: 11, color: Colors.white)),
+                    ]),
+                  ),
+                ),
+            ],
+          ),
+          const SizedBox(height: 14),
+          _buildPriceBar(offer),
+          const SizedBox(height: 12),
+          SizedBox(
+            width: double.infinity, height: 42,
+            child: ElevatedButton.icon(
+              onPressed: _openChat,
+              icon: const Icon(Icons.chat_bubble_outline_rounded, size: 16),
+              label: const Text('Contacter l\'artisan',
+                style: TextStyle(fontFamily: 'Public Sans', fontWeight: FontWeight.w600, fontSize: 13)),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primary, foregroundColor: Colors.white,
+                elevation: 0, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(25))),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ── Client card (artisan viewing) ──────────────────────────────────────
+  Widget _buildClientCard(ServiceRequest req) {
+    final offer = _acceptedOffer;
+    final name = req.clientName ?? 'Client';
+    return _SectionCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _CardHeader(icon: Icons.person_outline_rounded, label: 'Client'),
+          const SizedBox(height: 14),
+          Row(
+            children: [
+              _PersonAvatar(name: name, avatarUrl: req.clientAvatar),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(name,
+                      style: const TextStyle(
+                        fontFamily: 'Public Sans', fontWeight: FontWeight.w600,
+                        fontSize: 15, letterSpacing: -0.2, color: Color(0xFF191C24))),
+                    const SizedBox(height: 4),
+                    Row(children: [
+                      const Icon(Icons.calendar_today_outlined, color: Color(0xFF9CA3AF), size: 12),
+                      const SizedBox(width: 4),
+                      Text(_fmtDate(req.createdAt),
+                        style: const TextStyle(fontFamily: 'Public Sans', fontSize: 12, color: Color(0xFF62748E))),
+                    ]),
+                  ],
+                ),
+              ),
+              if (req.clientId != null)
+                GestureDetector(
+                  onTap: () => context.push('/artisan/client-profile/${req.clientId}'),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF393C40), borderRadius: BorderRadius.circular(20)),
+                    child: const Row(mainAxisSize: MainAxisSize.min, children: [
+                      Icon(Icons.person_outline_rounded, color: Colors.white, size: 13),
+                      SizedBox(width: 4),
+                      Text('Profil', style: TextStyle(fontFamily: 'Public Sans', fontSize: 11, color: Colors.white)),
+                    ]),
+                  ),
+                ),
+            ],
+          ),
+          if (offer != null) ...[
+            const SizedBox(height: 14),
+            _buildPriceBar(offer),
+          ],
+          const SizedBox(height: 12),
+          SizedBox(
+            width: double.infinity, height: 42,
+            child: ElevatedButton.icon(
+              onPressed: _openChat,
+              icon: const Icon(Icons.chat_bubble_outline_rounded, size: 16),
+              label: const Text('Contactez',
+                style: TextStyle(fontFamily: 'Public Sans', fontWeight: FontWeight.w600, fontSize: 13)),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primary, foregroundColor: Colors.white,
+                elevation: 0, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(25))),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ── Shared price/duration bar ──────────────────────────────────────────
+  Widget _buildPriceBar(Offer offer) {
+    return Container(
+      padding: const EdgeInsets.fromLTRB(14, 10, 14, 10),
+      decoration: BoxDecoration(
+        color: const Color(0xFFFFEFE8), borderRadius: BorderRadius.circular(10)),
+      child: Row(
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text('Prix accepté',
+                  style: TextStyle(fontFamily: 'Public Sans', fontSize: 11, color: Color(0xFF62748E))),
+                const SizedBox(height: 2),
+                Text('${offer.price.toStringAsFixed(0)} DH',
+                  style: const TextStyle(
+                    fontFamily: 'Public Sans', fontWeight: FontWeight.w700,
+                    fontSize: 22, letterSpacing: 0.2, color: AppColors.primary)),
+              ],
+            ),
+          ),
+          if (offer.duration > 0)
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                const Text('Durée estimée',
+                  style: TextStyle(fontFamily: 'Public Sans', fontSize: 11, color: Color(0xFF62748E))),
+                const SizedBox(height: 2),
+                Text(_fmtDuration(offer.duration),
+                  style: const TextStyle(
+                    fontFamily: 'Public Sans', fontWeight: FontWeight.w600,
+                    fontSize: 15, color: Color(0xFF314158))),
+              ],
+            ),
+        ],
+      ),
+    );
   }
 }
 
@@ -1095,10 +1154,10 @@ class _ActionBtn extends StatelessWidget {
 
 // ── Artisan avatar ─────────────────────────────────────────────────────────────
 
-class _ArtisanAvatar extends StatelessWidget {
+class _PersonAvatar extends StatelessWidget {
   final String  name;
   final String? avatarUrl;
-  const _ArtisanAvatar({required this.name, this.avatarUrl});
+  const _PersonAvatar({required this.name, this.avatarUrl});
 
   Color _color() {
     const p = [

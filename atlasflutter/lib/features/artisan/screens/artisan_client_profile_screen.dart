@@ -204,126 +204,122 @@ class _ArtisanClientProfileScreenState
               ),
               const SizedBox(height: 16),
 
-              // Avatar with green border + online dot
-              Stack(
+              // Avatar + Name row (side by side)
+              Row(
                 children: [
-                  Container(
-                    width: 92, height: 92,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      border: Border.all(
-                          color: const Color(0xFF22C55E), width: 3),
-                    ),
-                    child: ClipOval(child: _avatarWidget()),
-                  ),
-                  Positioned(
-                    bottom: 4, right: 4,
-                    child: Container(
-                      width: 16, height: 16,
-                      decoration: BoxDecoration(
-                        color: const Color(0xFF22C55E),
-                        shape: BoxShape.circle,
-                        border: Border.all(color: Colors.white, width: 2),
+                  // Avatar with green border + online dot
+                  Stack(
+                    children: [
+                      Container(
+                        width: 82, height: 82,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          border: Border.all(
+                              color: const Color(0xFF22C55E), width: 3),
+                        ),
+                        child: ClipOval(child: _avatarWidget()),
                       ),
+                      Positioned(
+                        bottom: 4, right: 4,
+                        child: Container(
+                          width: 16, height: 16,
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF22C55E),
+                            shape: BoxShape.circle,
+                            border: Border.all(color: Colors.white, width: 2),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(width: 16),
+                  // Name + member since
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(_name,
+                          style: const TextStyle(
+                            fontFamily: 'Public Sans',
+                            fontWeight: FontWeight.w700,
+                            fontSize: 20,
+                            color: Colors.white,
+                          )),
+                        const SizedBox(height: 4),
+                        Row(
+                          children: [
+                            const Icon(Icons.calendar_today_outlined,
+                                color: Colors.white70, size: 12),
+                            const SizedBox(width: 4),
+                            Text(
+                              _since.isNotEmpty
+                                  ? 'Membre depuis $_since'
+                                  : 'Membre',
+                              style: const TextStyle(
+                                fontFamily: 'Public Sans',
+                                fontSize: 12,
+                                color: Colors.white70,
+                              )),
+                          ],
+                        ),
+                      ],
                     ),
                   ),
                 ],
               ),
-              const SizedBox(height: 10),
+              const SizedBox(height: 14),
 
-              // Name
-              Text(_name,
-                style: const TextStyle(
-                  fontFamily: 'Public Sans',
-                  fontWeight: FontWeight.w700,
-                  fontSize: 20,
-                  color: Colors.white,
-                )),
-              const SizedBox(height: 6),
-
-              // Member since + location on same line
+              // Info pills row: email + location
               Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Icon(Icons.calendar_today_outlined,
-                      color: Colors.white70, size: 12),
-                  const SizedBox(width: 4),
-                  Text(
-                    _since.isNotEmpty
-                        ? 'Membre depuis $_since'
-                        : 'Membre',
-                    style: const TextStyle(
-                      fontFamily: 'Public Sans',
-                      fontSize: 12,
-                      color: Colors.white70,
-                    )),
-                  if (_city.isNotEmpty) ...[
-                    const SizedBox(width: 12),
-                    const Icon(Icons.location_on_outlined,
-                        color: Colors.white70, size: 12),
-                    const SizedBox(width: 2),
-                    Text(_city,
-                      style: const TextStyle(
-                        fontFamily: 'Public Sans',
-                        fontSize: 12,
-                        color: Colors.white,
-                      )),
-                  ],
-                ],
-              ),
-              const SizedBox(height: 10),
-
-              // Badges row: Profil vérifié + Active
-              Row(
-                mainAxisSize: MainAxisSize.min,
                 children: [
                   if (_verified)
                     Container(
                       padding: const EdgeInsets.symmetric(
-                          horizontal: 10, vertical: 5),
+                          horizontal: 12, vertical: 6),
                       decoration: BoxDecoration(
-                        color: const Color(0xFF22C55E),
+                        color: Colors.white.withValues(alpha: 0.15),
                         borderRadius: BorderRadius.circular(20),
                       ),
                       child: const Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Icon(Icons.check_circle_rounded,
-                              color: Colors.white, size: 13),
-                          SizedBox(width: 4),
-                          Text('Profil vérifié',
+                          Icon(Icons.email_outlined,
+                              color: Colors.white, size: 14),
+                          SizedBox(width: 6),
+                          Text('E-mail vérifié',
                             style: TextStyle(
                               fontFamily: 'Public Sans',
-                              fontSize: 11,
-                              fontWeight: FontWeight.w600,
+                              fontSize: 12,
                               color: Colors.white,
                             )),
                         ],
                       ),
                     ),
-                  if (_verified) const SizedBox(width: 8),
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 10, vertical: 5),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.2),
-                      borderRadius: BorderRadius.circular(20),
+                  if (_verified && _city.isNotEmpty)
+                    const SizedBox(width: 8),
+                  if (_city.isNotEmpty)
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 12, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.15),
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Icon(Icons.location_on_outlined,
+                              color: Colors.white, size: 14),
+                          const SizedBox(width: 4),
+                          Text(_city,
+                            style: const TextStyle(
+                              fontFamily: 'Public Sans',
+                              fontSize: 12,
+                              color: Colors.white,
+                            )),
+                        ],
+                      ),
                     ),
-                    child: const Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(Icons.circle, color: Color(0xFF22C55E), size: 8),
-                        SizedBox(width: 4),
-                        Text('Active',
-                          style: TextStyle(
-                            fontFamily: 'Public Sans',
-                            fontSize: 11,
-                            fontWeight: FontWeight.w600,
-                            color: Colors.white,
-                          )),
-                      ],
-                    ),
-                  ),
                 ],
               ),
             ],

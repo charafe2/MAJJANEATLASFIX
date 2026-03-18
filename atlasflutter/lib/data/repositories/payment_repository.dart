@@ -5,6 +5,7 @@ import '../../core/constants/api_constants.dart';
 
 class Payment {
   final int    id;
+  final int?   serviceRequestId;
   final String artisanName;
   final String artisanInitial;
   final String serviceType;
@@ -15,6 +16,7 @@ class Payment {
 
   const Payment({
     required this.id,
+    this.serviceRequestId,
     required this.artisanName,
     required this.artisanInitial,
     required this.serviceType,
@@ -133,6 +135,55 @@ class PaymentRepository {
       }
     }
     return payments;
+  }
+
+  /// Uses the dedicated /payment-stats endpoint (works for both client & artisan).
+  Future<({PaymentStats stats, List<Payment> payments})> getPaymentStats() async {
+    final res = await _dio.get('/payment-stats');
+    final data = (res.data is Map<String, dynamic>)
+        ? res.data as Map<String, dynamic>
+        : <String, dynamic>{};
+
+    final statsJson = data['stats'] as Map<String, dynamic>? ?? {};
+    final rawPayments = data['payments'] as List<dynamic>? ?? [];
+
+    final stats = PaymentStats(
+      totalSpent:      double.tryParse('${statsJson['total_revenue'] ?? 0}') ?? 0,
+      completedAmount: double.tryParse('${statsJson['completed_total'] ?? 0}') ?? 0,
+      completedCount:  statsJson['completed_count'] as int? ?? 0,
+      pendingAmount:   double.tryParse('${statsJson['pending_total'] ?? 0}') ?? 0,
+      pendingCount:    statsJson['pending_count'] as int? ?? 0,
+      changePercent:   12,
+    );
+
+    final payments = rawPayments.map((p) {
+      final m = p as Map<String, dynamic>;
+      final name = m['client'] as String? ?? 'Client';
+      final dateStr = m['date'] as String? ?? '';
+      // Parse dd/mm/yyyy
+      DateTime date;
+      try {
+        final parts = dateStr.split('/');
+        date = parts.length == 3
+            ? DateTime(int.parse(parts[2]), int.parse(parts[1]), int.parse(parts[0]))
+            : DateTime.now();
+      } catch (_) {
+        date = DateTime.now();
+      }
+      return Payment(
+        id:               0,
+        serviceRequestId: m['service_request_id'] as int?,
+        artisanName:      name,
+        artisanInitial:   m['initials'] as String? ?? (name.isNotEmpty ? name[0].toUpperCase() : '?'),
+        serviceType:      m['service'] as String? ?? 'Service',
+        amount:           double.tryParse('${m['amount'] ?? 0}') ?? 0,
+        paymentMethod:    m['method'] as String? ?? 'Carte bancaire',
+        date:             date,
+        status:           (m['status'] as String?) == 'completed' ? 'completed' : 'in_progress',
+      );
+    }).toList();
+
+    return (stats: stats, payments: payments);
   }
 
   static String errorMessage(Object e) {
