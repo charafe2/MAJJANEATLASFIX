@@ -19,6 +19,7 @@
             v-for="(service, i) in services"
             :key="i"
             class="service-card"
+            @click="goToService(service.slug)"
           >
             <!-- Image -->
             <div class="card-image-wrap">
@@ -33,7 +34,7 @@
             <!-- Content -->
             <div class="card-content">
               <h3 class="card-title">{{ service.title }}</h3>
-              <button class="card-btn">Voir détails</button>
+              <router-link :to="`/services/${service.slug}`" class="card-btn">Voir détails</router-link>
             </div>
           </div>
         </div>
@@ -58,17 +59,24 @@
 
 <script setup>
 import { ref } from 'vue'
+import { useRouter } from 'vue-router'
+
+const router = useRouter()
 
 const services = ref([
-  { title: 'Plomberie',            image: 'https://images.unsplash.com/photo-1585771724684-38269d6639fd?w=400&q=80', icon: '/icons/plumbing.svg' },
-  { title: 'Électricité',          image: 'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=400&q=80', icon: '/icons/electricity.svg' },
-  { title: 'Peinture',             image: 'https://images.unsplash.com/photo-1562259949-e8e7689d7828?w=400&q=80', icon: '/icons/paint.svg' },
-  { title: 'Menuiserie',           image: 'https://images.unsplash.com/photo-1504148455328-c376907d081c?w=400&q=80', icon: '/icons/hammer.svg' },
-  { title: 'Climatisation',        image: 'https://images.unsplash.com/photo-1631545806609-bae1b2e66987?w=400&q=80', icon: '/icons/ac.svg' },
-  { title: 'Réparations générales',image: 'https://images.unsplash.com/photo-1581783898377-1c85bf937427?w=400&q=80', icon: '/icons/wrench.svg' },
-  { title: 'Carrelage',            image: new URL('../../assets/images/zlij.png', import.meta.url).href, icon: '/icons/tile.svg' },
-  { title: 'Maçonnerie',           image: new URL('../../assets/images/brickwall.jpg', import.meta.url).href, icon: '/icons/brick.svg' },
+  { title: 'Plomberie',            slug: 'plomberie',            image: 'https://images.unsplash.com/photo-1585771724684-38269d6639fd?w=400&q=80', icon: '/icons/plumbing.svg' },
+  { title: 'Électricité',          slug: 'electricite',          image: 'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=400&q=80', icon: '/icons/electricity.svg' },
+  { title: 'Peinture',             slug: 'peinture',             image: 'https://images.unsplash.com/photo-1562259949-e8e7689d7828?w=400&q=80', icon: '/icons/paint.svg' },
+  { title: 'Menuiserie',           slug: 'menuiserie',           image: 'https://images.unsplash.com/photo-1504148455328-c376907d081c?w=400&q=80', icon: '/icons/hammer.svg' },
+  { title: 'Climatisation',        slug: 'climatisation',        image: 'https://images.unsplash.com/photo-1631545806609-bae1b2e66987?w=400&q=80', icon: '/icons/ac.svg' },
+  { title: 'Réparations générales',slug: 'reparations-generales',image: 'https://images.unsplash.com/photo-1581783898377-1c85bf937427?w=400&q=80', icon: '/icons/wrench.svg' },
+  { title: 'Carrelage',            slug: 'carrelage',            image: new URL('../../assets/images/zlij.png', import.meta.url).href, icon: '/icons/tile.svg' },
+  { title: 'Maçonnerie',           slug: 'maconnerie',           image: new URL('../../assets/images/brickwall.jpg', import.meta.url).href, icon: '/icons/brick.svg' },
 ])
+
+function goToService(slug) {
+  router.push(`/services/${slug}`)
+}
 
 const trackRef = ref(null)
 const CARD_W   = 260 + 24  // card width + gap
@@ -147,6 +155,7 @@ const scroll = (dir) => {
   display: flex;
   gap: 24px;
   overflow-x: auto;
+  overflow-y: hidden;
   scroll-behavior: smooth;
   scrollbar-width: none;
   -webkit-overflow-scrolling: touch;
@@ -166,14 +175,14 @@ const scroll = (dir) => {
   border-radius: 14px;
   background: #fff;
   box-shadow: 0 4px 20px rgba(0,0,0,0.08);
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  transition: box-shadow 0.3s ease;
   overflow: visible;
   display: flex;
   flex-direction: column;
+  cursor: pointer;
 }
 
 .service-card:hover {
-  transform: translateY(-10px);
   box-shadow: 0 14px 36px rgba(0,0,0,0.13);
 }
 
@@ -262,6 +271,7 @@ const scroll = (dir) => {
   cursor: pointer;
   transition: background 0.2s, color 0.2s;
   box-shadow: 0 2px 8px rgba(252,90,21,0.15);
+  text-decoration: none;
 }
 
 .card-btn:hover {
